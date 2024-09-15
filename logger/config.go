@@ -4,6 +4,7 @@ import (
 	"braces.dev/errtrace"
 	"context"
 	"github.com/go-modulus/modulus/errlog"
+	"github.com/go-modulus/modulus/module"
 	slogformatter "github.com/samber/slog-formatter"
 	slogmulti "github.com/samber/slog-multi"
 	slogzap "github.com/samber/slog-zap/v2"
@@ -11,7 +12,6 @@ import (
 	"log/slog"
 	"time"
 
-	"go.uber.org/fx"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -19,7 +19,7 @@ import (
 type ModuleConfig struct {
 	Level string `env:"LOGGER_LEVEL, default=debug"`
 	Type  string `env:"LOGGER_TYPE, default=json"`
-	App   string `env:"LOGGER_APP, default=trustypay"`
+	App   string `env:"LOGGER_APP, default=modulus"`
 }
 
 func NewLogger(config *ModuleConfig) (*zap.Logger, error) {
@@ -62,11 +62,10 @@ func NewLogger(config *ModuleConfig) (*zap.Logger, error) {
 	return logger, nil
 }
 
-func NewModule(config ModuleConfig) fx.Option {
-	return fx.Module(
-		"logger",
-		fx.Provide(
-			NewLogger,
+func NewModule(config ModuleConfig) *module.Module {
+	return module.NewModule("github.com/go-modulus/modulus/logger").
+		AddConstructor(NewLogger).
+		AddConstructor(
 			func(
 				zapLogger *zap.Logger,
 			) *slog.Logger {
@@ -111,10 +110,9 @@ func NewModule(config ModuleConfig) fx.Option {
 
 				return logger
 			},
-
-			func() (*ModuleConfig, error) {
-				return &config, envconfig.Process(context.Background(), &config)
-			},
-		),
+		).AddConstructor(
+		func() (*ModuleConfig, error) {
+			return &config, envconfig.Process(context.Background(), &config)
+		},
 	)
 }

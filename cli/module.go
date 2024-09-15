@@ -2,16 +2,13 @@ package cli
 
 import (
 	"context"
+	"github.com/go-modulus/modulus/module"
 	"os"
 	"sort"
 
 	"github.com/urfave/cli/v2"
 	"go.uber.org/fx"
 )
-
-func ProvideCommand(command interface{}) interface{} {
-	return fx.Annotate(command, fx.ResultTags(`group:"cli.commands"`))
-}
 
 type StartCliParams struct {
 	fx.In
@@ -46,11 +43,14 @@ func Start(
 	runner *Runner,
 	app *cli.App,
 ) error {
-	return runner.start(func() error {
-		return app.Run(os.Args)
-	})
+	return runner.start(
+		func() error {
+			return app.Run(os.Args)
+		},
+	)
 }
 
-func NewModule() fx.Option {
-	return fx.Module("cli", fx.Provide(NewApp, NewRunner))
+func NewModule() *module.Module {
+	return module.NewModule("github.com/go-modulus/modulus/cli").
+		AddConstructors(NewApp, NewRunner)
 }
