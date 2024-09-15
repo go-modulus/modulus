@@ -8,7 +8,6 @@ import (
 	slogformatter "github.com/samber/slog-formatter"
 	slogmulti "github.com/samber/slog-multi"
 	slogzap "github.com/samber/slog-zap/v2"
-	"github.com/sethvargo/go-envconfig"
 	"log/slog"
 	"time"
 
@@ -62,57 +61,60 @@ func NewLogger(config *ModuleConfig) (*zap.Logger, error) {
 	return logger, nil
 }
 
+func NewSlog(
+	zapLogger *zap.Logger,
+) *slog.Logger {
+	handler := slogzap.Option{Logger: zapLogger.WithOptions(zap.AddCallerSkip(8))}.NewZapHandler()
+	errorFormattingMiddleware := slogformatter.NewFormatterMiddleware(
+		slogformatter.TimeFormatter(time.RFC3339Nano, time.UTC),
+		errlog.Formatter(),
+	)
+	logger := slog.New(
+		slogmulti.
+			Pipe(slogmulti.NewHandleInlineMiddleware(Tags)).
+			Pipe(
+				slogmulti.NewHandleInlineMiddleware(
+					func(
+						ctx context.Context,
+						record slog.Record,
+						next func(context.Context, slog.Record) error,
+					) error {
+						// https://github.com/temporalio/sdk-go/blob/7fc12d37fe7fde6dcab6dfb4e0763db82b9991df/internal/internal_task_handlers.go#L2118
+						if record.Message == "Activity error." {
+							// TODO: test it
+							record.Attrs(
+								func(attr slog.Attr) bool {
+									if attr.Key == "Error" {
+										err, ok := attr.Value.Any().(error)
+										if ok {
+											attr.Value = slog.StringValue(errtrace.FormatString(err))
+										}
+										return false
+									}
+									return true
+								},
+							)
+						}
+						return next(ctx, record)
+					},
+				),
+			).
+			Pipe(errorFormattingMiddleware).
+			Handler(handler),
+	)
+
+	return logger
+}
+
 func NewModule(config ModuleConfig) *module.Module {
-	return module.NewModule("github.com/go-modulus/modulus/logger").
+	return module.NewConfiguredModule[ModuleConfig]("github.com/go-modulus/modulus/logger", config).
 		AddConstructor(NewLogger).
 		AddConstructor(
-			func(
-				zapLogger *zap.Logger,
-			) *slog.Logger {
-				handler := slogzap.Option{Logger: zapLogger.WithOptions(zap.AddCallerSkip(8))}.NewZapHandler()
-				errorFormattingMiddleware := slogformatter.NewFormatterMiddleware(
-					slogformatter.TimeFormatter(time.RFC3339Nano, time.UTC),
-					errlog.Formatter(),
-				)
-				logger := slog.New(
-					slogmulti.
-						Pipe(slogmulti.NewHandleInlineMiddleware(Tags)).
-						Pipe(
-							slogmulti.NewHandleInlineMiddleware(
-								func(
-									ctx context.Context,
-									record slog.Record,
-									next func(context.Context, slog.Record) error,
-								) error {
-									// https://github.com/temporalio/sdk-go/blob/7fc12d37fe7fde6dcab6dfb4e0763db82b9991df/internal/internal_task_handlers.go#L2118
-									if record.Message == "Activity error." {
-										// TODO: test it
-										record.Attrs(
-											func(attr slog.Attr) bool {
-												if attr.Key == "Error" {
-													err, ok := attr.Value.Any().(error)
-													if ok {
-														attr.Value = slog.StringValue(errtrace.FormatString(err))
-													}
-													return false
-												}
-												return true
-											},
-										)
-									}
-									return next(ctx, record)
-								},
-							),
-						).
-						Pipe(errorFormattingMiddleware).
-						Handler(handler),
-				)
-
-				return logger
-			},
-		).AddConstructor(
-		func() (*ModuleConfig, error) {
-			return &config, envconfig.Process(context.Background(), &config)
-		},
-	)
+			NewSlog,
+		)
+	//.AddConstructor(
+	//	func() (*ModuleConfig, error) {
+	//		return &config, envconfig.Process(context.Background(), &config)
+	//	},
+	//)
 }

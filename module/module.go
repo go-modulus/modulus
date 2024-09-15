@@ -1,6 +1,8 @@
 package module
 
 import (
+	"context"
+	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/fx"
 )
 
@@ -87,4 +89,13 @@ func (m *Module) HideCommands() *Module {
 
 func (m *Module) provideCommand(command interface{}) interface{} {
 	return fx.Annotate(command, fx.ResultTags(`group:"cli.commands"`))
+}
+
+func NewConfiguredModule[T any](name string, config T) *Module {
+	module := NewModule(name).AddConstructor(
+		func() (*T, error) {
+			return &config, envconfig.Process(context.Background(), &config)
+		},
+	)
+	return module
 }
