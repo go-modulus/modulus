@@ -9,5 +9,5 @@ import (
 func NewModule() *module.Module {
 	return module.NewModule("github.com/go-modulus/modulus/mtools").
 		AddCliCommand(cli2.NewCommand, cli2.NewInitProject).
-		AddDependency(*logger.NewModule(logger.ModuleConfig{}))
+		AddDependencies(*logger.NewModule(logger.ModuleConfig{}))
 }

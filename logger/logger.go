@@ -3,23 +3,15 @@ package logger
 import (
 	"braces.dev/errtrace"
 	"context"
-	"github.com/go-modulus/modulus/errlog"
-	"github.com/go-modulus/modulus/module"
+	"github.com/go-modulus/modulus/errors/errlog"
 	slogformatter "github.com/samber/slog-formatter"
 	slogmulti "github.com/samber/slog-multi"
 	slogzap "github.com/samber/slog-zap/v2"
-	"log/slog"
-	"time"
-
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"log/slog"
+	"time"
 )
-
-type ModuleConfig struct {
-	Level string `env:"LOGGER_LEVEL, default=debug"`
-	Type  string `env:"LOGGER_TYPE, default=json"`
-	App   string `env:"LOGGER_APP, default=modulus"`
-}
 
 func NewLogger(config *ModuleConfig) (*zap.Logger, error) {
 	level, err := zap.ParseAtomicLevel(config.Level)
@@ -104,13 +96,4 @@ func NewSlog(
 	)
 
 	return logger
-}
-
-func NewModule(config ModuleConfig) *module.Module {
-	return module.NewModule("github.com/go-modulus/modulus/logger").
-		AddProviders(
-			NewLogger,
-			NewSlog,
-			module.ConfigConstructor(config),
-		)
 }

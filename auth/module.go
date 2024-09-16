@@ -1,15 +1,13 @@
 package auth
 
 import (
-	"go.uber.org/fx"
+	"github.com/go-modulus/modulus/module"
 )
 
-func NewModule() fx.Option {
-	return fx.Module(
-		"modulus/auth",
-		fx.Provide(
+func NewModule() *module.Module {
+	return module.NewModule("github.com/go-modulus/modulus/auth").
+		AddProviders(
 			NewMiddlewareConfig,
 			NewMiddleware,
-		),
-	)
+		)
 }

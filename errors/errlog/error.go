@@ -2,6 +2,7 @@ package errlog
 
 import (
 	"braces.dev/errtrace"
+	"github.com/go-modulus/modulus/errors"
 	slogformatter "github.com/samber/slog-formatter"
 	_ "golang.org/x/text/message"
 	"log/slog"
@@ -17,7 +18,7 @@ func Formatter() slogformatter.Formatter {
 	return slogformatter.FormatByType[error](
 		func(err error) slog.Value {
 			values := getErrorAttrs(err)
-			cause := Cause(err)
+			cause := errors.Cause(err)
 			if cause != nil {
 				causeValues := getErrorAttrs(cause)
 				values = append(values, slog.Any("cause", causeValues))

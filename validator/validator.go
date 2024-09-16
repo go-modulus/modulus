@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-modulus/modulus/erruser"
+	"github.com/go-modulus/modulus/errors/erruser"
 	translationContext "github.com/go-modulus/modulus/translation"
 	"strings"
 

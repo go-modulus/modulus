@@ -2,7 +2,7 @@ package erruser_test
 
 import (
 	"errors"
-	"github.com/go-modulus/modulus/erruser"
+	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/go-modulus/modulus/translation"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"

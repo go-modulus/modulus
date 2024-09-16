@@ -1,8 +1,9 @@
-package errors_test
+package errbuilder_test
 
 import (
 	syserrors "errors"
 	"github.com/go-modulus/modulus/errors"
+	"github.com/go-modulus/modulus/errors/errbuilder"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -13,7 +14,7 @@ func TestBuilder_Build(t *testing.T) {
 	t.Run(
 		"simple error from string", func(t *testing.T) {
 
-			b := errors.NewB("test error")
+			b := errbuilder.New("test error")
 			err := b.Build()
 
 			var p = message.NewPrinter(language.English)
@@ -31,7 +32,7 @@ func TestBuilder_Build(t *testing.T) {
 	t.Run(
 		"simple error from system error", func(t *testing.T) {
 			cause := syserrors.New("test error")
-			b := errors.NewBE(cause)
+			b := errbuilder.NewE(cause)
 			err := b.Build()
 
 			var p = message.NewPrinter(language.English)
@@ -49,7 +50,7 @@ func TestBuilder_Build(t *testing.T) {
 
 	t.Run(
 		"error with tags", func(t *testing.T) {
-			b := errors.NewB("test error").WithTags("tag1", "tag2")
+			b := errbuilder.New("test error").WithTags("tag1", "tag2")
 			err := b.Build()
 
 			err = errors.WrapAddingTags(err, "tag3")

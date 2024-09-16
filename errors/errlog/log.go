@@ -1,8 +1,8 @@
-package errors
+package errlog
 
 import (
 	"context"
-	"github.com/go-modulus/modulus/errlog"
+	"github.com/go-modulus/modulus/errors"
 	"log/slog"
 )
 
@@ -13,7 +13,7 @@ const LogAsDebug = "log_as_debug"
 const DontLog = "dont_log"
 
 func LogError(ctx context.Context, err error, logger *slog.Logger) (slog.Level, bool) {
-	level, dontLog := getLevel(Tags(err))
+	level, dontLog := getLevel(errors.Tags(err))
 
 	if dontLog {
 		return level, false
@@ -23,7 +23,7 @@ func LogError(ctx context.Context, err error, logger *slog.Logger) (slog.Level, 
 		ctx,
 		level,
 		err.Error(),
-		errlog.Error(err),
+		Error(err),
 	)
 
 	return level, true

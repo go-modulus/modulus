@@ -1,7 +1,7 @@
 package http
 
 import (
-	"github.com/go-modulus/modulus/errhttp"
+	"github.com/go-modulus/modulus/errors/errhttp"
 	"net/http"
 )
 

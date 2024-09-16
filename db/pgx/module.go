@@ -4,10 +4,9 @@ import (
 	"braces.dev/errtrace"
 	"context"
 	"fmt"
+	"github.com/go-modulus/modulus/module"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
-	"github.com/sethvargo/go-envconfig"
-	"go.uber.org/fx"
 	_ "golang.org/x/text/message"
 	"log/slog"
 )
@@ -87,14 +86,10 @@ func NewPgxPool(
 	return errtrace.Wrap2(pgxpool.NewWithConfig(context.Background(), cfg))
 }
 
-func NewModule(config ModuleConfig) fx.Option {
-	return fx.Module(
-		"pgx",
-		fx.Provide(
+func NewModule(config ModuleConfig) *module.Module {
+	return module.NewModule("github.com/go-modulus/modulus/db/pgx").
+		AddProviders(
 			NewPgxPool,
-			func() (*ModuleConfig, error) {
-				return &config, envconfig.Process(context.Background(), &config)
-			},
-		),
-	)
+			module.ConfigProvider[ModuleConfig](config),
+		)
 }

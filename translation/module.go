@@ -1,7 +1,7 @@
 package translation
 
 import (
-	"go.uber.org/fx"
+	"github.com/go-modulus/modulus/module"
 	"golang.org/x/text/language"
 )
 
@@ -9,10 +9,9 @@ type ModuleConfig struct {
 	Locales []string `env:"TRANSLATION_LOCALES"`
 }
 
-func NewModule(cfg ModuleConfig) fx.Option {
-	return fx.Module(
-		"modulus/translation",
-		fx.Provide(
+func NewModule(cfg ModuleConfig) *module.Module {
+	return module.NewModule("github.com/go-modulus/modulus/translation").
+		AddProviders(
 			func() language.Matcher {
 				tags := make([]language.Tag, 0, len(cfg.Locales))
 				for _, locale := range cfg.Locales {
@@ -24,6 +23,5 @@ func NewModule(cfg ModuleConfig) fx.Option {
 			},
 			NewTranslator,
 			NewMiddleware,
-		),
-	)
+		)
 }

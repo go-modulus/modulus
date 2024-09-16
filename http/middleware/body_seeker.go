@@ -3,7 +3,7 @@ package middleware
 import (
 	"braces.dev/errtrace"
 	"bytes"
-	"github.com/go-modulus/modulus/errhttp"
+	"github.com/go-modulus/modulus/errors/errhttp"
 	"io"
 	"log/slog"
 	"net/http"

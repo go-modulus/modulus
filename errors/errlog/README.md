@@ -7,7 +7,7 @@ import (
 	"braces.dev/errtrace"
 	"context"
 	"fmt"
-	"github.com/go-modulus/modulus/errlog"
+	"github.com/go-modulus/modulus/errors/errlog"
 	"github.com/go-modulus/modulus/errwrap"
 )
 

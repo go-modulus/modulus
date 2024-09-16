@@ -1,9 +1,5 @@
 package errwrap
 
-import (
-	"github.com/go-modulus/modulus/errlog"
-)
-
 type Wrapper func(err error) error
 
 func With(w ...Wrapper) Wrapper {
@@ -30,8 +26,4 @@ func Wrap(err error, w ...Wrapper) error {
 	}
 
 	return err
-}
-
-func WrapCause(err error, cause error) error {
-	return errlog.WrapLoggable(errlog.WrapCause(err, cause), true)
 }

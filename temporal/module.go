@@ -3,7 +3,8 @@ package temporal
 import (
 	"context"
 	"fmt"
-	infraCli "github.com/go-modulus/modulus/cli"
+	cli2 "github.com/go-modulus/modulus/cli"
+	"github.com/go-modulus/modulus/module"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/urfave/cli/v2"
 	"log/slog"
@@ -151,11 +152,12 @@ func ShouldContunueAsNew(ctx workflow.Context) bool {
 	return info.GetCurrentHistoryLength() > 10_000
 }
 
-func NewModule() fx.Option {
-	return fx.Module(
-		"temporal",
-		fx.Provide(
-			NewConfig,
+func NewModule() *module.Module {
+	config := Config{}
+	return module.NewModule("github.com/go-modulus/modulus/temporal").
+		AddDependencies(*cli2.NewModule()).
+		AddProviders(
+			module.ConfigProvider[Config](config),
 			NewStarter,
 
 			func(
@@ -175,19 +177,15 @@ func NewModule() fx.Option {
 
 				return client.NewLazyClient(opts)
 			},
-
-			NewWorker,
-
-			infraCli.ProvideCommand(
-				func(worker *Worker) *cli.Command {
-					return &cli.Command{
-						Name: "temporal",
-						Subcommands: []*cli.Command{
-							worker.Command(),
-						},
-					}
+		).AddCliCommand(
+		func(worker *Worker) *cli.Command {
+			return &cli.Command{
+				Name: "temporal",
+				Subcommands: []*cli.Command{
+					worker.Command(),
 				},
-			),
-		),
+			}
+		},
+		NewWorker,
 	)
 }

@@ -2,7 +2,7 @@ package cli
 
 import (
 	"context"
-	"github.com/go-modulus/modulus/errlog"
+	"github.com/go-modulus/modulus/errors/errlog"
 	"github.com/go-modulus/modulus/logger"
 	"log/slog"
 	"sync"

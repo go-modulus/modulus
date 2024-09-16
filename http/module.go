@@ -3,12 +3,11 @@ package http
 import (
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
-	infraCli "github.com/go-modulus/modulus/cli"
-	"github.com/go-modulus/modulus/errhttp"
-	"github.com/go-modulus/modulus/erruser"
-	"github.com/go-modulus/modulus/errwrap"
+	errhttp2 "github.com/go-modulus/modulus/errors/errhttp"
+	"github.com/go-modulus/modulus/errors/erruser"
+	"github.com/go-modulus/modulus/errors/errwrap"
+	"github.com/go-modulus/modulus/module"
 	"github.com/urfave/cli/v2"
-	"go.uber.org/fx"
 	"log/slog"
 	"net/http"
 )
@@ -16,18 +15,18 @@ import (
 var (
 	ErrMethodNotAllowed = errwrap.Wrap(
 		erruser.New("MethodNotAllowed", "Method not allowed"),
-		errhttp.With(http.StatusMethodNotAllowed),
+		errhttp2.With(http.StatusMethodNotAllowed),
 	)
 	ErrNotFound = errwrap.Wrap(
 		erruser.New("NotFound", "Not found"),
-		errhttp.With(http.StatusNotFound),
+		errhttp2.With(http.StatusNotFound),
 	)
 )
 
 func NewRouter(logger *slog.Logger, config *ServeConfig) chi.Router {
 	r := chi.NewRouter()
 	r.MethodNotAllowed(
-		errhttp.WrapHandler(
+		errhttp2.WrapHandler(
 			logger,
 			func(w http.ResponseWriter, req *http.Request) error {
 				return ErrMethodNotAllowed
@@ -35,7 +34,7 @@ func NewRouter(logger *slog.Logger, config *ServeConfig) chi.Router {
 		),
 	)
 	r.NotFound(
-		errhttp.WrapHandler(
+		errhttp2.WrapHandler(
 			logger,
 			func(w http.ResponseWriter, req *http.Request) error {
 				return ErrNotFound
@@ -47,18 +46,16 @@ func NewRouter(logger *slog.Logger, config *ServeConfig) chi.Router {
 	return r
 }
 
-func NewModule() fx.Option {
-	return fx.Module(
-		"http",
-		fx.Provide(
+func NewModule() *module.Module {
+	return module.NewModule("github.com/go-modulus/modulus/http").
+		AddCliCommand(
+			func(serve *Serve) *cli.Command {
+				return serve.Command()
+			},
+			NewServe,
+		).
+		AddProviders(
 			NewRouter,
 			NewServeConfig,
-			NewServe,
-			infraCli.ProvideCommand(
-				func(serve *Serve) *cli.Command {
-					return serve.Command()
-				},
-			),
-		),
-	)
+		)
 }

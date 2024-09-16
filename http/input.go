@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"github.com/ggicci/httpin"
 	httpinCore "github.com/ggicci/httpin/core"
-	"github.com/go-modulus/modulus/errhttp"
+	"github.com/go-modulus/modulus/errors/errhttp"
 	translationContext "github.com/go-modulus/modulus/translation"
 	"github.com/go-modulus/modulus/validator"
 	"io"

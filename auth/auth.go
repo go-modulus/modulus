@@ -3,8 +3,8 @@ package auth
 import (
 	"braces.dev/errtrace"
 	"context"
-	"github.com/go-modulus/modulus/errhttp"
-	"github.com/go-modulus/modulus/errors"
+	"github.com/go-modulus/modulus/errors/errbuilder"
+	"github.com/go-modulus/modulus/errors/errhttp"
 	"github.com/go-modulus/modulus/logger"
 	"github.com/gofrs/uuid"
 	"github.com/sethvargo/go-envconfig"
@@ -16,14 +16,14 @@ import (
 const TagUnauthenticated = "unauthenticated"
 const TagUnauthorized = "unauthorized"
 
-var ErrInvalidToken = errors.NewB("invalid access token").
+var ErrInvalidToken = errbuilder.New("invalid access token").
 	WithHint("Please provide a valid access token").
 	Build()
-var ErrUnauthenticated = errors.NewB("unauthenticated").
+var ErrUnauthenticated = errbuilder.New("unauthenticated").
 	WithHint("Please authenticate to get access").
 	WithTags(TagUnauthenticated).
 	Build()
-var ErrUnauthorized = errors.NewB("unauthorized").
+var ErrUnauthorized = errbuilder.New("unauthorized").
 	WithHint("You are not authorized to access this resource").
 	WithTags(TagUnauthorized).
 	Build()

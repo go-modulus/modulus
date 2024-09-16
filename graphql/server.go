@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler/apollotracing"
 	config2 "github.com/go-modulus/modulus/config"
+	"github.com/go-modulus/modulus/errors/errlog"
 	httpContext "github.com/go-modulus/modulus/http/context"
 	context2 "github.com/go-modulus/modulus/translation"
 	"github.com/sethvargo/go-envconfig"
@@ -115,7 +116,7 @@ func NewGraphqlServer(
 				extra["requestId"] = requestID
 			}
 
-			level, logged := infraErrors.LogError(ctx, err, logger)
+			level, logged := errlog.LogError(ctx, err, logger)
 			if logged && level == slog.LevelError {
 				message = fmt.Sprintf("%s (RID: %s)", message, requestID)
 			}

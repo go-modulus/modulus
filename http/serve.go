@@ -6,7 +6,7 @@ import (
 	"github.com/c2h5oh/datasize"
 	"github.com/go-chi/chi/v5"
 	infraCli "github.com/go-modulus/modulus/cli"
-	"github.com/go-modulus/modulus/errhttp"
+	"github.com/go-modulus/modulus/errors/errhttp"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/urfave/cli/v2"
 	"log/slog"

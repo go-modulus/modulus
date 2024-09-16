@@ -1,16 +1,14 @@
 package time
 
 import (
+	"github.com/go-modulus/modulus/module"
 	"github.com/jonboulle/clockwork"
-	"go.uber.org/fx"
 	_ "golang.org/x/text/message"
 )
 
-func NewModule() fx.Option {
-	return fx.Module(
-		"time",
-		fx.Provide(
+func NewModule() *module.Module {
+	return module.NewModule("github.com/go-modulus/modulus/time").
+		AddProviders(
 			clockwork.NewRealClock,
-		),
-	)
+		)
 }

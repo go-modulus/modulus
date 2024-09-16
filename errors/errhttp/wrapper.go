@@ -3,9 +3,9 @@ package errhttp
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-modulus/modulus/errlog"
 	"github.com/go-modulus/modulus/errors"
-	"github.com/go-modulus/modulus/erruser"
+	"github.com/go-modulus/modulus/errors/errlog"
+	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/go-modulus/modulus/http/context"
 	translationContext "github.com/go-modulus/modulus/translation"
 	"log/slog"

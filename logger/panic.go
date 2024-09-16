@@ -2,7 +2,7 @@ package logger
 
 import (
 	"fmt"
-	"github.com/go-modulus/modulus/errlog"
+	"github.com/go-modulus/modulus/errors/errlog"
 	"log/slog"
 )
 

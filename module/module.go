@@ -8,7 +8,7 @@ import (
 
 var builtModules = make(map[string]*Module)
 
-func ConfigConstructor[T any](config T) interface{} {
+func ConfigProvider[T any](config T) interface{} {
 	return func() (*T, error) {
 		err := envconfig.Process(context.Background(), &config)
 		return &config, err
@@ -19,8 +19,11 @@ type Module struct {
 	dependencies        []Module
 	cliCommandProviders []interface{}
 	providers           []interface{}
+	invokes             []interface{}
 	name                string
 	fxOptions           []fx.Option
+	//@TODO: Add route handlers implementation
+	//routeHandlers []interface{}
 
 	exposeCommands bool
 }
@@ -32,8 +35,8 @@ func NewModule(name string) *Module {
 	}
 }
 
-func (m *Module) AddDependency(dependency Module) *Module {
-	m.dependencies = append(m.dependencies, dependency)
+func (m *Module) AddDependencies(dependency ...Module) *Module {
+	m.dependencies = append(m.dependencies, dependency...)
 	return m
 }
 
@@ -42,9 +45,8 @@ func (m *Module) AddDependency(dependency Module) *Module {
 // The depConstructors are optional providers that are used to provide dependencies to the commandConstructor.
 func (m *Module) AddCliCommand(commandProvider interface{}, dependencyProviders ...any) *Module {
 	m.cliCommandProviders = append(m.cliCommandProviders, commandProvider)
-	for _, provider := range dependencyProviders {
-		m.providers = append(m.providers, provider)
-	}
+	m.providers = append(m.providers, dependencyProviders...)
+
 	return m
 }
 
@@ -53,10 +55,14 @@ func (m *Module) AddProviders(constructors ...interface{}) *Module {
 	return m
 }
 
+func (m *Module) AddInvokes(invokes ...interface{}) *Module {
+	m.invokes = append(m.invokes, invokes...)
+	return m
+}
+
 func (m *Module) AddFxOptions(option ...fx.Option) *Module {
 	m.fxOptions = append(m.fxOptions, option...)
 	return m
-
 }
 
 func (m *Module) BuildFx() fx.Option {
@@ -68,15 +74,23 @@ func (m *Module) BuildFx() fx.Option {
 			providers = append(providers, m.provideCommand(constructor))
 		}
 	}
-	opts = append(opts, fx.Provide(providers...))
-	builtModules[m.name] = m
-	for _, dep := range m.dependencies {
-		if _, ok := builtModules[dep.name]; !ok {
-			opts = append(opts, dep.BuildFx())
+	if len(m.providers) > 0 {
+		opts = append(opts, fx.Provide(providers...))
+		builtModules[m.name] = m
+		for _, dep := range m.dependencies {
+			if _, ok := builtModules[dep.name]; !ok {
+				opts = append(opts, dep.BuildFx())
+			}
 		}
 	}
 
-	opts = append(opts, m.fxOptions...)
+	if len(m.invokes) > 0 {
+		opts = append(opts, fx.Invoke(m.invokes...))
+	}
+
+	if len(m.fxOptions) > 0 {
+		opts = append(opts, m.fxOptions...)
+	}
 
 	return fx.Module(
 		m.name,
