@@ -52,5 +52,5 @@ func Start(
 
 func NewModule() *module.Module {
 	return module.NewModule("github.com/go-modulus/modulus/cli").
-		AddConstructors(NewApp, NewRunner)
+		AddProviders(NewApp, NewRunner)
 }

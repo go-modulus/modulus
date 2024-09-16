@@ -107,14 +107,10 @@ func NewSlog(
 }
 
 func NewModule(config ModuleConfig) *module.Module {
-	return module.NewConfiguredModule[ModuleConfig]("github.com/go-modulus/modulus/logger", config).
-		AddConstructor(NewLogger).
-		AddConstructor(
+	return module.NewModule("github.com/go-modulus/modulus/logger").
+		AddProviders(
+			NewLogger,
 			NewSlog,
+			module.ConfigConstructor(config),
 		)
-	//.AddConstructor(
-	//	func() (*ModuleConfig, error) {
-	//		return &config, envconfig.Process(context.Background(), &config)
-	//	},
-	//)
 }
