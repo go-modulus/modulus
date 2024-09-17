@@ -1,0 +1,17 @@
+run:
+  go: "1.23"
+  # default concurrency is a available CPU number
+  concurrency: 8
+
+  # timeout for analysis, e.g. 30s, 5m, default is 1m
+  timeout: 5m
+
+  # exit code when at least one issue was found, default is 1
+  issues-exit-code: 1
+
+  # include test files or not, default is true
+  tests: true
+
+issues:
+  exclude-dirs:
+    - mocks
