@@ -3,7 +3,9 @@ package cli
 import (
 	"context"
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/go-modulus/modulus/internal/mtools/utils"
+	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
 	"log/slog"
 	"os"
@@ -27,8 +29,8 @@ func NewCommand(c *InitProject) *cli.Command {
 	return &cli.Command{
 		Name: "init",
 		Usage: `Inits a project with the base Modulus structure.
-	Uses interactive prompts to create the project.
-	Example: ./bin/console init --path /path/to/project --name my_project
+Uses interactive prompts to create the project.
+Example: ./bin/console init --path /path/to/project --name my_project
 `,
 		Action: c.Invoke,
 		Flags: []cli.Flag{
@@ -47,14 +49,15 @@ func NewCommand(c *InitProject) *cli.Command {
 func (c *InitProject) Invoke(
 	ctx *cli.Context,
 ) error {
-	path := ctx.String("path")
-	name := ctx.String("name")
-	fmt.Println("Start initializing a project")
-	if path == "" {
-		path = c.getDefaultPath(name)
-	}
+	c.printLogo()
 
-	err := c.walkToProjectFolder(path)
+	name, path, err := c.getParams(ctx)
+	if err != nil {
+		return err
+	}
+	fmt.Println("Start initializing a project")
+
+	err = c.walkToProjectFolder(path)
 	if err != nil {
 		return err
 	}
@@ -74,6 +77,56 @@ func (c *InitProject) Invoke(
 	)
 
 	return nil
+}
+
+func (c *InitProject) getParams(ctx *cli.Context) (name, path string, err error) {
+	path = ctx.String("path")
+	name = ctx.String("name")
+	if name == "" {
+		name, err = c.askName()
+		if err != nil {
+			return
+		}
+	}
+	if path == "" {
+		path, err = c.askPath(name)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func (c *InitProject) printLogo() {
+	str := `
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⢠⣄⡄⠀⠀⠀⠀⢀⣤⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣤⠀⠀⠀⠀⠀⠀⠀⠀⢀⣤⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⣤⣤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣤⠀⠀⠀⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⢸⣿⣿⡄⠀⠀⠀⣾⣿⣿⠀⠀⢀⣠⣠⣀⡀⠀⠀⢀⣠⣠⣀⢺⣿⠀⣀⣀⠀⠀⢀⣀⡀⠸⣿⡇⢀⣀⡀⠀⠀⣀⣀⠀⢀⣀⣄⣄⣀⠀⠀⠀⠀⣠⣿⣏⣈⠀⣀⡄⣀⣄⠀⢀⣠⣠⣀⡀⠀⢀⣀⣀⣠⣠⡀⢀⣠⣄⡀⠀⠀⢀⣠⣠⣀⡀⠀⣀⣀⠀⠀⣀⣀⠀⠀⣀⣀⠀⢀⣠⣠⣀⡀⠀⢀⣀⣀⣠⡀⢸⣿⠂⠀⣀⣠⡀⠀⠀⠀
+⠀⠀⠀⠀⢸⣿⠹⣿⡄⠀⣼⡟⢽⣿⠀⣴⣿⠋⠉⠻⣿⡆⢰⣿⠟⠉⠛⣿⣿⠀⣺⣿⠀⠀⢸⣿⡇⠸⣿⡇⢨⣿⡇⠀⠀⣿⣿⠀⣾⣟⡉⠙⠿⠆⠀⠀⠀⠙⣿⣏⠉⠠⣿⡿⠋⠋⠸⠟⠋⡉⣻⣿⡀⢼⣿⠏⠙⢻⣿⡛⠉⢻⣿⠄⣰⣿⢋⢉⢻⣿⡄⢹⣿⡀⢸⡿⣿⡀⢸⣿⠃⣴⣿⠛⠉⠻⣿⡆⢸⣿⡟⠙⠁⢺⣿⣡⣾⠟⠁⠀⠀⠀⠀
+⠀⠀⠀⠀⢸⣿⠀⢻⣷⣼⡿⠁⢽⣿⠀⢿⣿⠀⠀⢠⣿⡏⢸⣿⡅⠀⠀⣾⣿⠀⣺⣿⠀⠀⢸⣿⡇⠸⣿⡇⠰⣿⡇⠀⠀⣿⣷⠀⣈⡛⠛⠿⣷⣆⠀⠀⠀⢈⣿⣇⠀⠀⣿⡯⠀⠀⣴⣿⠛⠛⢻⣿⡂⢸⣿⠂⠀⢸⣿⠄⠀⢸⣿⠅⢿⣿⠛⠛⠛⣛⠃⠀⣿⣇⣿⠇⢻⣧⣾⡟⠀⢿⣿⠀⠀⢀⣿⡯⠸⣿⡇⠀⠀⢸⣿⠟⣿⣦⠀⠀⠀⠀⠀
+⠀⠀⠀⠀⠸⡿⠀⠀⠻⠿⠁⠀⠽⠿⠀⠈⠻⢿⢶⠿⠟⠁⠈⠻⢿⢾⠾⠻⠿⠀⠘⠿⡿⡾⠻⠿⠇⠸⠿⠇⠈⠻⢿⢾⠞⠿⠿⠀⠛⠿⡶⡾⠟⠃⠀⠀⠀⠠⠿⡇⠀⠀⡿⠯⠀⠀⠙⠿⡶⠾⠻⢿⠂⢸⢿⠁⠀⠸⡿⠂⠀⠸⡿⠅⠈⠻⢷⢶⠿⠟⠁⠀⠸⠿⠟⠀⠈⠿⠿⠀⠀⠈⠻⢿⢶⠿⠟⠁⠸⠿⠇⠀⠀⠸⡿⠂⠈⠻⡷⠄⠀⠀⠀
+⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀
+`
+	fmt.Println(color.CyanString(str))
+}
+
+func (c *InitProject) askName() (string, error) {
+	prompt := promptui.Prompt{
+		Label: "What is the name of your project?: ",
+	}
+
+	return prompt.Run()
+}
+
+func (c *InitProject) askPath(name string) (string, error) {
+	prompt := promptui.Prompt{
+		Label: "Enter a folder : ",
+	}
+
+	suggestion := c.getDefaultPath(name)
+	prompt.Default = suggestion
+
+	return prompt.Run()
 }
 
 func (c *InitProject) getDefaultPath(name string) string {
@@ -114,11 +167,13 @@ func (c *InitProject) walkToProjectFolder(path string) error {
 
 func (c *InitProject) initGoModules(ctx context.Context, name string) error {
 	fmt.Println("Initializing go modules")
-	err := exec.CommandContext(ctx, "go", "mod", "init", name).Run()
-	if err != nil {
-		return err
+	if !utils.FileExists("go.mod") {
+		err := exec.CommandContext(ctx, "go", "mod", "init", name).Run()
+		if err != nil {
+			return err
+		}
 	}
-	err = exec.CommandContext(ctx, "go", "mod", "tidy").Run()
+	err := exec.CommandContext(ctx, "go", "mod", "tidy").Run()
 	if err != nil {
 		return err
 	}

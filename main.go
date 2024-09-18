@@ -14,7 +14,12 @@ func main() {
 		append(
 			[]fx.Option{
 				cli.NewModule().BuildFx(),
-				logger.NewModule(logger.ModuleConfig{App: "modulus cli"}).BuildFx(),
+				logger.NewModule(
+					logger.ModuleConfig{
+						Type: "console",
+						App:  "modulus cli",
+					},
+				).BuildFx(),
 				mtools.NewModule().BuildFx(),
 			},
 			fx.WithLogger(
