@@ -1,0 +1,35 @@
+{
+  "name": "Modulus framework modules manifest",
+  "version": "1.0.0",
+  "description": "List of modules available for the Modulus framework",
+  "modules": [
+    {
+      "name": "http router",
+      "package": "github.com/go-modulus/modulus",
+      "description": "Adds HTTP server capabilities to the Modulus framework. Uses the CHI router.",
+      "setup": "github.com/go-modulus/modulus setup-module http",
+      "version": "1.0.0"
+    },
+    {
+      "name": "pgx",
+      "package": "github.com/go-modulus/modulus",
+      "description": "A wrapper for the pgx package to integrate it into the Modulus framework.",
+      "setup": "github.com/go-modulus/modulus setup-module pgx",
+      "version": "1.0.0"
+    },
+    {
+      "name": "db migrations",
+      "package": "github.com/go-modulus/modulus",
+      "description": "Several CLI commands to use DBMate (https://github.com/amacneil/dbmate) migration tool inside the Modulus framework.",
+      "setup": "github.com/go-modulus/modulus setup-module migrator",
+      "version": "1.0.0"
+    },
+    {
+      "name": "GraphQL gqlgen",
+      "package": "github.com/go-modulus/modulus",
+      "description": "Integration of the GraphQL generator gqlgen (https://gqlgen.com/).",
+      "setup": "github.com/go-modulus/modulus setup-module graphql",
+      "version": "1.0.0"
+    }
+  ]
+}

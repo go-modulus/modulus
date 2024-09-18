@@ -40,12 +40,10 @@ func (m *Module) AddDependencies(dependency ...Module) *Module {
 	return m
 }
 
-// AddCliCommand adds a CLI command to the module.
-// The commandConstructor is a constructor function that returns a CLI command.
-// The depConstructors are optional providers that are used to provide dependencies to the commandConstructor.
-func (m *Module) AddCliCommand(commandProvider interface{}, dependencyProviders ...any) *Module {
-	m.cliCommandProviders = append(m.cliCommandProviders, commandProvider)
-	m.providers = append(m.providers, dependencyProviders...)
+// AddCliCommands adds a CLI command to the module.
+// The commandProvider is a constructor function that returns a CLI command.
+func (m *Module) AddCliCommands(commandProvider ...interface{}) *Module {
+	m.cliCommandProviders = append(m.cliCommandProviders, commandProvider...)
 
 	return m
 }

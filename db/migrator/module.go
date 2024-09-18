@@ -39,7 +39,11 @@ func NewModule(config ModuleConfig) *module.Module {
 		).
 		AddProviders(
 			module.ConfigProvider[ModuleConfig](config),
-		).AddCliCommand(
+			NewMigrate,
+			NewAdd,
+			NewRollback,
+			NewRollbackAll,
+		).AddCliCommands(
 		func(
 			migrate *Migrate,
 			add *Add,
@@ -57,9 +61,5 @@ func NewModule(config ModuleConfig) *module.Module {
 				},
 			}
 		},
-		NewMigrate,
-		NewAdd,
-		NewRollback,
-		NewRollbackAll,
 	)
 }

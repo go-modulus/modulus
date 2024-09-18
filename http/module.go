@@ -48,14 +48,14 @@ func NewRouter(logger *slog.Logger, config *ServeConfig) chi.Router {
 
 func NewModule() *module.Module {
 	return module.NewModule("github.com/go-modulus/modulus/http").
-		AddCliCommand(
+		AddCliCommands(
 			func(serve *Serve) *cli.Command {
 				return serve.Command()
 			},
-			NewServe,
 		).
 		AddProviders(
 			NewRouter,
 			NewServeConfig,
+			NewServe,
 		)
 }

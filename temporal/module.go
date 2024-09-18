@@ -159,6 +159,7 @@ func NewModule() *module.Module {
 		AddProviders(
 			module.ConfigProvider[Config](config),
 			NewStarter,
+			NewWorker,
 
 			func(
 				config *Config,
@@ -177,7 +178,7 @@ func NewModule() *module.Module {
 
 				return client.NewLazyClient(opts)
 			},
-		).AddCliCommand(
+		).AddCliCommands(
 		func(worker *Worker) *cli.Command {
 			return &cli.Command{
 				Name: "temporal",
@@ -186,6 +187,5 @@ func NewModule() *module.Module {
 				},
 			}
 		},
-		NewWorker,
 	)
 }
