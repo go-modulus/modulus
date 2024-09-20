@@ -1,16 +1,29 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/go-modulus/modulus"
+	"github.com/go-modulus/modulus/errors"
+	"github.com/go-modulus/modulus/errors/errbuilder"
 	"github.com/go-modulus/modulus/internal/mtools/utils"
 	"github.com/go-modulus/modulus/module"
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"log/slog"
+	"os/exec"
 	"strings"
+	"time"
 )
+
+var ErrPackageIsEmpty = errbuilder.New("package is empty").
+	WithHint("Please provide a package for the module in the manifest file.").Build()
+var ErrCannotRunGoGetCommand = errbuilder.New("cannot run go get command").Build()
+var ErrCannotInstallModule = errbuilder.New("cannot install the module").
+	WithHint("The install field in the manifest file should be a valid command running under 'go run'").Build()
 
 type AddModule struct {
 	logger *slog.Logger
@@ -39,6 +52,8 @@ Example: ./bin/modulus add-module
 func (c *AddModule) Invoke(
 	ctx *cli.Context,
 ) error {
+	p := message.NewPrinter(language.English)
+
 	utils.PrintLogo()
 
 	fmt.Println("Choose a module to add to your project")
@@ -59,9 +74,53 @@ func (c *AddModule) Invoke(
 		return nil
 	}
 
+	hasErrors := false
+	for _, md := range modules {
+		err = c.installModule(ctx.Context, md)
+		if err != nil {
+			fmt.Println(color.RedString("Cannot install the module %s: %s", md.Name, err.Error()))
+			if errors.Hint(p, err) != "" {
+				fmt.Println(color.YellowString("Hint: %s", errors.Hint(p, err)))
+			}
+			hasErrors = true
+			continue
+		}
+	}
+	if hasErrors {
+		fmt.Println(color.YellowString("Some modules were not installed. Exiting..."))
+		return nil
+	}
 	fmt.Println(
 		"Congratulations! Your project has been updated.",
 	)
+
+	return nil
+}
+
+func (c *AddModule) installModule(
+	ctx context.Context,
+	md module.ManifestItem,
+) error {
+
+	if md.Package == "" {
+		return ErrPackageIsEmpty
+	}
+	if md.Package != "github.com/go-modulus/modulus" {
+		cmdCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+		defer cancel()
+		err := exec.CommandContext(cmdCtx, "go", "get", md.Package).Run()
+		if err != nil {
+			return errors.WrapCause(ErrCannotRunGoGetCommand, err)
+		}
+	}
+	if md.InstallCommand != "" {
+		cmdCtx, cancel := context.WithTimeout(ctx, time.Minute)
+		defer cancel()
+		err := exec.CommandContext(cmdCtx, "go", "run", md.InstallCommand).Run()
+		if err != nil {
+			return errors.WrapCause(ErrCannotInstallModule, err)
+		}
+	}
 
 	return nil
 }
@@ -149,11 +208,9 @@ func (c *AddModule) askModulesFromManifest(
 
 	}
 	if len(res) > 0 {
-		fmt.Println(
-			fmt.Sprintf(
-				"You have chosen the following modules:\n%s",
-				color.BlueString(strings.Join(resNames, "\n")),
-			),
+		fmt.Printf(
+			"You have chosen the following modules:\n%s\n",
+			color.BlueString(strings.Join(resNames, "\n")),
 		)
 	}
 	return res, nil

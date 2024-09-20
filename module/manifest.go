@@ -6,11 +6,11 @@ import (
 )
 
 type ManifestItem struct {
-	Name         string `json:"name"`
-	Version      string `json:"version"`
-	Description  string `json:"description"`
-	Package      string `json:"package"`
-	SetupCommand string `json:"setup"`
+	Name           string `json:"name"`
+	Version        string `json:"version"`
+	Description    string `json:"description"`
+	Package        string `json:"package"`
+	InstallCommand string `json:"install"`
 }
 type Manifest struct {
 	Modules     []ManifestItem `json:"modules"`

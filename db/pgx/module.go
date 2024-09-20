@@ -14,12 +14,16 @@ import (
 type ModuleConfig struct {
 	DSN string `env:"PGX_DSN"`
 
-	Host     string `env:"PG_HOST, default=localhost"`
-	Port     int    `env:"PG_PORT, default=5432"`
-	User     string `env:"PG_USER, default=postgres"`
-	Password string `env:"PG_PASSWORD, default=foobar"`
-	Database string `env:"PG_DB_NAME, default=trustypay"`
-	SslMode  string `env:"PG_SSL_MODE, default=disable"`
+	ConnectionConfig *ConnectionConfig `env:",prefix=PG_"`
+}
+
+type ConnectionConfig struct {
+	Host     string `env:"HOST, default=localhost"`
+	Port     int    `env:"PORT, default=5432"`
+	User     string `env:"USER, default=postgres"`
+	Password string `env:"PASSWORD, default=foobar"`
+	Database string `env:"DB_NAME, default=trustypay"`
+	SslMode  string `env:"SSL_MODE, default=disable"`
 }
 
 func (c ModuleConfig) Dsn() string {
@@ -29,12 +33,12 @@ func (c ModuleConfig) Dsn() string {
 
 	return fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s?sslmode=%s",
-		c.User,
-		c.Password,
-		c.Host,
-		c.Port,
-		c.Database,
-		c.SslMode,
+		c.ConnectionConfig.User,
+		c.ConnectionConfig.Password,
+		c.ConnectionConfig.Host,
+		c.ConnectionConfig.Port,
+		c.ConnectionConfig.Database,
+		c.ConnectionConfig.SslMode,
 	)
 }
 
