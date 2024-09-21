@@ -1,6 +1,7 @@
 package mtools
 
 import (
+	"github.com/go-modulus/modulus/cli"
 	cli2 "github.com/go-modulus/modulus/internal/mtools/cli"
 	"github.com/go-modulus/modulus/logger"
 	"github.com/go-modulus/modulus/module"
@@ -16,5 +17,8 @@ func NewModule() *module.Module {
 			cli2.NewInitProject,
 			cli2.NewAddModule,
 		).
-		AddDependencies(*logger.NewModule(logger.ModuleConfig{}))
+		AddDependencies(
+			*logger.NewModule(logger.ModuleConfig{}),
+			*cli.NewModule(),
+		)
 }

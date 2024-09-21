@@ -7,6 +7,7 @@ import (
 	"github.com/go-modulus/modulus"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/errors/errbuilder"
+	"github.com/go-modulus/modulus/internal/mtools/files"
 	"github.com/go-modulus/modulus/internal/mtools/utils"
 	"github.com/go-modulus/modulus/module"
 	"github.com/manifoldco/promptui"
@@ -24,6 +25,8 @@ var ErrPackageIsEmpty = errbuilder.New("package is empty").
 var ErrCannotRunGoGetCommand = errbuilder.New("cannot run go get command").Build()
 var ErrCannotInstallModule = errbuilder.New("cannot install the module").
 	WithHint("The install field in the manifest file should be a valid command running under 'go run'").Build()
+var ErrCannotUpdateToolsFile = errbuilder.New("cannot update the tools file").
+	WithHint("Check the existence and rights for the tools.go file at the root folder of your project.").Build()
 
 type AddModule struct {
 	logger *slog.Logger
@@ -105,15 +108,35 @@ func (c *AddModule) installModule(
 	if md.Package == "" {
 		return ErrPackageIsEmpty
 	}
-	if md.Package != "github.com/go-modulus/modulus" {
-		cmdCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-		defer cancel()
-		err := exec.CommandContext(cmdCtx, "go", "get", md.Package).Run()
-		if err != nil {
-			return errors.WrapCause(ErrCannotRunGoGetCommand, err)
-		}
+
+	fmt.Println(color.BlueString("Getting a package %s...", md.Package))
+	cmdCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
+	err := exec.CommandContext(cmdCtx, "go", "get", md.Package).Run()
+	if err != nil {
+		return errors.WrapCause(ErrCannotRunGoGetCommand, err)
 	}
+
+	fmt.Println(color.BlueString("Adding the package %s to the tools.go file...", md.Package))
+	err = files.AddImportToTools(md.Package)
+	if err != nil {
+		return errors.WrapCause(ErrCannotUpdateToolsFile, err)
+	}
+
+	fmt.Println(color.BlueString("Running go mod tidy..."))
+	err = exec.CommandContext(cmdCtx, "go", "mod", "tidy").Run()
+	if err != nil {
+		return errors.WrapCause(ErrCannotRunGoGetCommand, err)
+	}
+
 	if md.InstallCommand != "" {
+		fmt.Println(
+			color.BlueString(
+				"Running the install command '%s' for the module %s...",
+				md.InstallCommand,
+				md.Name,
+			),
+		)
 		cmdCtx, cancel := context.WithTimeout(ctx, time.Minute)
 		defer cancel()
 		err := exec.CommandContext(cmdCtx, "go", "run", md.InstallCommand).Run()
@@ -122,6 +145,7 @@ func (c *AddModule) installModule(
 		}
 	}
 
+	fmt.Println(color.GreenString("The module %s has been successfully installed.", md.Name))
 	return nil
 }
 
