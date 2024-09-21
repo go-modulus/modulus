@@ -7,16 +7,16 @@ import (
 
 type ManifestItem struct {
 	Name           string `json:"name"`
-	Version        string `json:"version"`
-	Description    string `json:"description"`
 	Package        string `json:"package"`
+	Description    string `json:"description"`
 	InstallCommand string `json:"install"`
+	Version        string `json:"version"`
 }
 type Manifest struct {
-	Modules     []ManifestItem `json:"modules"`
-	Version     string         `json:"version"`
 	Name        string         `json:"name"`
 	Description string         `json:"description"`
+	Version     string         `json:"version"`
+	Modules     []ManifestItem `json:"modules"`
 }
 
 func (m *Manifest) ReadFromJSON(data []byte) error {
@@ -24,7 +24,7 @@ func (m *Manifest) ReadFromJSON(data []byte) error {
 }
 
 func (m *Manifest) WriteToJSON() ([]byte, error) {
-	return json.Marshal(m)
+	return json.MarshalIndent(m, "", "  ")
 }
 
 func NewFromFs(manifestFs fs.FS, filename string) (*Manifest, error) {

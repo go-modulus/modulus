@@ -10,20 +10,35 @@ import (
 )
 
 func main() {
+	loggerOption := fx.WithLogger(
+		func(logger *zap.Logger) fxevent.Logger {
+			logger = logger.WithOptions(zap.IncreaseLevel(zap.WarnLevel))
+
+			return &fxevent.ZapLogger{Logger: logger}
+		},
+	)
 	// Add your project modules here
-	var projectModules []fx.Option
+	// for example:
+	// cli.NewModule().BuildFx(),
+	projectModulesOptions := []fx.Option{
+		loggerOption,
+	}
+
+	// DO NOT EDIT. It will be replaced by the add-module CLI command.
+	importedModulesOptions := []fx.Option{
+		cli.NewModule().BuildFx(),
+	}
+
+	invokes := []fx.Option{
+		fx.Invoke(cli.Start),
+	}
+
 	app := fx.New(
 		append(
-			projectModules,
-			cli.NewModule().BuildFx(),
-			fx.WithLogger(
-				func(logger *zap.Logger) fxevent.Logger {
-					logger = logger.WithOptions(zap.IncreaseLevel(zap.WarnLevel))
-
-					return &fxevent.ZapLogger{Logger: logger}
-				},
-			),
-			fx.Invoke(cli.Start),
+			append(
+				projectModulesOptions,
+				importedModulesOptions...,
+			), invokes...,
 		)...,
 	)
 

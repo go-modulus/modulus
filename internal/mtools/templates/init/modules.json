@@ -1,0 +1,14 @@
+{
+  "name": "Modulus framework modules manifest",
+  "version": "1.0.0",
+  "description": "List of installed modules for the Modulus framework",
+  "modules": [
+    {
+      "name": "urfave cli",
+      "package": "github.com/go-modulus/modulus/cli",
+      "description": "Adds HTTP server capabilities to the Modulus framework. Uses the CHI router.",
+      "install": "",
+      "version": "1.0.0"
+    }
+  ]
+}

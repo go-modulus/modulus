@@ -179,6 +179,7 @@ func (c *InitProject) createProjectRelatedFiles() error {
 		".mockery.yaml":  ".mockery.yaml",
 		"tools.go":       "tools.go",
 		"main.go":        "cmd/console/main.go",
+		"modules.json":   "modules.json",
 	}
 	for source, name := range names {
 		err := utils.CopyFromTemplates("init/"+source, name)

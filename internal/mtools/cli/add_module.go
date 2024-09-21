@@ -15,6 +15,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"log/slog"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -67,7 +68,22 @@ func (c *AddModule) Invoke(
 		return err
 	}
 
-	modules, err := c.askModulesFromManifest(availableModulesManifest)
+	manifest, err := c.getLocalManifest()
+	if err != nil {
+		fmt.Println(color.RedString("Cannot get the local modules.json manifest file: %s", err.Error()))
+		return err
+	}
+
+	fmt.Println(color.BlueString("Installed modules:"))
+	for _, md := range manifest.Modules {
+		fmt.Printf(
+			"	%s: %s\n",
+			color.BlueString(md.Name),
+			md.Package,
+		)
+	}
+
+	modules, err := c.askModulesFromManifest(availableModulesManifest, manifest.Modules)
 	if err != nil {
 		fmt.Println(color.RedString("Cannot ask modules from the manifest: %s", err.Error()))
 		return err
@@ -88,6 +104,12 @@ func (c *AddModule) Invoke(
 			hasErrors = true
 			continue
 		}
+		manifest.Modules = append(manifest.Modules, md)
+		err = c.saveLocalManifest(manifest)
+		if err != nil {
+			fmt.Println(color.RedString("Cannot save the local manifest file modules.json: %s", err.Error()))
+			hasErrors = true
+		}
 	}
 	if hasErrors {
 		fmt.Println(color.YellowString("Some modules were not installed. Exiting..."))
@@ -98,6 +120,34 @@ func (c *AddModule) Invoke(
 	)
 
 	return nil
+}
+
+func (c *AddModule) saveLocalManifest(
+	manifest module.Manifest,
+) error {
+	data, err := manifest.WriteToJSON()
+	if err != nil {
+		return err
+	}
+	return os.WriteFile("modules.json", data, 0644)
+}
+
+func (c *AddModule) getLocalManifest() (module.Manifest, error) {
+	res := module.Manifest{
+		Modules:     make([]module.ManifestItem, 0),
+		Version:     "1.0.0",
+		Name:        "Modulus framework modules manifest",
+		Description: "List of installed modules for the Modulus framework",
+	}
+	if utils.FileExists("modules.json") {
+		projFs := os.DirFS("./")
+		manifest, err := module.NewFromFs(projFs, "modules.json")
+		if err != nil {
+			return res, err
+		}
+		return *manifest, nil
+	}
+	return res, nil
 }
 
 func (c *AddModule) installModule(
@@ -151,6 +201,7 @@ func (c *AddModule) installModule(
 
 func (c *AddModule) askModulesFromManifest(
 	availableModulesManifest *module.Manifest,
+	installedModules []module.ManifestItem,
 ) ([]module.ManifestItem, error) {
 	res := make([]module.ManifestItem, 0)
 	resNames := make([]string, 0)
@@ -158,10 +209,9 @@ func (c *AddModule) askModulesFromManifest(
 
 	templates := &promptui.SelectTemplates{
 		Label:    "{{if .IsSelected}}\U0001F4E6 {{ .Name | blue | faint }}{{else}}{{ . }}{{end}}",
-		Active:   "→ {{if .IsSelected}}\U0001F4E6 {{end}} {{ .Name | cyan }}",
-		Inactive: "{{if .IsSelected}}\U0001F4E6 {{end}} {{ .Name | white | faint }}",
-		//Selected: "\U0001F4E6 {{ .Name | blue | faint }}",
-		Details: `{{ if eq .Name  "Exit" }}{{ else }}
+		Active:   "→ {{if .IsSelected}}\U0001F4E6 {{end}} {{ .Name | cyan }} {{if .IsInstalled}}(installed){{end}}",
+		Inactive: "{{if .IsSelected}}\U0001F4E6 {{end}} {{ .Name | white | faint }} {{if .IsInstalled}}(installed){{end}}",
+		Details: `{{ if eq .Name  "Install chosen" }}{{ else }}
 {{ "Package:" | faint }}	{{ .Package }}
 {{ "Description:" | faint }}	{{ .Description }}{{ end }}`,
 	}
@@ -171,17 +221,26 @@ func (c *AddModule) askModulesFromManifest(
 		Package     string
 		Description string
 		IsSelected  bool
+		IsInstalled bool
 	}
 
 	selectItems := make([]selectItem, len(availableModulesManifest.Modules)+1)
 	selectItems[0] = selectItem{
-		Name: "Exit",
+		Name: "Install chosen",
 	}
 	for i, md := range availableModulesManifest.Modules {
+		isInstalled := false
+		for _, imd := range installedModules {
+			if imd.Package == md.Package {
+				isInstalled = true
+				break
+			}
+		}
 		selectItems[i+1] = selectItem{
 			Name:        md.Name,
 			Package:     md.Package,
 			Description: md.Description,
+			IsInstalled: isInstalled,
 		}
 	}
 
