@@ -7,7 +7,9 @@ require (
 	github.com/99designs/gqlgen v0.17.53
 	github.com/amacneil/dbmate/v2 v2.21.0
 	github.com/c2h5oh/datasize v0.0.0-20231215233829-aa82cc1e6500
+	github.com/dave/dst v0.27.3
 	github.com/fatih/color v1.17.0
+	github.com/fatih/structs v1.1.0
 	github.com/ggicci/httpin v0.19.0
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
@@ -26,6 +28,7 @@ require (
 	github.com/sethvargo/go-envconfig v1.1.0
 	github.com/stretchr/testify v1.9.0
 	github.com/subosito/gotenv v1.6.0
+	github.com/thanhpk/randstr v1.0.6
 	github.com/urfave/cli/v2 v2.27.4
 	github.com/vektah/gqlparser/v2 v2.5.16
 	github.com/vektra/mockery/v2 v2.46.0
@@ -43,7 +46,6 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.4 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
-	github.com/fatih/structs v1.1.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/ggicci/owl v0.8.2 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
@@ -87,7 +89,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.15.0 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/thanhpk/randstr v1.0.6 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	go.opentelemetry.io/contrib v1.29.0 // indirect
 	go.opentelemetry.io/otel v1.30.0 // indirect

@@ -3,9 +3,11 @@ package files_test
 import (
 	"fmt"
 	"github.com/go-modulus/modulus/internal/mtools/files"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/thanhpk/randstr"
 	"os"
+	"strings"
 	"testing"
 )
 
@@ -16,6 +18,59 @@ package tools
 
 import _ "github.com/vektra/mockery/v2"
 import _ "github.com/rakyll/gotest"
+
+`
+
+var entrypointContent = `package main
+
+import (
+	"github.com/go-modulus/modulus/cli"
+	cfg "github.com/go-modulus/modulus/config"
+
+	"go.uber.org/fx"
+	"go.uber.org/fx/fxevent"
+	"go.uber.org/zap"
+)
+
+func main() {
+	loggerOption := fx.WithLogger(
+		func(logger *zap.Logger) fxevent.Logger {
+			logger = logger.WithOptions(zap.IncreaseLevel(zap.WarnLevel))
+
+			return &fxevent.ZapLogger{Logger: logger}
+		},
+	)
+	// Add your project modules here
+	// for example:
+	// cli.NewModule().BuildFx(),
+	projectModulesOptions := []fx.Option{
+		loggerOption,
+	}
+
+	// DO NOT EDIT. It will be replaced by the add-module CLI command.
+	importedModulesOptions := []fx.Option{
+		cli.NewModule().BuildFx(),
+	}
+
+	invokes := []fx.Option{
+		fx.Invoke(cli.Start),
+	}
+
+	app := fx.New(
+		append(
+			append(
+				projectModulesOptions,
+				importedModulesOptions...,
+			), invokes...,
+		)...,
+	)
+
+	app.Run()
+}
+
+func init() {
+	config.LoadDefaultEnv()
+}
 
 `
 
@@ -30,7 +85,7 @@ func TestAddPackageToGoFile(t *testing.T) {
 				t.Fatal("Cannot create "+fn+" file", err)
 			}
 
-			err = files.AddImportToGoFile("github.com/stretchr/testify", "_", fn)
+			_, err = files.AddImportToGoFile("github.com/stretchr/testify", "_", fn)
 			require.NoError(t, err)
 			fc, err := os.ReadFile(fn)
 			require.NoError(t, err)
@@ -52,7 +107,7 @@ func TestAddPackageToGoFile(t *testing.T) {
 				t.Fatal("Cannot create "+fn+" file", err)
 			}
 
-			err = files.AddImportToGoFile("github.com/rakyll/gotest", "a", fn)
+			_, err = files.AddImportToGoFile("github.com/rakyll/gotest", "a", fn)
 			require.NoError(t, err)
 			fc, err := os.ReadFile(fn)
 			require.NoError(t, err)
@@ -94,6 +149,90 @@ func TestAddImportToTools(t *testing.T) {
 			require.Contains(t, string(fc), "import _ \"github.com/stretchr/testify\"")
 			t.Log("The tools.go file should be created with package tools")
 			require.Contains(t, string(fc), "package tools")
+		},
+	)
+}
+
+func TestAddModuleToEntrypoint(t *testing.T) {
+	t.Run(
+		"Add a module to the CLI entrypoint without package alias", func(t *testing.T) {
+			fn := fmt.Sprintf("/tmp/%s.go", randstr.String(10))
+			err := os.WriteFile(fn, []byte(entrypointContent), 0644)
+			defer os.Remove(fn)
+			if err != nil {
+				t.Fatal("Cannot create "+fn+" file", err)
+			}
+			err = files.AddModuleToEntrypoint(
+				"github.com/stretchr/testify",
+				fn,
+			)
+			require.NoError(t, err)
+			fc, err := os.ReadFile(fn)
+			require.NoError(t, err)
+
+			t.Log("Given a list of packages in the go file that does not contain the new package alias")
+			t.Log("When add a new module to the go file")
+			t.Log("	The new module should be added to the array of imported modules")
+			assert.Contains(t, string(fc), "testify.NewModule().BuildFx(),")
+			t.Log("	The new import should be added to the go file")
+			assert.Contains(t, string(fc), "\"github.com/stretchr/testify\"")
+
+		},
+	)
+
+	t.Run(
+		"Add a module to the CLI entrypoint with package alias", func(t *testing.T) {
+			fn := fmt.Sprintf("/tmp/%s.go", randstr.String(10))
+			err := os.WriteFile(fn, []byte(entrypointContent), 0644)
+			defer os.Remove(fn)
+			if err != nil {
+				t.Fatal("Cannot create "+fn+" file", err)
+			}
+			err = files.AddModuleToEntrypoint(
+				"github.com/stretchr/cfg",
+				fn,
+			)
+			require.NoError(t, err)
+			fc, err := os.ReadFile(fn)
+			require.NoError(t, err)
+
+			t.Log("Given an imported package with alias in the go file")
+			t.Log("When add a new module to the go file with different package but the same alias")
+			t.Log("	The new module should be added to the array of imported modules with the new alias")
+			assert.Contains(t, string(fc), "cfg2.NewModule().BuildFx(),")
+			t.Log("	The new import should be added to the go file with the new alias")
+			assert.Contains(t, string(fc), "cfg2 \"github.com/stretchr/cfg\"")
+
+		},
+	)
+
+	t.Run(
+		"Skip adding a module if it is already added", func(t *testing.T) {
+			fn := fmt.Sprintf("/tmp/%s.go", randstr.String(10))
+			err := os.WriteFile(fn, []byte(entrypointContent), 0644)
+			defer os.Remove(fn)
+			if err != nil {
+				t.Fatal("Cannot create "+fn+" file", err)
+			}
+			err = files.AddModuleToEntrypoint(
+				"github.com/go-modulus/modulus/cli",
+				fn,
+			)
+			require.NoError(t, err)
+			fc, err := os.ReadFile(fn)
+			require.NoError(t, err)
+
+			// one cli.NewModule().BuildFx() is present in comment and one is present in the array of imported modules
+			modulesInitsCount := strings.Count(string(fc), "cli.NewModule().BuildFx(),")
+			importsCount := strings.Count(string(fc), "\"github.com/go-modulus/modulus/cli\"")
+
+			t.Log("Given an already added module to the go file")
+			t.Log("When add the same module to the go file")
+			t.Log("	The new module should NOT be added to the array of imported modules")
+			assert.Equal(t, 2, modulesInitsCount)
+			t.Log("	The new import should be added to the go file")
+			assert.Equal(t, 1, importsCount)
+
 		},
 	)
 }
