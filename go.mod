@@ -7,7 +7,6 @@ require (
 	github.com/99designs/gqlgen v0.17.53
 	github.com/amacneil/dbmate/v2 v2.21.0
 	github.com/c2h5oh/datasize v0.0.0-20231215233829-aa82cc1e6500
-	github.com/dave/dst v0.27.3
 	github.com/fatih/color v1.17.0
 	github.com/fatih/structs v1.1.0
 	github.com/ggicci/httpin v0.19.0
@@ -37,6 +36,7 @@ require (
 	go.uber.org/fx v1.22.2
 	go.uber.org/zap v1.27.0
 	golang.org/x/text v0.18.0
+	golang.org/x/tools v0.25.0
 )
 
 require (
@@ -105,7 +105,6 @@ require (
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/term v0.24.0 // indirect
 	golang.org/x/time v0.6.0 // indirect
-	golang.org/x/tools v0.25.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1 // indirect
 	google.golang.org/grpc v1.66.2 // indirect

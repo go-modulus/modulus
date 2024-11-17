@@ -6,7 +6,7 @@
     {
       "name": "urfave cli",
       "package": "github.com/go-modulus/modulus/cli",
-      "description": "Adds HTTP server capabilities to the Modulus framework. Uses the CHI router.",
+      "description": "Adds ability to create cli applications in the Modulus framework.",
       "install": "",
       "version": "1.0.0"
     }
