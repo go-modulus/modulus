@@ -26,7 +26,7 @@ The module's code is divided to packages. The structure of packages can be diffe
 ## Installation
 1. Init a project
 ```bash
-go run github.com/go-modulus/modulus/cmd init 
+go run github.com/go-modulus/modulus/cmd/mtools init 
 ```
 2. It asks a name of your project.
 ![init_command.png](docs/img/init_command.png)
@@ -47,5 +47,5 @@ go run github.com/go-modulus/modulus/cmd init
 5. Install the modules
 ```bash
 cd testproj
-go run github.com/go-modulus/modulus/cmd add-module
+go run github.com/go-modulus/modulus/cmd/mtools add-module
 ```

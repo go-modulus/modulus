@@ -35,7 +35,7 @@ func NewModule(config ModuleConfig) *module.Module {
 	return module.NewModule("github.com/go-modulus/modulus/db/migrator").
 		AddDependencies(
 			*pgx.NewModule(pgx.ModuleConfig{}),
-			*infraCli.NewModule(),
+			*infraCli.NewModule(infraCli.ModuleConfig{}),
 		).
 		AddProviders(
 			module.ConfigProvider[ModuleConfig](config),

@@ -19,14 +19,19 @@ func main() {
 	)
 	// Add your project modules here
 	// for example:
-	// cli.NewModule().BuildFx(),
+	// cli.NewModule(cli.ModuleConfig{}).BuildFx(),
 	projectModulesOptions := []fx.Option{
 		loggerOption,
 	}
 
-	// DO NOT EDIT. It will be replaced by the add-module CLI command.
+	// DO NOT Remove. It will be edited by the add-module CLI command.
 	importedModulesOptions := []fx.Option{
-		cli.NewModule().BuildFx(),
+		cli.NewModule(
+			cli.ModuleConfig{
+				Version: "0.1.0",
+				Usage:   "Run project commands",
+			},
+		).BuildFx(),
 	}
 
 	invokes := []fx.Option{

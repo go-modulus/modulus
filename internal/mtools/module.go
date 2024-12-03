@@ -19,6 +19,6 @@ func NewModule() *module.Module {
 		).
 		AddDependencies(
 			*logger.NewModule(logger.ModuleConfig{}),
-			*cli.NewModule(),
+			*cli.NewModule(cli.ModuleConfig{}),
 		)
 }

@@ -13,7 +13,12 @@ func main() {
 	app := fx.New(
 		append(
 			[]fx.Option{
-				cli.NewModule().BuildFx(),
+				cli.NewModule(
+					cli.ModuleConfig{
+						Version: "0.1.4",
+						Usage:   "This is a CLI tool for the Modulus framework. It helps you to create a new project, add modules, and run the project.",
+					},
+				).BuildFx(),
 				logger.NewModule(
 					logger.ModuleConfig{
 						Type: "console",

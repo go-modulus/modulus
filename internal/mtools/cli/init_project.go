@@ -159,7 +159,11 @@ func (c *InitProject) initGoModules(ctx context.Context, name string) error {
 			return err
 		}
 	}
-	err := exec.CommandContext(ctx, "go", "mod", "tidy").Run()
+	err := exec.CommandContext(ctx, "go", "get", "-u").Run()
+	if err != nil {
+		return err
+	}
+	err = exec.CommandContext(ctx, "go", "mod", "tidy").Run()
 	if err != nil {
 		return err
 	}

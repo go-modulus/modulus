@@ -10,19 +10,30 @@ import (
 	"go.uber.org/fx"
 )
 
+type ModuleConfig struct {
+	Version string
+	Usage   string
+}
+
 type StartCliParams struct {
 	fx.In
 
 	Lc       fx.Lifecycle
 	Commands []*cli.Command `group:"cli.commands"`
 	Runner   *Runner
+	Config   *ModuleConfig
 }
 
 func NewApp(params StartCliParams) *cli.App {
+	usage := "Run console commands"
+	if params.Config.Usage != "" {
+		usage = params.Config.Usage
+	}
 	app := &cli.App{
-		Usage:                "Run console commands",
+		Usage:                usage,
 		Commands:             params.Commands,
 		EnableBashCompletion: true,
+		Version:              params.Config.Version,
 	}
 
 	sort.Sort(cli.FlagsByName(app.Flags))
@@ -50,7 +61,11 @@ func Start(
 	)
 }
 
-func NewModule() *module.Module {
+func NewModule(config ModuleConfig) *module.Module {
 	return module.NewModule("github.com/go-modulus/modulus/cli").
-		AddProviders(NewApp, NewRunner)
+		AddProviders(
+			NewApp,
+			NewRunner,
+			module.ConfigProvider[ModuleConfig](config),
+		)
 }
