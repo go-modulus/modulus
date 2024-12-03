@@ -24,14 +24,18 @@ The module's code is divided to packages. The structure of packages can be diffe
 
 
 ## Installation
-1. Init a project
+1. Install the Modulus CLI tool
 ```bash
-go run github.com/go-modulus/modulus/cmd/mtools init 
+go install github.com/go-modulus/modulus/cmd/mtools@latest
 ```
-2. It asks a name of your project.
+2. Init a project
+```bash
+mtools init 
+```
+3. It asks a name of your project.
 ![init_command.png](docs/img/init_command.png)
-3. Enter, for example, `testproj` and agree with the folder name.
-4. The project is initialized with the following structure
+4. Enter, for example, `testproj` and agree with the folder name.
+5. The project is initialized with the following structure
 ![initial_directories.png](docs/img/initial_directories.png)
 
 * `bin` - contains the compiled binaries of the project.
@@ -44,8 +48,8 @@ go run github.com/go-modulus/modulus/cmd/mtools init
 * `Makefile` - all service commands which can help you to develop your project. For example, run, test, analyze, etc. Each module can add own commands to this file.
 * `modules.json` -  a manifest with installed modules of the Modulus framework
 
-5. Install the modules
+6. Install the modules
 ```bash
 cd testproj
-go run github.com/go-modulus/modulus/cmd/mtools add-module
+mtools add-module
 ```
