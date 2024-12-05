@@ -47,9 +47,14 @@ func main() {
 		loggerOption,
 	}
 
-	// DO NOT EDIT. It will be replaced by the add-module CLI command.
+	// DO NOT Remove. It will be edited by the add-module CLI command.
 	importedModulesOptions := []fx.Option{
-		cli.NewModule().BuildFx(),
+		cli.NewModule(
+			cli.ModuleConfig{
+				Version: "0.1.0",
+				Usage:   "Run project commands",
+			},
+		).BuildFx(),
 	}
 
 	invokes := []fx.Option{
@@ -223,7 +228,7 @@ func TestAddModuleToEntrypoint(t *testing.T) {
 			require.NoError(t, err)
 
 			// one cli.NewModule().BuildFx() is present in comment and one is present in the array of imported modules
-			modulesInitsCount := strings.Count(string(fc), "cli.NewModule().BuildFx(),")
+			modulesInitsCount := strings.Count(string(fc), "cli.NewModule(")
 			importsCount := strings.Count(string(fc), "\"github.com/go-modulus/modulus/cli\"")
 
 			t.Log("Given an already added module to the go file")

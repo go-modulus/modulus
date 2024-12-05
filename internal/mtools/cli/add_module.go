@@ -50,6 +50,12 @@ Adds the chosen module to the project and inits it with copying necessary files.
 Example: ./bin/modulus add-module
 `,
 		Action: addModule.Invoke,
+		Flags: []cli.Flag{
+			&cli.StringSliceFlag{
+				Name:  "modules",
+				Usage: "A comma-separated list of modules to add to the project",
+			},
+		},
 	}
 }
 
@@ -83,19 +89,46 @@ func (c *AddModule) Invoke(
 		)
 	}
 
-	modules, err := c.askModulesFromManifest(availableModulesManifest, manifest.Modules)
-	if err != nil {
-		fmt.Println(color.RedString("Cannot ask modules from the manifest: %s", err.Error()))
-		return err
+	modulesValue := ctx.StringSlice("modules")
+	var modules []module.ManifestItem
+	if len(modulesValue) != 0 {
+		for _, val := range modulesValue {
+			for _, availableItem := range availableModulesManifest.Modules {
+				if val == availableItem.Name {
+					modules = append(modules, availableItem)
+				}
+			}
+		}
+	} else {
+		modules, err = c.askModulesFromManifest(availableModulesManifest, manifest.Modules)
+		if err != nil {
+			fmt.Println(color.RedString("Cannot ask modules from the manifest: %s", err.Error()))
+			return err
+		}
 	}
 	if len(modules) == 0 {
 		fmt.Println(color.YellowString("No modules were chosen. Exiting..."))
 		return nil
 	}
 
+	entrypoints, err := c.getEntrypoints()
+	if err != nil {
+		fmt.Println(color.RedString("Cannot get the entrypoints: %s", err.Error()))
+		return err
+	}
+	if len(entrypoints) == 0 {
+		fmt.Println(
+			color.YellowString(
+				"No entrypoints were found. Please create a cmd folder with the entrypoints. \n" +
+					"For example, you can create a cmd/console/main.go file with the main function. \n" +
+					"Then run the command again. Exiting...",
+			),
+		)
+		return nil
+	}
 	hasErrors := false
 	for _, md := range modules {
-		err = c.installModule(ctx.Context, md)
+		err = c.installModule(ctx.Context, md, entrypoints)
 		if err != nil {
 			fmt.Println(color.RedString("Cannot install the module %s: %s", md.Name, err.Error()))
 			if errors.Hint(p, err) != "" {
@@ -153,6 +186,7 @@ func (c *AddModule) getLocalManifest() (module.Manifest, error) {
 func (c *AddModule) installModule(
 	ctx context.Context,
 	md module.ManifestItem,
+	entrypoints []entripoint,
 ) error {
 
 	if md.Package == "" {
@@ -171,6 +205,23 @@ func (c *AddModule) installModule(
 	err = files.AddImportToTools(md.Package)
 	if err != nil {
 		return errors.WrapCause(ErrCannotUpdateToolsFile, err)
+	}
+
+	for _, entrypoint := range entrypoints {
+		fmt.Println(color.BlueString("Adding module initialization to the entrypoint %s ...", entrypoint.name))
+		err = files.AddModuleToEntrypoint(md.Package, entrypoint.path)
+		if err != nil {
+			fmt.Println(
+				color.RedString(
+					"Cannot add the module %s to the entrypoint %s: %s. Try to type initialization code manually",
+					md.Name,
+					entrypoint.path,
+					err.Error(),
+				),
+			)
+			continue
+		}
+		fmt.Println(color.BlueString("File %s is updated", entrypoint.path))
 	}
 
 	fmt.Println(color.BlueString("Running go mod tidy..."))
@@ -297,4 +348,38 @@ func (c *AddModule) askModulesFromManifest(
 		)
 	}
 	return res, nil
+}
+
+type entripoint struct {
+	name string
+	path string
+}
+
+func (c *AddModule) getEntrypoints() (entripoints []entripoint, err error) {
+	entries, err := os.ReadDir("./cmd")
+	if err != nil {
+		return
+	}
+	entripoints = make([]entripoint, 0, len(entries))
+	for _, entry := range entries {
+		if entry.IsDir() {
+			entryItem := entripoint{
+				name: entry.Name(),
+			}
+			_, err2 := os.Stat("./cmd/" + entry.Name() + "/main.go")
+			if os.IsNotExist(err2) {
+				continue
+			}
+
+			if err2 != nil {
+				err = err2
+				fmt.Println(color.RedString("Error when getting an entrypoint %s: %s", entry.Name(), err.Error()))
+				return
+			}
+			entryItem.path = "./cmd/" + entry.Name() + "/main.go"
+			entripoints = append(entripoints, entryItem)
+		}
+	}
+
+	return
 }

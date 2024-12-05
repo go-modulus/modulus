@@ -12,7 +12,7 @@ import (
 )
 
 type ModuleConfig struct {
-	DSN string `env:"PGX_DSN"`
+	DSN string `env:"PGX_DSN, default=postgres://postgres:foobar@localhost:5432/test?sslmode=disable"`
 
 	ConnectionConfig *ConnectionConfig `env:",prefix=PG_"`
 }
@@ -22,7 +22,7 @@ type ConnectionConfig struct {
 	Port     int    `env:"PORT, default=5432"`
 	User     string `env:"USER, default=postgres"`
 	Password string `env:"PASSWORD, default=foobar"`
-	Database string `env:"DB_NAME, default=trustypay"`
+	Database string `env:"DB_NAME, default=test"`
 	SslMode  string `env:"SSL_MODE, default=disable"`
 }
 

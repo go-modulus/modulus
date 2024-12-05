@@ -53,3 +53,29 @@ mtools init
 cd testproj
 mtools add-module
 ```
+Select all modules you want to install. For example, select `pgx` module.
+![select_module.png](./docs/img/select_module.png)
+After that select the item "Install chosen".
+
+It updates:
+* the `modules.json` file with the installed modules.
+```json
+{
+  "modules": [
+    {
+      "name": "pgx",
+      "version": "v0.0.1"
+    }
+  ]
+}
+```
+* the `go.mod` file with the dependencies of the installed modules.
+* adds all environment variables that are required by the installed modules to the `.env` file.
+* inits a module in the entrypoint of the project. For example, in the `cmd/console/main.go` file.
+```go
+importedModulesOptions := []fx.Option{
+		...
+		pgx.NewModule().BuildFx(),
+	}
+```
+
