@@ -1,0 +1,20 @@
+{{define "module.go.tmpl"}}
+{{- /*gotype:github.com/go-modulus/modulus/module.ManifestItem*/ -}}
+package {{.GetShortPackageName}}
+
+import (
+	"github.com/go-modulus/modulus/module"
+)
+
+type ModuleConfig struct {
+	// Add your module configuration here
+	// e.g. Var1 string `env:"MYMODULE_VAR1, default=test"`
+}
+
+func NewModule(config ModuleConfig) *module.Module {
+	return module.NewModule("{{.Name}}").
+		AddProviders(
+			module.ConfigProvider[ModuleConfig](config),
+		)
+}
+{{end}}

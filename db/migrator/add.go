@@ -8,16 +8,14 @@ import (
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
 	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
 )
 
 type Add struct {
-	cfg    *ModuleConfig
-	logger *zap.Logger
+	params CreateCommandParams
 }
 
-func NewAdd(cfg *ModuleConfig, logger *zap.Logger) *Add {
-	return &Add{cfg: cfg, logger: logger}
+func NewAdd(params CreateCommandParams) *Add {
+	return &Add{params: params}
 }
 
 func (c *Add) Command() *cli.Command {
@@ -49,7 +47,7 @@ func (c *Add) Command() *cli.Command {
 }
 
 func (c *Add) Invoke(ctx context.Context, module string, name string) error {
-	u, _ := url.Parse(c.cfg.Pgx.Dsn())
+	u, _ := url.Parse(c.params.Pgx.Dsn())
 	db := dbmate.New(u)
 	migrationDir := "internal/" + module + "/storage/migration"
 	db.MigrationsDir = []string{migrationDir}

@@ -157,6 +157,7 @@ func TestAddModule_Invoke(t *testing.T) {
 			toolsFileContent, errCont := os.ReadFile(fmt.Sprintf("%s/tools.go", projDir))
 			entrypointFileContent, errCont2 := os.ReadFile(fmt.Sprintf("%s/cmd/console/main.go", projDir))
 			envContent, errCont3 := os.ReadFile(fmt.Sprintf("%s/.env", projDir))
+			modulesContent, errCont4 := os.ReadFile(fmt.Sprintf("%s/modules.json", projDir))
 
 			t.Log("Given the tools.go file in the root of the project")
 			t.Log("When install a new module to a project")
@@ -165,17 +166,19 @@ func TestAddModule_Invoke(t *testing.T) {
 			t.Log("	The new package should be added to the tools.go file")
 			require.NoError(t, errCont)
 			require.Contains(t, string(toolsFileContent), "github.com/go-modulus/modulus/db/pgx")
-			t.Log("The entrypoint file should be updated with the new module")
+			t.Log("	The entrypoint file should be updated with the new module")
 			require.NoError(t, errCont2)
 			require.Contains(t, string(entrypointFileContent), "github.com/go-modulus/modulus/db/pgx")
 			require.Contains(t, string(entrypointFileContent), "pgx.NewModule().BuildFx()")
-			t.Log("The .env file should be changed with new env variables")
+			t.Log("	The .env file should be changed with new env variables")
 			require.NoError(t, errCont3)
 			require.Contains(t, string(envContent), "PGX_DSN=")
-			t.Log("The old env variables should not be overwritten")
+			t.Log("	The old env variables should not be overwritten")
 			require.Contains(t, string(envContent), "APP_ENV=local")
 			require.Contains(t, string(envContent), "PG_HOST=myhost")
-
+			t.Log("	The modules.json file should be updated with the new module")
+			require.NoError(t, errCont4)
+			require.Contains(t, string(modulesContent), "github.com/go-modulus/modulus/db/pgx")
 		},
 	)
 }

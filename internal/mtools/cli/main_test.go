@@ -9,7 +9,8 @@ import (
 )
 
 var (
-	addModule *cli.AddModule
+	addModule    *cli.AddModule
+	createModule *cli.CreateModule
 )
 
 func TestMain(m *testing.M) {
@@ -17,7 +18,10 @@ func TestMain(m *testing.M) {
 	test.TestMain(
 		m,
 		currentModule.BuildFx(),
-		fx.Populate(&addModule),
+		fx.Populate(
+			&addModule,
+			&createModule,
+		),
 	)
 
 }

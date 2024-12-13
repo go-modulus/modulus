@@ -47,7 +47,8 @@ func NewAddModuleCommand(addModule *AddModule) *cli.Command {
 		Usage: `Gives user a choice to get any modules from the available ones list.
 Uses interactive prompts to make a choice.
 Adds the chosen module to the project and inits it with copying necessary files.
-Example: ./bin/modulus add-module
+Example: mtools add-module
+Example without UI: mtools add-module --modules="urfave cli,pgx"
 `,
 		Action: addModule.Invoke,
 		Flags: []cli.Flag{
@@ -138,7 +139,7 @@ func (c *AddModule) Invoke(
 			continue
 		}
 		manifest.Modules = append(manifest.Modules, md)
-		err = c.saveLocalManifest(manifest)
+		err = manifest.SaveAsLocalManifest()
 		if err != nil {
 			fmt.Println(color.RedString("Cannot save the local manifest file modules.json: %s", err.Error()))
 			hasErrors = true

@@ -12,10 +12,12 @@ func NewModule() *module.Module {
 		AddCliCommands(
 			cli2.NewInitProjectCommand,
 			cli2.NewAddModuleCommand,
+			cli2.NewCreateModuleCommand,
 		).
 		AddProviders(
 			cli2.NewInitProject,
 			cli2.NewAddModule,
+			cli2.NewCreateModule,
 		).
 		AddDependencies(
 			*logger.NewModule(logger.ModuleConfig{}),

@@ -2,7 +2,10 @@ package module
 
 import (
 	"encoding/json"
+	"github.com/go-modulus/modulus/internal/mtools/utils"
 	"io/fs"
+	"os"
+	"strings"
 )
 
 type ManifestItem struct {
@@ -11,6 +14,7 @@ type ManifestItem struct {
 	Description    string `json:"description"`
 	InstallCommand string `json:"install"`
 	Version        string `json:"version"`
+	LocalPath      string `json:"localPath"`
 }
 type Manifest struct {
 	Name        string         `json:"name"`
@@ -38,4 +42,34 @@ func NewFromFs(manifestFs fs.FS, filename string) (*Manifest, error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+func LoadLocalManifest() (Manifest, error) {
+	res := Manifest{
+		Modules:     make([]ManifestItem, 0),
+		Version:     "1.0.0",
+		Name:        "Modulus framework modules manifest",
+		Description: "List of installed modules for the Modulus framework",
+	}
+	if utils.FileExists("modules.json") {
+		projFs := os.DirFS("./")
+		manifest, err := NewFromFs(projFs, "modules.json")
+		if err != nil {
+			return res, err
+		}
+		return *manifest, nil
+	}
+	return res, nil
+}
+
+func (m *Manifest) SaveAsLocalManifest() error {
+	data, err := m.WriteToJSON()
+	if err != nil {
+		return err
+	}
+	return os.WriteFile("modules.json", data, 0644)
+}
+
+func (m ManifestItem) GetShortPackageName() string {
+	return m.Package[strings.LastIndex(m.Package, "/")+1:]
 }

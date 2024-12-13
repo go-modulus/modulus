@@ -1,32 +1,40 @@
 package migrator
 
 import (
-	"braces.dev/errtrace"
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
 	infraCli "github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/go-modulus/modulus/module"
+	"github.com/laher/mergefs"
 	"github.com/urfave/cli/v2"
+	"go.uber.org/fx"
 	"io/fs"
+	"log/slog"
 	"net/url"
 )
 
 type ModuleConfig struct {
-	Pgx *pgx.ModuleConfig
-	FS  fs.FS
 }
 
-func newDBMate(cfg *ModuleConfig) (*dbmate.DB, error) {
-	u, _ := url.Parse(cfg.Pgx.Dsn())
+type CreateCommandParams struct {
+	fx.In
+
+	Fs     []fs.FS `group:"migrator.directories"`
+	Pgx    *pgx.ModuleConfig
+	Logger *slog.Logger
+}
+
+func newDBMate(params CreateCommandParams) (*dbmate.DB, error) {
+	u, _ := url.Parse(params.Pgx.Dsn())
 	db := dbmate.New(u)
-	db.FS = cfg.FS
+	db.FS = mergefs.Merge(params.Fs...)
 	db.AutoDumpSchema = false
 
-	migrationsDir, err := fs.Glob(cfg.FS, "./*/storage/migration")
-	if err != nil {
-		return nil, errtrace.Wrap(err)
-	}
-	db.MigrationsDir = migrationsDir
+	//migrationsDir, err := fs.Glob(cfg.FS, "./*/storage/migration")
+	//if err != nil {
+	//	return nil, errtrace.Wrap(err)
+	//}
+	//db.MigrationsDir = migrationsDir
 
 	return db, nil
 }
