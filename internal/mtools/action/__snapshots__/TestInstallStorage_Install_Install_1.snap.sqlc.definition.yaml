@@ -1,0 +1,136 @@
+## Place all common values here and use them in the module specific sqlc.tmpl.yaml files
+definition:
+  default-overrides: &default-overrides
+    - db_type: "uuid"
+      nullable: true
+      engine: "postgresql"
+      gql_type: "Uuid"
+      go_type:
+        import: "github.com/gofrs/uuid"
+        package: "uuid"
+        type: "NullUUID"
+    - db_type: "uuid"
+      nullable: false
+      gql_type: "Uuid"
+      engine: "postgresql"
+      go_type:
+        import: "github.com/gofrs/uuid"
+        package: "uuid"
+        type: "UUID"
+    - db_type: "text"
+      gql_type: "String"
+      go_type:
+        import: "gopkg.in/guregu/null.v4"
+        package: "null"
+        type: "String"
+      nullable: true
+
+    - db_type: "pg_catalog.timestamp"
+      gql_type: "Time"
+      go_type:
+        import: "gopkg.in/guregu/null.v4"
+        package: "null"
+        type: "Time"
+      nullable: true
+    - db_type: "timestamp"
+      gql_type: "Time"
+      go_type:
+        import: "gopkg.in/guregu/null.v4"
+        package: "null"
+        type: "Time"
+      nullable: true
+    - db_type: "pg_catalog.timestamptz"
+      gql_type: "Time"
+      go_type:
+        import: "gopkg.in/guregu/null.v4"
+        package: "null"
+        type: "Time"
+      nullable: true
+    - db_type: "timestamptz"
+      gql_type: "Time"
+      go_type:
+        import: "gopkg.in/guregu/null.v4"
+        package: "null"
+        type: "Time"
+      nullable: true
+
+    - db_type: "pg_catalog.timestamp"
+      gql_type: "Time"
+      go_type:
+        type: "Time"
+        import: "time"
+    - db_type: "timestamp"
+      gql_type: "Time"
+      go_type:
+        type: "Time"
+        import: "time"
+    - db_type: "pg_catalog.timestamptz"
+      gql_type: "Time"
+      go_type:
+        type: "Time"
+        import: "time"
+    - db_type: "timestamptz"
+      gql_type: "Time"
+      go_type:
+        type: "Time"
+        import: "time"
+
+
+  plugins:
+    - &plugin-golang
+      name: golang
+      wasm:
+        url: "https://github.com/debugger84/sqlc-gen-go/releases/download/v1.3.4/sqlc-gen-go.wasm"
+        sha256: "420c334803aef2d0656384789a9486fa3158cb37b71f7ff245c51f8a860bb460"
+
+    - &plugin-fixture
+      name: fixture
+      wasm:
+        url: "https://github.com/debugger84/sqlc-fixture/releases/download/v0.1.4/sqlc-fixture.wasm"
+        sha256: "0dcc0043d3239ad99bcd96d3a92f10d7503814afb3e6673cb4815b24726be401"
+
+    - &plugin-graphql
+      name: graphql
+      wasm:
+        url: "https://github.com/debugger84/sqlc-graphql/releases/download/v0.2.7/sqlc-graphql.wasm"
+        sha256: "22375c8619c4815626ba095ac98344dc210c94103ec4042b6d04e1f312d178ea"
+
+    - &plugin-dataloader
+      name: dataloader
+      wasm:
+        url: "https://github.com/debugger84/sqlc-dataloader/releases/download/v0.1.3/sqlc-dataloader.wasm"
+        sha256: "b69812dc848c552147f321bad554580938600e3ee0e4f70c33f5a10270553b33"
+  codegen:
+    - &codegen-golang
+      plugin: golang
+      out: "./"
+      options: &codegen-golang-options
+        package: "storage"
+        sql_package: "pgx/v5"
+        emit_db_tags: true
+        emit_json_tags: true
+        emit_all_enum_values: true
+        json_tags_case_style: "camel"
+        out: "./"
+
+    - &codegen-graphql
+      plugin: graphql
+      out: "../graphql"
+      options: &codegen-graphql-options
+        emit_all_enum_values: true
+        gen_common_parts: false
+
+
+    - &codegen-fixture
+      plugin: fixture
+      out: "./"
+      options: &codegen-fixture-options
+        package: "fixture"
+        sql_package: "pgx/v5"
+
+    - &codegen-dataloader
+      plugin: dataloader
+      out: "./"
+      options: &codegen-dataloader-options
+        package: "dataloader"
+        sql_package: "pgx/v5"

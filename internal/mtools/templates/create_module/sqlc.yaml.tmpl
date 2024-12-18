@@ -1,0 +1,40 @@
+{{ define "sqlc.yaml.tmpl" }}
+{{- /*gotype:github.com/go-modulus/modulus/internal/mtools/action.InstallStorageTmplVars*/ -}}
+## This file is a template for the sqlc configuration file.
+## It is used to generate the final sqlc.yaml file.
+## All anchors will be used from the <ROOT_OF_PROJECT>/sqlc.definition.yaml file.
+## Run make prepare-sqlc to generate the final sqlc.yaml file.
+sqlc-tmpl:
+  version: "2"
+  options:
+    golang:
+      overrides:
+        *default-overrides
+  plugins:
+    {{- if .Config.GenerateGraphql }}
+    - <<: *plugin-graphql
+    {{- end -}}
+    {{- if .Config.GenerateDataloader }}
+    - <<: *plugin-dataloader
+    {{- end -}}
+    {{- if .Config.GenerateFixture }}
+    - <<: *plugin-fixture
+    {{ end -}}
+    - <<: *plugin-golang
+  sql:
+    - schema: "migration"
+      queries: "query"
+      engine: "postgresql"
+      codegen:
+        - <<: *codegen-golang
+          options:
+            <<: *codegen-golang-options
+            default_schema: "{{ .Config.Schema }}"
+            overrides:
+              ## Place your module overrides here
+              ##- db_type: "test"
+              ##  go_type: "github.com/shopspring/test"
+              ##  nullable: true
+
+
+{{ end }}

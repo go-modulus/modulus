@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/go-modulus/modulus/errors"
+	"github.com/go-modulus/modulus/internal/mtools/action"
 	"github.com/go-modulus/modulus/internal/mtools/files"
 	"github.com/go-modulus/modulus/internal/mtools/templates"
 	"github.com/go-modulus/modulus/internal/mtools/utils"
@@ -18,21 +19,30 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 )
 
 var moduleNameRegexp = regexp.MustCompile(`module\s+([a-zA-Z0-9_\-\/]+)+`)
 
+type features struct {
+	storage bool
+	graphQL bool
+}
+
 type CreateModule struct {
-	logger *slog.Logger
+	logger         *slog.Logger
+	installStorage *action.InstallStorage
 }
 
 func NewCreateModule(
 	logger *slog.Logger,
+	installStorage *action.InstallStorage,
 ) *CreateModule {
 	return &CreateModule{
-		logger: logger,
+		logger:         logger,
+		installStorage: installStorage,
 	}
 }
 
@@ -59,6 +69,14 @@ Example filling default values without UI: mtools create-module --package=mypckg
 				Name:  "name",
 				Usage: "A name of the module",
 			},
+			&cli.BoolFlag{
+				Name:  "silent",
+				Usage: "Set the silent mode to disable asking the questions",
+			},
+			&cli.StringSliceFlag{
+				Name:  "without",
+				Usage: "Set the list of features to install the module without. Available values: storage, graphql",
+			},
 		},
 	}
 }
@@ -84,6 +102,15 @@ func (c *CreateModule) Invoke(
 		return err
 	}
 
+	selectedFeatures := c.getFeatures(ctx)
+
+	if selectedFeatures.storage {
+		err = c.installStorageFeature(ctx, manifestItem)
+		if err != nil {
+			return err
+		}
+	}
+
 	err = c.addModuleFile(manifestItem)
 	if err != nil {
 		return err
@@ -93,6 +120,121 @@ func (c *CreateModule) Invoke(
 	)
 
 	return nil
+}
+
+func (c *CreateModule) installStorageFeature(
+	ctx *cli.Context,
+	md module.ManifestItem,
+) error {
+	cfg := action.StorageConfig{
+		Schema:             "public",
+		GenerateGraphql:    true,
+		GenerateFixture:    true,
+		GenerateDataloader: true,
+	}
+	if !ctx.Bool("silent") {
+		schema, err := c.askSchema(cfg.Schema)
+		if err != nil {
+			return err
+		}
+		cfg.Schema = schema
+
+		cfg.GenerateGraphql, err = c.askYesNo("Do you want to generate GraphQL files from SQL?")
+		if err != nil {
+			return err
+		}
+		cfg.GenerateFixture, err = c.askYesNo("Do you want to generate fixture files from SQL?")
+		if err != nil {
+			return err
+		}
+		cfg.GenerateDataloader, err = c.askYesNo("Do you want to generate dataloader files from SQL?")
+		if err != nil {
+			return err
+		}
+	}
+	return c.installStorage.Install(ctx.Context, md, cfg)
+}
+
+func (c *CreateModule) getFeatures(ctx *cli.Context) (res features) {
+	res = features{
+		storage: true,
+		graphQL: true,
+	}
+	without := ctx.StringSlice("without")
+	type feature struct {
+		name        string
+		description string
+		value       *bool
+	}
+	items := []feature{
+		{
+			name: "storage",
+			description: "The storage feature allows you to work with PostgreSQL.\n" +
+				"It includes migrations and SQLc generated files to call DB queries.",
+			value: &res.storage,
+		},
+		{
+			name: "graphql",
+			description: "The GraphQL feature allows you to work with GraphQL.\n" +
+				"It includes the resolvers and GraphQL schemas compatible with gqlgen.",
+			value: &res.graphQL,
+		},
+	}
+	for _, w := range without {
+		switch w {
+		case "storage":
+			res.storage = false
+			items = slices.DeleteFunc(
+				items, func(val feature) bool {
+					return val.name == "storage"
+				},
+			)
+		case "graphql":
+			res.graphQL = false
+			items = slices.DeleteFunc(
+				items, func(val feature) bool {
+					return val.name == "graphql"
+				},
+			)
+		}
+	}
+	if len(items) != 0 && !ctx.Bool("silent") {
+		for _, item := range items {
+			val, err := c.askYesNo("Do you want to install the " + item.name + " feature?\n" + item.description)
+			if err != nil {
+				return
+			}
+			*item.value = val
+		}
+
+	}
+	return
+}
+
+func (c *CreateModule) askSchema(defSchema string) (string, error) {
+	prompt := promptui.Prompt{
+		Label:   "Enter a PG schema where you want to place tables for this module: ",
+		Default: defSchema,
+	}
+
+	return prompt.Run()
+}
+
+func (c *CreateModule) askYesNo(label string) (bool, error) {
+	sel := promptui.Select{
+		Label: label,
+		Items: []string{"Yes", "No"},
+	}
+	_, result, err := sel.Run()
+	if err != nil {
+		fmt.Println(color.RedString("Cannot ask a question: %s", err.Error()))
+		return false, err
+	}
+	val := false
+	if result == "Yes" {
+		val = true
+	}
+	return val, nil
 }
 
 func (c *CreateModule) addModuleFile(
@@ -169,16 +311,19 @@ func (c *CreateModule) getManifestItem(ctx *cli.Context) (
 	res module.ManifestItem,
 	err error,
 ) {
+	isSilent := ctx.Bool("silent")
 	pckg := ctx.String("package")
-	obtainedPckg := true
 	if pckg == "" {
-		obtainedPckg = false
+		if isSilent {
+			fmt.Println(color.RedString("The package name is not provided. Please add the --package flag or remove the --silent=true flag"))
+			return module.ManifestItem{}, errors.New("the package name is not provided")
+		}
 		pckg, err = c.askPackage()
 	}
 
 	name := ctx.String("name")
 	if name == "" {
-		if !obtainedPckg {
+		if !isSilent {
 			name, err = c.askName(pckg)
 			if err != nil {
 				fmt.Println(color.RedString("Cannot ask a name: %s", err.Error()))
@@ -192,7 +337,7 @@ func (c *CreateModule) getManifestItem(ctx *cli.Context) (
 
 	path := ctx.String("path")
 	if path == "" {
-		if !obtainedPckg {
+		if !isSilent {
 			path, err = c.askPath(pckg)
 			if err != nil {
 				fmt.Println(color.RedString("Cannot ask a path: %s", err.Error()))

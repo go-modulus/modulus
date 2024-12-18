@@ -33,6 +33,17 @@ func Cause(err error) error {
 	return nil
 }
 
+func CauseString(err error) string {
+	if err == nil {
+		return ""
+	}
+	cause := Cause(err)
+	if cause == nil {
+		return ""
+	}
+	return cause.Error()
+}
+
 func WrapCause(err error, cause error) error {
 	if err == nil {
 		return err
