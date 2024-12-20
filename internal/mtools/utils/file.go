@@ -13,6 +13,21 @@ func FileExists(filename string) bool {
 	return !info.IsDir()
 }
 
+func DirExists(dirName string) bool {
+	info, err := os.Stat(dirName)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return info.IsDir()
+}
+
+func CreateDirIfNotExists(dirName string) error {
+	if DirExists(dirName) {
+		return nil
+	}
+	return os.Mkdir(dirName, 0755)
+}
+
 func CopyFromTemplates(src, dest string) error {
 	if FileExists(dest) {
 		return nil
@@ -26,4 +41,12 @@ func CopyFromTemplates(src, dest string) error {
 		return err
 	}
 	return nil
+}
+
+func CopyMakeFileFromTemplates(projPath, srcTmplPath, destName string) error {
+	err := CreateDirIfNotExists(projPath + "/mk")
+	if err != nil {
+		return err
+	}
+	return CopyFromTemplates(srcTmplPath, projPath+"/mk/"+destName)
 }

@@ -25,16 +25,13 @@ func TestInstallStorage_Install(t *testing.T) {
 			err = os.Mkdir(moduleDir, 0755)
 			require.NoError(t, err)
 
-			currentDir, _ := os.Getwd()
-			os.Chdir(projDir)
-
 			md := module.ManifestItem{
 				Name:           "My package",
 				Package:        "mypckg",
 				Description:    "",
 				InstallCommand: "",
 				Version:        "",
-				LocalPath:      moduleDir,
+				LocalPath:      "mypckg",
 			}
 			err = installStorage.Install(
 				context.Background(), md, action.StorageConfig{
@@ -42,16 +39,17 @@ func TestInstallStorage_Install(t *testing.T) {
 					GenerateGraphql:    true,
 					GenerateFixture:    true,
 					GenerateDataloader: true,
+					ProjPath:           projDir,
 				},
 			)
 
-			os.Chdir(currentDir)
 			_, errDir1 := os.Stat(storageDir)
 			_, errDir2 := os.Stat(storageDir + "/migration")
 			_, errDir3 := os.Stat(storageDir + "/query")
 			contentDef, errDefFile := os.ReadFile(projDir + "/sqlc.definition.yaml")
 			contentTmpl, errTmplFile := os.ReadFile(storageDir + "/sqlc.tmpl.yaml")
 			confTmpl, errConfFile := os.ReadFile(storageDir + "/sqlc.yaml")
+			makeContent, errMakeFile := os.ReadFile(projDir + "/mk/db.mk")
 
 			t.Log("When install storage to a module")
 			t.Log("	The error should be nil")
@@ -79,6 +77,11 @@ func TestInstallStorage_Install(t *testing.T) {
 			require.NoError(t, errConfFile)
 			snaps.WithConfig(snaps.Ext(".sqlc.yaml")).
 				MatchStandaloneSnapshot(t, string(confTmpl))
+
+			t.Log("	The db.mk file should be created")
+			require.NoError(t, errMakeFile)
+			snaps.WithConfig(snaps.Ext(".mk")).
+				MatchStandaloneSnapshot(t, string(makeContent))
 		},
 	)
 }

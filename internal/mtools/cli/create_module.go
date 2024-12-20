@@ -91,7 +91,8 @@ func (c *CreateModule) Invoke(
 		return err
 	}
 
-	err = c.saveManifestItem(manifestItem)
+	projPath := ctx.String("proj-path")
+	err = c.saveManifestItem(manifestItem, projPath)
 	if err != nil {
 		return err
 	}
@@ -105,7 +106,7 @@ func (c *CreateModule) Invoke(
 	selectedFeatures := c.getFeatures(ctx)
 
 	if selectedFeatures.storage {
-		err = c.installStorageFeature(ctx, manifestItem)
+		err = c.installStorageFeature(ctx, manifestItem, projPath)
 		if err != nil {
 			return err
 		}
@@ -125,12 +126,14 @@ func (c *CreateModule) Invoke(
 func (c *CreateModule) installStorageFeature(
 	ctx *cli.Context,
 	md module.ManifestItem,
+	projPath string,
 ) error {
 	cfg := action.StorageConfig{
 		Schema:             "public",
 		GenerateGraphql:    true,
 		GenerateFixture:    true,
 		GenerateDataloader: true,
+		ProjPath:           projPath,
 	}
 	if !ctx.Bool("silent") {
 		schema, err := c.askSchema(cfg.Schema)
@@ -264,8 +267,8 @@ func (c *CreateModule) addModuleFile(
 	return nil
 }
 
-func (c *CreateModule) saveManifestItem(manifestItem module.ManifestItem) (err error) {
-	manifest, err := module.LoadLocalManifest()
+func (c *CreateModule) saveManifestItem(manifestItem module.ManifestItem, projPath string) (err error) {
+	manifest, err := module.LoadLocalManifest(projPath)
 	if err != nil {
 		fmt.Println(color.RedString("Cannot get a local manifest: %s", err.Error()))
 		return err
@@ -279,7 +282,7 @@ func (c *CreateModule) saveManifestItem(manifestItem module.ManifestItem) (err e
 	manifest.Modules = append(
 		manifest.Modules, manifestItem,
 	)
-	err = manifest.SaveAsLocalManifest()
+	err = manifest.SaveAsLocalManifest(projPath)
 	if err != nil {
 		fmt.Println(color.RedString("Cannot save a local manifest: %s", err.Error()))
 		return err
@@ -360,6 +363,7 @@ func (c *CreateModule) getManifestItem(ctx *cli.Context) (
 		InstallCommand: "",
 		Version:        "",
 		LocalPath:      path,
+		IsLocalModule:  true,
 	}
 	return res, nil
 }

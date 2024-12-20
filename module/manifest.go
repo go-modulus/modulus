@@ -15,6 +15,7 @@ type ManifestItem struct {
 	InstallCommand string `json:"install"`
 	Version        string `json:"version"`
 	LocalPath      string `json:"localPath"`
+	IsLocalModule  bool   `json:"isLocalModule"`
 }
 type Manifest struct {
 	Name        string         `json:"name"`
@@ -44,15 +45,15 @@ func NewFromFs(manifestFs fs.FS, filename string) (*Manifest, error) {
 	return m, nil
 }
 
-func LoadLocalManifest() (Manifest, error) {
+func LoadLocalManifest(projPath string) (Manifest, error) {
 	res := Manifest{
 		Modules:     make([]ManifestItem, 0),
 		Version:     "1.0.0",
 		Name:        "Modulus framework modules manifest",
 		Description: "List of installed modules for the Modulus framework",
 	}
-	if utils.FileExists("modules.json") {
-		projFs := os.DirFS("./")
+	if utils.FileExists(projPath + "/modules.json") {
+		projFs := os.DirFS(projPath)
 		manifest, err := NewFromFs(projFs, "modules.json")
 		if err != nil {
 			return res, err
@@ -62,14 +63,18 @@ func LoadLocalManifest() (Manifest, error) {
 	return res, nil
 }
 
-func (m *Manifest) SaveAsLocalManifest() error {
+func (m *Manifest) SaveAsLocalManifest(projPath string) error {
 	data, err := m.WriteToJSON()
 	if err != nil {
 		return err
 	}
-	return os.WriteFile("modules.json", data, 0644)
+	return os.WriteFile(projPath+"/modules.json", data, 0644)
 }
 
 func (m ManifestItem) GetShortPackageName() string {
 	return m.Package[strings.LastIndex(m.Package, "/")+1:]
+}
+
+func (m ManifestItem) StoragePath(projPath string) string {
+	return projPath + "/" + m.LocalPath + "/storage"
 }

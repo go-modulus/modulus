@@ -21,11 +21,13 @@ type StorageConfig struct {
 	GenerateGraphql    bool
 	GenerateFixture    bool
 	GenerateDataloader bool
+	ProjPath           string
 }
 
 type InstallStorageTmplVars struct {
-	Config StorageConfig
-	Module module.ManifestItem
+	Config      StorageConfig
+	Module      module.ManifestItem
+	StoragePath string
 }
 
 type InstallStorage struct {
@@ -39,29 +41,45 @@ func NewInstallStorage(config *UpdateSqlcConfig) *InstallStorage {
 }
 
 func (c *InstallStorage) Install(ctx context.Context, md module.ManifestItem, cfg StorageConfig) error {
-	os.Mkdir(md.LocalPath+"/storage", 0755)
-	os.Mkdir(md.LocalPath+"/storage/migration", 0755)
-	os.Mkdir(md.LocalPath+"/storage/query", 0755)
+	storagePath := md.StoragePath(cfg.ProjPath)
+	err := utils.CreateDirIfNotExists(storagePath)
+	if err != nil {
+		return fmt.Errorf("cannot create storage directory: %v", err)
+	}
+	err = utils.CreateDirIfNotExists(storagePath + "/migration")
+	if err != nil {
+		return fmt.Errorf("cannot create migration directory: %v", err)
+	}
+	err = utils.CreateDirIfNotExists(storagePath + "/query")
+	if err != nil {
+		return fmt.Errorf("cannot create query directory: %v", err)
+	}
 
-	err := utils.CopyFromTemplates("create_module/sqlc.definition.yaml", "./sqlc.definition.yaml")
+	err = utils.CopyFromTemplates("create_module/sqlc.definition.yaml", cfg.ProjPath+"/sqlc.definition.yaml")
 	if err != nil {
 		return err
 	}
 
 	vars := InstallStorageTmplVars{
-		Config: cfg,
-		Module: md,
+		Config:      cfg,
+		Module:      md,
+		StoragePath: storagePath,
 	}
-	err = c.addModuleFile(vars)
+	err = c.addFilesOfModule(vars, storagePath, cfg.ProjPath)
 	if err != nil {
 		return err
 	}
-
+	err = utils.CopyMakeFileFromTemplates(cfg.ProjPath, "create_module/db.mk", "db.mk")
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (c *InstallStorage) addModuleFile(
+func (c *InstallStorage) addFilesOfModule(
 	vars InstallStorageTmplVars,
+	storagePath string,
+	projPath string,
 ) error {
 	tmpl := template.Must(
 		template.New("sqlc.yaml.tmpl").
@@ -79,13 +97,13 @@ func (c *InstallStorage) addModuleFile(
 	}
 	w.Flush()
 
-	err = os.WriteFile(vars.Module.LocalPath+"/storage/sqlc.tmpl.yaml", b.Bytes(), 0644)
+	err = os.WriteFile(vars.StoragePath+"/sqlc.tmpl.yaml", b.Bytes(), 0644)
 	if err != nil {
 		fmt.Println(color.RedString("Cannot write a storage tmpl file: %s", err.Error()))
 		return err
 	}
 
-	err = c.UpdateSqlcConfig.Update(context.Background(), vars.Module)
+	err = c.UpdateSqlcConfig.Update(context.Background(), storagePath, projPath)
 	if err != nil {
 		p := message.NewPrinter(language.English)
 		fmt.Println(color.RedString("Cannot update sqlc config: %s: %s", errors.Hint(p, err), errors.CauseString(err)))

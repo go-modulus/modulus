@@ -13,6 +13,7 @@ import (
 type ModuleConfig struct {
 	Version string
 	Usage   string
+	Flags   []cli.Flag
 }
 
 type StartCliParams struct {
@@ -34,6 +35,7 @@ func NewApp(params StartCliParams) *cli.App {
 		Commands:             params.Commands,
 		EnableBashCompletion: true,
 		Version:              params.Config.Version,
+		Flags:                params.Config.Flags,
 	}
 
 	sort.Sort(cli.FlagsByName(app.Flags))

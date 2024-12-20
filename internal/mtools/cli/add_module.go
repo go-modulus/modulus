@@ -64,6 +64,7 @@ func (c *AddModule) Invoke(
 	ctx *cli.Context,
 ) error {
 	p := message.NewPrinter(language.English)
+	projPath := ctx.String("proj-path")
 
 	utils.PrintLogo()
 
@@ -139,7 +140,7 @@ func (c *AddModule) Invoke(
 			continue
 		}
 		manifest.Modules = append(manifest.Modules, md)
-		err = manifest.SaveAsLocalManifest()
+		err = manifest.SaveAsLocalManifest(projPath)
 		if err != nil {
 			fmt.Println(color.RedString("Cannot save the local manifest file modules.json: %s", err.Error()))
 			hasErrors = true

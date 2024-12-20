@@ -5,7 +5,6 @@ import (
 	"errors"
 	errors2 "github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/errors/errbuilder"
-	"github.com/go-modulus/modulus/module"
 	"gopkg.in/yaml.v3"
 	"os"
 )
@@ -15,8 +14,8 @@ var ErrSqlcTemplateFileNotFound = errors.New("module_path/storage/sqlc.tmpl.yaml
 var ErrCannotParseSqlcDefinition = errbuilder.New("cannot parse sqlc.definition.yaml file").
 	WithHint("Please check the file sqlc.definition.yaml content. It has wrong yaml format.").
 	Build()
-var ErrNoDefinitionBlock = errbuilder.New("sqlc.definition.yaml file does not have definition block").
-	WithHint("Please check the file sqlc.definition.yaml content. It has no the 'definition' map field.").
+var ErrNoSqlcTmpl = errbuilder.New("sqlc.tmpl.yaml file does not exist").
+	WithHint("Please check the if the file module/storage/sqlc.tmpl.yaml exists.").
 	Build()
 var ErrCannotParseSqlcTmpl = errbuilder.New("cannot parse sqlc.tmpl.yaml file").
 	WithHint("Please check the file module/storage/sqlc.tmpl.yaml content. It has wrong yaml format.").
@@ -32,8 +31,8 @@ func NewUpdateSqlcConfig() *UpdateSqlcConfig {
 	return &UpdateSqlcConfig{}
 }
 
-func (c *UpdateSqlcConfig) Update(ctx context.Context, md module.ManifestItem) error {
-	defFile := "./sqlc.definition.yaml"
+func (c *UpdateSqlcConfig) Update(ctx context.Context, storagePath string, projPath string) error {
+	defFile := projPath + "/sqlc.definition.yaml"
 	defContent, err := os.ReadFile(defFile)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -49,7 +48,11 @@ func (c *UpdateSqlcConfig) Update(ctx context.Context, md module.ManifestItem) e
 		return errors2.WrapCause(ErrCannotParseSqlcDefinition, err)
 	}
 
-	tmplContent, err := os.ReadFile(md.LocalPath + "/storage/sqlc.tmpl.yaml")
+	if _, err := os.Stat(storagePath + "/sqlc.tmpl.yaml"); os.IsNotExist(err) {
+		return ErrNoSqlcTmpl
+	}
+
+	tmplContent, err := os.ReadFile(storagePath + "/sqlc.tmpl.yaml")
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return ErrSqlcTemplateFileNotFound
@@ -78,7 +81,7 @@ func (c *UpdateSqlcConfig) Update(ctx context.Context, md module.ManifestItem) e
 
 	sqlcContent, err := yaml.Marshal(tmpl["sqlc-tmpl"])
 
-	err = os.WriteFile(md.LocalPath+"/storage/sqlc.yaml", sqlcContent, 0644)
+	err = os.WriteFile(storagePath+"/sqlc.yaml", sqlcContent, 0644)
 	if err != nil {
 		return errors2.WrapCause(ErrCannotUpdateSqlcConfig, err)
 	}

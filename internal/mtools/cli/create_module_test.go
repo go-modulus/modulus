@@ -17,15 +17,15 @@ func TestCreateModule_Invoke(t *testing.T) {
 			rb := initProject(t, projDir)
 			defer rb()
 
-			err := os.Chdir(projDir)
-			require.NoError(t, err)
+			//err := os.Chdir(projDir)
+			//require.NoError(t, err)
 			app := cli.NewApp()
 			set := flag.NewFlagSet("test", 0)
 			set.String("package", "mypckg", "")
 			set.String("path", "internal/mypckg", "")
 			set.Bool("silent", true, "")
 			ctx := cli.NewContext(app, set, nil)
-			err = createModule.Invoke(ctx)
+			err := createModule.Invoke(ctx)
 
 			moduleDir := fmt.Sprintf("%s/internal/mypckg", projDir)
 			_, errDir := os.Stat(moduleDir)
@@ -33,7 +33,7 @@ func TestCreateModule_Invoke(t *testing.T) {
 			storageDir := fmt.Sprintf("%s/internal/mypckg/storage", projDir)
 			_, errStorageDir := os.Stat(storageDir)
 
-			localManifest, errCont := module.LoadLocalManifest()
+			localManifest, errCont := module.LoadLocalManifest(projDir)
 			moduleContent, errCont1 := os.ReadFile(fmt.Sprintf("%s/module.go", moduleDir))
 			tmplYaml, errCont2 := os.ReadFile(fmt.Sprintf("%s/sqlc.tmpl.yaml", storageDir))
 			defStorageYaml, errCont3 := os.ReadFile(fmt.Sprintf("%s/sqlc.definition.yaml", moduleDir))
