@@ -51,7 +51,7 @@ mtools init
 6. Install the modules
 ```bash
 cd testproj
-mtools add-module
+mtools module install
 ```
 Select all modules you want to install. For example, select `pgx` module.
 ![select_module.png](./docs/img/select_module.png)

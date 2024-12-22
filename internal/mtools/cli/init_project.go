@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+	"github.com/fatih/color"
 	"github.com/go-modulus/modulus/internal/mtools/utils"
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
@@ -74,6 +75,7 @@ func (c *InitProject) Invoke(
 	fmt.Println(
 		"Congratulations! Your project has been initialized. Please, add your first module.",
 	)
+	fmt.Println("To add a module, run the command: " + color.CyanString("mtools module install"))
 
 	return nil
 }

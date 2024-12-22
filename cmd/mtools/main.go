@@ -21,11 +21,13 @@ func main() {
 					cli.ModuleConfig{
 						Version: "0.1.4",
 						Usage:   "This is a CLI tool for the Modulus framework. It helps you to create a new project, add modules, and run the project.",
-						Flags: []cli2.Flag{
+						GlobalFlags: []cli2.Flag{
 							&cli2.StringFlag{
-								Name:  "proj-path",
-								Usage: "Set the path to the project if you want to run the command from another directory",
-								Value: path,
+								Name:    "proj-path",
+								Usage:   "Set the path to the project if you want to run the command from another directory",
+								Value:   path,
+								Aliases: []string{"p"},
+								EnvVars: []string{"PROJECT_PATH"},
 							},
 						},
 					},

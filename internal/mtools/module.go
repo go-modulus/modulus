@@ -3,8 +3,9 @@ package mtools
 import (
 	"github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/internal/mtools/action"
-	cli2 "github.com/go-modulus/modulus/internal/mtools/cli"
-	"github.com/go-modulus/modulus/internal/mtools/cli/db"
+	cmdRoot "github.com/go-modulus/modulus/internal/mtools/cli"
+	cmdDb "github.com/go-modulus/modulus/internal/mtools/cli/db"
+	cmdMmodule "github.com/go-modulus/modulus/internal/mtools/cli/module"
 	"github.com/go-modulus/modulus/logger"
 	"github.com/go-modulus/modulus/module"
 )
@@ -12,18 +13,17 @@ import (
 func NewModule() *module.Module {
 	return module.NewModule("github.com/go-modulus/modulus/mtools").
 		AddCliCommands(
-			db.NewDbCommand,
-			cli2.NewInitProjectCommand,
-			cli2.NewAddModuleCommand,
-			cli2.NewCreateModuleCommand,
+			cmdDb.NewDbCommand,
+			cmdRoot.NewInitProjectCommand,
+			cmdMmodule.NewModuleCommand,
 		).
 		AddProviders(
-			cli2.NewInitProject,
-			cli2.NewAddModule,
-			cli2.NewCreateModule,
+			cmdRoot.NewInitProject,
+			cmdMmodule.NewInstall,
+			cmdMmodule.NewCreate,
 			action.NewInstallStorage,
 			action.NewUpdateSqlcConfig,
-			db.NewUpdateSQLCConfig,
+			cmdDb.NewUpdateSQLCConfig,
 		).
 		AddDependencies(
 			*logger.NewModule(logger.ModuleConfig{}),

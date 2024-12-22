@@ -1,4 +1,4 @@
-package cli
+package module
 
 import (
 	"context"
@@ -29,42 +29,50 @@ var ErrCannotInstallModule = errbuilder.New("cannot install the module").
 var ErrCannotUpdateToolsFile = errbuilder.New("cannot update the tools file").
 	WithHint("Check the existence and rights for the tools.go file at the root folder of your project.").Build()
 
-type AddModule struct {
+type Install struct {
 	logger *slog.Logger
 }
 
-func NewAddModule(
+func NewInstall(
 	logger *slog.Logger,
-) *AddModule {
-	return &AddModule{
+) *Install {
+	return &Install{
 		logger: logger,
 	}
 }
 
-func NewAddModuleCommand(addModule *AddModule) *cli.Command {
+func NewInstallCommand(addModule *Install) *cli.Command {
 	return &cli.Command{
-		Name: "add-module",
-		Usage: `Gives user a choice to get any modules from the available ones list.
+		Name: "install",
+		Usage: `Gives user a choice to install any modules from the available ones list.
 Uses interactive prompts to make a choice.
-Adds the chosen module to the project and inits it with copying necessary files.
-Example: mtools add-module
-Example without UI: mtools add-module --modules="urfave cli,pgx"
+Adds the chosen module to the project and inits it with default files.
+Example: mtools module install
+Example without UI: mtools module install --modules="urfave cli,pgx"
 `,
 		Action: addModule.Invoke,
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
-				Name:  "modules",
-				Usage: "A comma-separated list of modules to add to the project",
+				Name:    "modules",
+				Usage:   "A comma-separated list of modules to add to the project",
+				Aliases: []string{"m"},
 			},
 		},
 	}
 }
 
-func (c *AddModule) Invoke(
+func (c *Install) Invoke(
 	ctx *cli.Context,
 ) error {
 	p := message.NewPrinter(language.English)
 	projPath := ctx.String("proj-path")
+	curDir, err := os.Getwd()
+	if err != nil {
+		fmt.Println(color.RedString("Cannot get the current directory: %s", err.Error()))
+		return err
+	}
+	os.Chdir(projPath)
+	defer os.Chdir(curDir)
 
 	utils.PrintLogo()
 
@@ -94,6 +102,7 @@ func (c *AddModule) Invoke(
 	modulesValue := ctx.StringSlice("modules")
 	var modules []module.ManifestItem
 	if len(modulesValue) != 0 {
+		fmt.Println(color.BlueString("Modules to install: %s", strings.Join(modulesValue, ", ")))
 		for _, val := range modulesValue {
 			for _, availableItem := range availableModulesManifest.Modules {
 				if val == availableItem.Name {
@@ -157,7 +166,7 @@ func (c *AddModule) Invoke(
 	return nil
 }
 
-func (c *AddModule) saveLocalManifest(
+func (c *Install) saveLocalManifest(
 	manifest module.Manifest,
 ) error {
 	data, err := manifest.WriteToJSON()
@@ -167,7 +176,7 @@ func (c *AddModule) saveLocalManifest(
 	return os.WriteFile("modules.json", data, 0644)
 }
 
-func (c *AddModule) getLocalManifest() (module.Manifest, error) {
+func (c *Install) getLocalManifest() (module.Manifest, error) {
 	res := module.Manifest{
 		Modules:     make([]module.ManifestItem, 0),
 		Version:     "1.0.0",
@@ -185,7 +194,7 @@ func (c *AddModule) getLocalManifest() (module.Manifest, error) {
 	return res, nil
 }
 
-func (c *AddModule) installModule(
+func (c *Install) installModule(
 	ctx context.Context,
 	md module.ManifestItem,
 	entrypoints []entripoint,
@@ -252,7 +261,7 @@ func (c *AddModule) installModule(
 	return nil
 }
 
-func (c *AddModule) askModulesFromManifest(
+func (c *Install) askModulesFromManifest(
 	availableModulesManifest *module.Manifest,
 	installedModules []module.ManifestItem,
 ) ([]module.ManifestItem, error) {
@@ -357,7 +366,7 @@ type entripoint struct {
 	path string
 }
 
-func (c *AddModule) getEntrypoints() (entripoints []entripoint, err error) {
+func (c *Install) getEntrypoints() (entripoints []entripoint, err error) {
 	entries, err := os.ReadDir("./cmd")
 	if err != nil {
 		return

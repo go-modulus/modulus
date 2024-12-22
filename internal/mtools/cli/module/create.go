@@ -1,4 +1,4 @@
-package cli
+package module
 
 import (
 	"bufio"
@@ -31,35 +31,36 @@ type features struct {
 	graphQL bool
 }
 
-type CreateModule struct {
+type Create struct {
 	logger         *slog.Logger
 	installStorage *action.InstallStorage
 }
 
-func NewCreateModule(
+func NewCreate(
 	logger *slog.Logger,
 	installStorage *action.InstallStorage,
-) *CreateModule {
-	return &CreateModule{
+) *Create {
+	return &Create{
 		logger:         logger,
 		installStorage: installStorage,
 	}
 }
 
-func NewCreateModuleCommand(createModule *CreateModule) *cli.Command {
+func NewCreateCommand(createModule *Create) *cli.Command {
 	return &cli.Command{
 		Name: "create-module",
 		Usage: `Create a boilerplate of the new module and place its files inside the obtained path.
 Adds the chosen module to the project and inits it with copying necessary files.
-Example: mtools create-module
-Example without UI: mtools create-module --path=internal/mypckg --package=mypckg --name="My package"
-Example filling default values without UI: mtools create-module --package=mypckg
+Example: mtools module create
+Example without UI: mtools module create --path=internal/mypckg --package=mypckg --name="My package"
+Example filling default values without UI: mtools module create --package=mypckg
 `,
 		Action: createModule.Invoke,
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "package",
-				Usage: "A package name of the module Go file",
+				Name:    "package",
+				Usage:   "A package name of the module Go file",
+				Aliases: []string{"pkg"},
 			},
 			&cli.StringFlag{
 				Name:  "path",
@@ -70,8 +71,9 @@ Example filling default values without UI: mtools create-module --package=mypckg
 				Usage: "A name of the module",
 			},
 			&cli.BoolFlag{
-				Name:  "silent",
-				Usage: "Set the silent mode to disable asking the questions",
+				Name:    "silent",
+				Usage:   "Set the silent mode to disable asking the questions",
+				Aliases: []string{"s"},
 			},
 			&cli.StringSliceFlag{
 				Name:  "without",
@@ -81,7 +83,7 @@ Example filling default values without UI: mtools create-module --package=mypckg
 	}
 }
 
-func (c *CreateModule) Invoke(
+func (c *Create) Invoke(
 	ctx *cli.Context,
 ) (err error) {
 	utils.PrintLogo()
@@ -123,7 +125,7 @@ func (c *CreateModule) Invoke(
 	return nil
 }
 
-func (c *CreateModule) installStorageFeature(
+func (c *Create) installStorageFeature(
 	ctx *cli.Context,
 	md module.ManifestItem,
 	projPath string,
@@ -158,7 +160,7 @@ func (c *CreateModule) installStorageFeature(
 	return c.installStorage.Install(ctx.Context, md, cfg)
 }
 
-func (c *CreateModule) getFeatures(ctx *cli.Context) (res features) {
+func (c *Create) getFeatures(ctx *cli.Context) (res features) {
 	res = features{
 		storage: true,
 		graphQL: true,
@@ -214,7 +216,7 @@ func (c *CreateModule) getFeatures(ctx *cli.Context) (res features) {
 	return
 }
 
-func (c *CreateModule) askSchema(defSchema string) (string, error) {
+func (c *Create) askSchema(defSchema string) (string, error) {
 	prompt := promptui.Prompt{
 		Label:   "Enter a PG schema where you want to place tables for this module: ",
 		Default: defSchema,
@@ -223,7 +225,7 @@ func (c *CreateModule) askSchema(defSchema string) (string, error) {
 	return prompt.Run()
 }
 
-func (c *CreateModule) askYesNo(label string) (bool, error) {
+func (c *Create) askYesNo(label string) (bool, error) {
 	sel := promptui.Select{
 		Label: label,
 		Items: []string{"Yes", "No"},
@@ -240,7 +242,7 @@ func (c *CreateModule) askYesNo(label string) (bool, error) {
 	return val, nil
 }
 
-func (c *CreateModule) addModuleFile(
+func (c *Create) addModuleFile(
 	md module.ManifestItem,
 ) error {
 	tmpl := template.Must(
@@ -267,7 +269,7 @@ func (c *CreateModule) addModuleFile(
 	return nil
 }
 
-func (c *CreateModule) saveManifestItem(manifestItem module.ManifestItem, projPath string) (err error) {
+func (c *Create) saveManifestItem(manifestItem module.ManifestItem, projPath string) (err error) {
 	manifest, err := module.LoadLocalManifest(projPath)
 	if err != nil {
 		fmt.Println(color.RedString("Cannot get a local manifest: %s", err.Error()))
@@ -290,7 +292,7 @@ func (c *CreateModule) saveManifestItem(manifestItem module.ManifestItem, projPa
 	return nil
 }
 
-func (c *CreateModule) getProjModuleName() (string, error) {
+func (c *Create) getProjModuleName() (string, error) {
 	if _, err := os.Stat("go.mod"); os.IsNotExist(err) {
 		fmt.Println(color.RedString("The go.mod file is not found. Try to run the command in the root of the project"))
 		return "", err
@@ -310,7 +312,7 @@ func (c *CreateModule) getProjModuleName() (string, error) {
 	return moduleStr[1], nil
 }
 
-func (c *CreateModule) getManifestItem(ctx *cli.Context) (
+func (c *Create) getManifestItem(ctx *cli.Context) (
 	res module.ManifestItem,
 	err error,
 ) {
@@ -368,7 +370,7 @@ func (c *CreateModule) getManifestItem(ctx *cli.Context) (
 	return res, nil
 }
 
-func (c *CreateModule) saveLocalManifest(
+func (c *Create) saveLocalManifest(
 	manifest module.Manifest,
 ) error {
 	data, err := manifest.WriteToJSON()
@@ -378,7 +380,7 @@ func (c *CreateModule) saveLocalManifest(
 	return os.WriteFile("modules.json", data, 0644)
 }
 
-func (c *CreateModule) installModule(
+func (c *Create) installModule(
 	ctx context.Context,
 	md module.ManifestItem,
 	entrypoints []entripoint,
@@ -445,7 +447,7 @@ func (c *CreateModule) installModule(
 	return nil
 }
 
-func (c *CreateModule) askPath(packageName string) (string, error) {
+func (c *Create) askPath(packageName string) (string, error) {
 	prompt := promptui.Prompt{
 		Label: "Enter a folder starting from the root of a project: ",
 	}
@@ -462,7 +464,7 @@ func (c *CreateModule) askPath(packageName string) (string, error) {
 	return path, nil
 }
 
-func (c *CreateModule) askName(packageName string) (string, error) {
+func (c *Create) askName(packageName string) (string, error) {
 	prompt := promptui.Prompt{
 		Label: "Enter a name of the module: ",
 	}
@@ -472,12 +474,12 @@ func (c *CreateModule) askName(packageName string) (string, error) {
 	return prompt.Run()
 }
 
-func (c *CreateModule) getDefaultPath(packageName string) string {
+func (c *Create) getDefaultPath(packageName string) string {
 	nameParts := strings.Split(packageName, "/")
 	return "internal/" + nameParts[len(nameParts)-1]
 }
 
-func (c *CreateModule) askPackage() (string, error) {
+func (c *Create) askPackage() (string, error) {
 	prompt := promptui.Prompt{
 		Label: "Enter a Golang package name of the created module (e.g. user): ",
 	}
@@ -490,7 +492,7 @@ func (c *CreateModule) askPackage() (string, error) {
 	return pckg, nil
 }
 
-func (c *CreateModule) getEntrypoints() (entripoints []entripoint, err error) {
+func (c *Create) getEntrypoints() (entripoints []entripoint, err error) {
 	entries, err := os.ReadDir("./cmd")
 	if err != nil {
 		return

@@ -1,4 +1,4 @@
-package cli_test
+package module_test
 
 import (
 	"github.com/go-modulus/modulus/internal/mtools"
