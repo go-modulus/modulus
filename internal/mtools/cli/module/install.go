@@ -65,18 +65,26 @@ func (c *Install) Invoke(
 	ctx *cli.Context,
 ) error {
 	p := message.NewPrinter(language.English)
-	projPath := ctx.String("proj-path")
-	curDir, err := os.Getwd()
-	if err != nil {
-		fmt.Println(color.RedString("Cannot get the current directory: %s", err.Error()))
-		return err
+	modulesValue := ctx.StringSlice("modules")
+	if len(modulesValue) == 0 {
+		utils.PrintLogo()
 	}
-	os.Chdir(projPath)
-	defer os.Chdir(curDir)
-
-	utils.PrintLogo()
-
-	fmt.Println("Choose a module to add to your project")
+	projPath := ctx.String("proj-path")
+	if projPath != "" {
+		curDir, err := os.Getwd()
+		if err != nil {
+			fmt.Println(color.RedString("Cannot get the current directory: %s", err.Error()))
+			return err
+		}
+		err = os.Chdir(projPath)
+		if err != nil {
+			fmt.Println(color.RedString("Cannot change the current directory to %s: %s", projPath, err.Error()))
+			return err
+		}
+		curDirAfterChange, _ := os.Getwd()
+		fmt.Printf("Changing the current dir to %s\n", color.BlueString(curDirAfterChange))
+		defer os.Chdir(curDir)
+	}
 
 	availableModulesManifest, err := module.NewFromFs(modulus.ManifestFs, "modules.json")
 	if err != nil {
@@ -90,7 +98,7 @@ func (c *Install) Invoke(
 		return err
 	}
 
-	fmt.Println(color.BlueString("Installed modules:"))
+	fmt.Println("Installed modules:")
 	for _, md := range manifest.Modules {
 		fmt.Printf(
 			"	%s: %s\n",
@@ -99,10 +107,9 @@ func (c *Install) Invoke(
 		)
 	}
 
-	modulesValue := ctx.StringSlice("modules")
 	var modules []module.ManifestItem
 	if len(modulesValue) != 0 {
-		fmt.Println(color.BlueString("Modules to install: %s", strings.Join(modulesValue, ", ")))
+		fmt.Printf("Modules to install: %s\n", color.BlueString(strings.Join(modulesValue, ", ")))
 		for _, val := range modulesValue {
 			for _, availableItem := range availableModulesManifest.Modules {
 				if val == availableItem.Name {
@@ -111,6 +118,7 @@ func (c *Install) Invoke(
 			}
 		}
 	} else {
+		fmt.Println("Choose a module to add to your project")
 		modules, err = c.askModulesFromManifest(availableModulesManifest, manifest.Modules)
 		if err != nil {
 			fmt.Println(color.RedString("Cannot ask modules from the manifest: %s", err.Error()))
@@ -149,7 +157,7 @@ func (c *Install) Invoke(
 			continue
 		}
 		manifest.Modules = append(manifest.Modules, md)
-		err = manifest.SaveAsLocalManifest(projPath)
+		err = manifest.SaveAsLocalManifest("./")
 		if err != nil {
 			fmt.Println(color.RedString("Cannot save the local manifest file modules.json: %s", err.Error()))
 			hasErrors = true
@@ -204,7 +212,7 @@ func (c *Install) installModule(
 		return ErrPackageIsEmpty
 	}
 
-	fmt.Println(color.BlueString("Getting a package %s...", md.Package))
+	fmt.Printf("Getting a package %s...\n", color.BlueString(md.Package))
 	cmdCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 	err := exec.CommandContext(cmdCtx, "go", "get", md.Package).Run()
@@ -212,42 +220,40 @@ func (c *Install) installModule(
 		return errors.WrapCause(ErrCannotRunGoGetCommand, err)
 	}
 
-	fmt.Println(color.BlueString("Adding the package %s to the tools.go file...", md.Package))
+	fmt.Printf("Adding the package %s to the tools.go file...\n", color.BlueString(md.Package))
 	err = files.AddImportToTools(md.Package)
 	if err != nil {
 		return errors.WrapCause(ErrCannotUpdateToolsFile, err)
 	}
 
 	for _, entrypoint := range entrypoints {
-		fmt.Println(color.BlueString("Adding module initialization to the entrypoint %s ...", entrypoint.name))
+		fmt.Printf("Adding module initialization to the entrypoint %s ...\n", color.BlueString(entrypoint.name))
 		err = files.AddModuleToEntrypoint(md.Package, entrypoint.path)
 		if err != nil {
 			fmt.Println(
 				color.RedString(
 					"Cannot add the module %s to the entrypoint %s: %s. Try to type initialization code manually",
-					md.Name,
-					entrypoint.path,
+					color.BlueString(md.Name),
+					color.BlueString(entrypoint.path),
 					err.Error(),
 				),
 			)
 			continue
 		}
-		fmt.Println(color.BlueString("File %s is updated", entrypoint.path))
+		fmt.Printf("File %s is updated\n", color.BlueString(entrypoint.path))
 	}
 
-	fmt.Println(color.BlueString("Running go mod tidy..."))
+	fmt.Printf("Running %s...\n", color.BlueString("go mod tidy"))
 	err = exec.CommandContext(cmdCtx, "go", "mod", "tidy").Run()
 	if err != nil {
 		return errors.WrapCause(ErrCannotRunGoGetCommand, err)
 	}
 
 	if md.InstallCommand != "" {
-		fmt.Println(
-			color.BlueString(
-				"Running the install command '%s' for the module %s...",
-				md.InstallCommand,
-				md.Name,
-			),
+		fmt.Printf(
+			"Running the install command '%s' for the module %s...\n",
+			color.BlueString(md.InstallCommand),
+			color.BlueString(md.Name),
 		)
 		cmdCtx, cancel := context.WithTimeout(ctx, time.Minute)
 		defer cancel()
@@ -257,7 +263,7 @@ func (c *Install) installModule(
 		}
 	}
 
-	fmt.Println(color.GreenString("The module %s has been successfully installed.", md.Name))
+	fmt.Println(color.GreenString("The module %s has been successfully installed.", color.BlueString(md.Name)))
 	return nil
 }
 
