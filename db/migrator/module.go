@@ -39,14 +39,14 @@ func newDBMate(params CreateCommandParams) (*dbmate.DB, error) {
 	return db, nil
 }
 
-func NewModule(config ModuleConfig) *module.Module {
+func NewModule() *module.Module {
 	return module.NewModule("github.com/go-modulus/modulus/db/migrator").
 		AddDependencies(
-			*pgx.NewModule(pgx.ModuleConfig{}),
-			*infraCli.NewModule(infraCli.ModuleConfig{}),
+			*pgx.NewModule(),
+			*infraCli.NewModule(),
 		).
+		InitConfig(ModuleConfig{}).
 		AddProviders(
-			module.ConfigProvider[ModuleConfig](config),
 			NewMigrate,
 			NewAdd,
 			NewRollback,

@@ -23,8 +23,8 @@ func LoadEnv(basePath string, env string, override bool) {
 	}
 	load(
 		[]string{
-			basePath + ".env" + env,
-			basePath + ".env" + env + ".local",
+			basePath + "/.env" + env,
+			basePath + "/.env" + env + ".local",
 		}, override,
 	)
 }

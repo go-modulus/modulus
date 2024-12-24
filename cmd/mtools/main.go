@@ -14,30 +14,34 @@ import (
 func main() {
 	// current path
 	path, _ := os.Getwd()
+	cliModule := cli.NewModule().InitConfig(
+		cli.ModuleConfig{
+			Version: "0.1.4",
+			Usage:   "This is a CLI tool for the Modulus framework. It helps you to create a new project, add modules, and run the project.",
+			GlobalFlags: []cli2.Flag{
+				&cli2.StringFlag{
+					Name:    "proj-path",
+					Usage:   "Set the path to the project if you want to run the command from another directory",
+					Value:   path,
+					Aliases: []string{"p"},
+					EnvVars: []string{"PROJECT_PATH"},
+				},
+			},
+		},
+	)
+
+	loggerModule := logger.NewModule().InitConfig(
+		&logger.ModuleConfig{
+			Type: "console",
+			App:  "modulus cli",
+		},
+	)
+
 	app := fx.New(
 		append(
 			[]fx.Option{
-				cli.NewModule(
-					cli.ModuleConfig{
-						Version: "0.1.4",
-						Usage:   "This is a CLI tool for the Modulus framework. It helps you to create a new project, add modules, and run the project.",
-						GlobalFlags: []cli2.Flag{
-							&cli2.StringFlag{
-								Name:    "proj-path",
-								Usage:   "Set the path to the project if you want to run the command from another directory",
-								Value:   path,
-								Aliases: []string{"p"},
-								EnvVars: []string{"PROJECT_PATH"},
-							},
-						},
-					},
-				).BuildFx(),
-				logger.NewModule(
-					logger.ModuleConfig{
-						Type: "console",
-						App:  "modulus cli",
-					},
-				).BuildFx(),
+				cliModule.BuildFx(),
+				loggerModule.BuildFx(),
 				mtools.NewModule().BuildFx(),
 			},
 			fx.WithLogger(

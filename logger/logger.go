@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func NewLogger(config *ModuleConfig) (*zap.Logger, error) {
+func NewLogger(config ModuleConfig) (*zap.Logger, error) {
 	level, err := zap.ParseAtomicLevel(config.Level)
 	if err != nil {
 		return nil, errtrace.Errorf(

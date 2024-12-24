@@ -11,11 +11,11 @@ import (
 )
 
 type RollbackAll struct {
-	cfg    *ModuleConfig
+	cfg    ModuleConfig
 	logger *zap.Logger
 }
 
-func NewRollbackAll(cfg *ModuleConfig, logger *zap.Logger) *RollbackAll {
+func NewRollbackAll(cfg ModuleConfig, logger *zap.Logger) *RollbackAll {
 	return &RollbackAll{cfg: cfg, logger: logger}
 }
 

@@ -22,7 +22,7 @@ type StartCliParams struct {
 	Lc       fx.Lifecycle
 	Commands []*cli.Command `group:"cli.commands"`
 	Runner   *Runner
-	Config   *ModuleConfig
+	Config   ModuleConfig
 }
 
 func NewApp(params StartCliParams) *cli.App {
@@ -78,11 +78,10 @@ func Start(
 	)
 }
 
-func NewModule(config ModuleConfig) *module.Module {
+func NewModule() *module.Module {
 	return module.NewModule("github.com/go-modulus/modulus/cli").
 		AddProviders(
 			NewApp,
 			NewRunner,
-			module.ConfigProvider[ModuleConfig](config),
-		)
+		).InitConfig(ModuleConfig{})
 }

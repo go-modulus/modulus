@@ -10,11 +10,11 @@ import (
 )
 
 type Migrate struct {
-	cfg    *ModuleConfig
+	cfg    ModuleConfig
 	logger *zap.Logger
 }
 
-func NewMigrate(cfg *ModuleConfig, logger *zap.Logger) *Migrate {
+func NewMigrate(cfg ModuleConfig, logger *zap.Logger) *Migrate {
 	return &Migrate{cfg: cfg, logger: logger}
 }
 

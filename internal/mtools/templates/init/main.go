@@ -26,7 +26,7 @@ func main() {
 
 	// DO NOT Remove. It will be edited by the add-module CLI command.
 	importedModulesOptions := []fx.Option{
-		cli.NewModule(
+		cli.NewModule().InitConfig(
 			cli.ModuleConfig{
 				Version: "0.1.0",
 				Usage:   "Run project commands",

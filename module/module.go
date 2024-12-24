@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/fx"
+	"reflect"
 )
 
 var builtModules = make(map[string]*Module)
@@ -20,6 +21,7 @@ type Module struct {
 	cliCommandProviders []interface{}
 	providers           []interface{}
 	invokes             []interface{}
+	configs             map[string]interface{}
 	name                string
 	fxOptions           []fx.Option
 	//@TODO: Add route handlers implementation
@@ -32,6 +34,7 @@ func NewModule(name string) *Module {
 	return &Module{
 		name:           name,
 		exposeCommands: true,
+		configs:        make(map[string]interface{}),
 	}
 }
 
@@ -81,6 +84,13 @@ func (m *Module) BuildFx() fx.Option {
 			}
 		}
 	}
+	if len(m.configs) > 0 {
+		supplies := make([]interface{}, 0, len(m.configs))
+		for _, config := range m.configs {
+			supplies = append(supplies, config)
+		}
+		opts = append(opts, fx.Supply(supplies...))
+	}
 
 	if len(m.invokes) > 0 {
 		opts = append(opts, fx.Invoke(m.invokes...))
@@ -96,6 +106,28 @@ func (m *Module) BuildFx() fx.Option {
 	)
 }
 
+//func (m *Module) FxSupply() fx.Option {
+//	type test struct {
+//		t string
+//	}
+//	supplies := make([]interface{}, 0, len(m.configs))
+//	if len(m.configs) > 0 {
+//		for _, config := range m.configs {
+//			reflValue := reflect.ValueOf(config)
+//			c := reflValue.Elem()
+//			c2 := c.Elem()
+//			c3 := c2.Interface()
+//			err := envconfig.Process(context.Background(), &c2)
+//			if err != nil {
+//				panic(err)
+//			}
+//
+//			supplies = append(supplies, c3)
+//		}
+//	}
+//	return fx.Supply(supplies...)
+//}
+
 func (m *Module) HideCommands() *Module {
 	m.exposeCommands = false
 	return m
@@ -103,4 +135,38 @@ func (m *Module) HideCommands() *Module {
 
 func (m *Module) provideCommand(command interface{}) interface{} {
 	return fx.Annotate(command, fx.ResultTags(`group:"cli.commands"`))
+}
+
+// InitConfig fills the config struct with the default values
+// and adds it to the module if it doesn't exist.
+// It can be called multiple times with different config structs.
+// The last value added before the BuildFx() call will be used.
+// Note: After the BuildFx() call, the config struct will be immutable.
+// Note: Passed values of a struct have the highest priority. Env variables can overwrite only default values.
+func (m *Module) InitConfig(config any) *Module {
+	val := reflect.ValueOf(config)
+	if val.Kind() != reflect.Ptr {
+		vp := reflect.New(val.Type())
+		vp.Elem().Set(val)
+		config = vp.Interface()
+	}
+
+	err := envconfig.Process(context.Background(), config)
+	if err != nil {
+		panic(err)
+	}
+	val = reflect.ValueOf(config)
+
+	filledConfig := val.Elem().Interface()
+	m.configs[m.getConfigName(config)] = filledConfig
+
+	return m
+}
+
+func (m *Module) getConfigName(config any) string {
+	t := reflect.TypeOf(config)
+	pckgPath := t.PkgPath()
+	nameOfType := t.Name()
+
+	return pckgPath + "." + nameOfType
 }

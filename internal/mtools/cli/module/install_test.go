@@ -3,7 +3,6 @@ package module_test
 import (
 	"flag"
 	"fmt"
-	cli2 "github.com/go-modulus/modulus/internal/mtools/cli"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 	"os"
@@ -153,7 +152,7 @@ func TestAddModule_Invoke(t *testing.T) {
 			set := flag.NewFlagSet("test", 0)
 			set.Var(cli.NewStringSlice("pgx"), "modules", "doc")
 			ctx := cli.NewContext(app, set, nil)
-			err = cli2.addModule.Invoke(ctx)
+			err = installModule.Invoke(ctx)
 
 			toolsFileContent, errCont := os.ReadFile(fmt.Sprintf("%s/tools.go", projDir))
 			entrypointFileContent, errCont2 := os.ReadFile(fmt.Sprintf("%s/cmd/console/main.go", projDir))

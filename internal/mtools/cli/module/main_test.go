@@ -5,23 +5,28 @@ import (
 	"github.com/go-modulus/modulus/internal/mtools/cli/module"
 	"github.com/go-modulus/modulus/test"
 	"go.uber.org/fx"
+	"os"
 	"testing"
 )
 
 var (
-	addModule    *module.Install
-	createModule *module.Create
+	installModule *module.Install
+	createModule  *module.Create
 )
 
 func TestMain(m *testing.M) {
+	currentDir, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	test.LoadEnv(currentDir + "/../../../..")
 	currentModule := mtools.NewModule()
 	test.TestMain(
 		m,
 		currentModule.BuildFx(),
 		fx.Populate(
-			&addModule,
+			&installModule,
 			&createModule,
 		),
 	)
-
 }

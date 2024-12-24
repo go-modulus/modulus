@@ -4,8 +4,6 @@ import (
 	"context"
 	"github.com/go-modulus/modulus/config"
 	"os"
-	"path"
-	"runtime"
 	"sync"
 	"testing"
 
@@ -18,21 +16,22 @@ import (
 var initOnce sync.Once
 
 func TestMain(m *testing.M, options ...fx.Option) {
+	_ = Invoke(options...)
+	os.Exit(m.Run())
+}
+
+func LoadEnv(envFileDir string) {
 	initOnce.Do(
 		func() {
 			// force UTC timezone, otherwise it will use local timezone
 			// on unmarshalling/marshalling time from/to postgres
 			os.Setenv("TZ", "UTC")
+			os.Setenv("APP_ENV", "test")
 
-			_, filename, _, _ := runtime.Caller(0)
-			dir := path.Join(path.Dir(filename), "../../..") + "/"
-			config.LoadEnv(dir, "", false)
-			config.LoadEnv(dir, "test", true)
+			config.LoadEnv(envFileDir, "", false)
+			config.LoadEnv(envFileDir, "test", true)
 		},
 	)
-
-	_ = Invoke(options...)
-	os.Exit(m.Run())
 }
 
 func Invoke(options ...fx.Option) error {

@@ -26,7 +26,7 @@ func NewModule() *module.Module {
 			cmdDb.NewUpdateSQLCConfig,
 		).
 		AddDependencies(
-			*logger.NewModule(logger.ModuleConfig{}),
-			*cli.NewModule(cli.ModuleConfig{}),
+			*logger.NewModule(),
+			*cli.NewModule(),
 		)
 }

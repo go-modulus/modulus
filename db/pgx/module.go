@@ -44,7 +44,7 @@ func (c ModuleConfig) Dsn() string {
 
 func NewPgxPool(
 	logger *slog.Logger,
-	config *ModuleConfig,
+	config ModuleConfig,
 ) (*pgxpool.Pool, error) {
 	cfg, err := pgxpool.ParseConfig(config.Dsn())
 	if err != nil {
@@ -90,10 +90,9 @@ func NewPgxPool(
 	return errtrace.Wrap2(pgxpool.NewWithConfig(context.Background(), cfg))
 }
 
-func NewModule(config ModuleConfig) *module.Module {
+func NewModule() *module.Module {
 	return module.NewModule("github.com/go-modulus/modulus/db/pgx").
 		AddProviders(
 			NewPgxPool,
-			module.ConfigProvider[ModuleConfig](config),
-		)
+		).InitConfig(ModuleConfig{})
 }
