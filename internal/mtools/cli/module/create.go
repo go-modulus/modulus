@@ -20,11 +20,11 @@ import (
 	"os/exec"
 	"regexp"
 	"slices"
-	"strings"
 	"time"
 )
 
 var moduleNameRegexp = regexp.MustCompile(`module\s+([a-zA-Z0-9_\-\/]+)+`)
+var pckgNameRegexp = regexp.MustCompile(`^[a-z]+[a-z0-9]+`)
 
 type features struct {
 	storage bool
@@ -48,7 +48,7 @@ func NewCreate(
 
 func NewCreateCommand(createModule *Create) *cli.Command {
 	return &cli.Command{
-		Name: "create-module",
+		Name: "create",
 		Usage: `Create a boilerplate of the new module and place its files inside the obtained path.
 Adds the chosen module to the project and inits it with copying necessary files.
 Example: mtools module create
@@ -86,20 +86,22 @@ Example filling default values without UI: mtools module create --package=mypckg
 func (c *Create) Invoke(
 	ctx *cli.Context,
 ) (err error) {
-	utils.PrintLogo()
+	if !ctx.Bool("silent") {
+		utils.PrintLogo()
+	}
+	projPath := ctx.String("proj-path")
 
-	manifestItem, err := c.getManifestItem(ctx)
+	manifestItem, err := c.getManifestItem(ctx, projPath)
 	if err != nil {
 		return err
 	}
 
-	projPath := ctx.String("proj-path")
 	err = c.saveManifestItem(manifestItem, projPath)
 	if err != nil {
 		return err
 	}
 
-	err = os.MkdirAll(manifestItem.LocalPath, 0755)
+	err = os.MkdirAll(projPath+"/"+manifestItem.LocalPath, 0755)
 	if err != nil {
 		fmt.Println(color.RedString("Cannot create a directory %s: %s", manifestItem.LocalPath, err.Error()))
 		return err
@@ -114,7 +116,7 @@ func (c *Create) Invoke(
 		}
 	}
 
-	err = c.addModuleFile(manifestItem)
+	err = c.addModuleFile(manifestItem, projPath)
 	if err != nil {
 		return err
 	}
@@ -244,6 +246,7 @@ func (c *Create) askYesNo(label string) (bool, error) {
 
 func (c *Create) addModuleFile(
 	md module.ManifestItem,
+	projPath string,
 ) error {
 	tmpl := template.Must(
 		template.New("module.go.tmpl").
@@ -261,7 +264,7 @@ func (c *Create) addModuleFile(
 	}
 	w.Flush()
 
-	err = os.WriteFile(md.LocalPath+"/module.go", b.Bytes(), 0644)
+	err = os.WriteFile(md.ModulePath(projPath)+"/module.go", b.Bytes(), 0644)
 	if err != nil {
 		fmt.Println(color.RedString("Cannot write a module file: %s", err.Error()))
 		return err
@@ -292,12 +295,12 @@ func (c *Create) saveManifestItem(manifestItem module.ManifestItem, projPath str
 	return nil
 }
 
-func (c *Create) getProjModuleName() (string, error) {
-	if _, err := os.Stat("go.mod"); os.IsNotExist(err) {
+func (c *Create) getProjModuleName(projPath string) (string, error) {
+	if _, err := os.Stat(projPath + "/go.mod"); os.IsNotExist(err) {
 		fmt.Println(color.RedString("The go.mod file is not found. Try to run the command in the root of the project"))
 		return "", err
 	}
-	content, err := os.ReadFile("go.mod")
+	content, err := os.ReadFile(projPath + "/go.mod")
 	if err != nil {
 		fmt.Println(color.RedString("Cannot read a go.mod file: %s", err.Error()))
 		return "", err
@@ -312,7 +315,7 @@ func (c *Create) getProjModuleName() (string, error) {
 	return moduleStr[1], nil
 }
 
-func (c *Create) getManifestItem(ctx *cli.Context) (
+func (c *Create) getManifestItem(ctx *cli.Context, projPath string) (
 	res module.ManifestItem,
 	err error,
 ) {
@@ -324,6 +327,16 @@ func (c *Create) getManifestItem(ctx *cli.Context) (
 			return module.ManifestItem{}, errors.New("the package name is not provided")
 		}
 		pckg, err = c.askPackage()
+	} else {
+		if !pckgNameRegexp.MatchString(pckg) {
+			fmt.Println(
+				color.RedString(
+					"The package name %s is not valid. Please use lowercase latin symbols without spaces",
+					pckg,
+				),
+			)
+			return module.ManifestItem{}, errors.New("the package name is not valid")
+		}
 	}
 
 	name := ctx.String("name")
@@ -343,7 +356,7 @@ func (c *Create) getManifestItem(ctx *cli.Context) (
 	path := ctx.String("path")
 	if path == "" {
 		if !isSilent {
-			path, err = c.askPath(pckg)
+			path, err = c.askPath(projPath, pckg)
 			if err != nil {
 				fmt.Println(color.RedString("Cannot ask a path: %s", err.Error()))
 				return module.ManifestItem{}, err
@@ -351,9 +364,11 @@ func (c *Create) getManifestItem(ctx *cli.Context) (
 		} else {
 			path = c.getDefaultPath(pckg)
 		}
+	} else {
+		path += "/" + pckg
 	}
 
-	projPckg, err := c.getProjModuleName()
+	projPckg, err := c.getProjModuleName(projPath)
 	if err != nil {
 		return module.ManifestItem{}, err
 	}
@@ -447,21 +462,21 @@ func (c *Create) installModule(
 	return nil
 }
 
-func (c *Create) askPath(packageName string) (string, error) {
+func (c *Create) askPath(projPath string, packageName string) (string, error) {
 	prompt := promptui.Prompt{
-		Label: "Enter a folder starting from the root of a project: ",
+		Label: "Enter a folder starting from the root of a project (" +
+			color.BlueString(projPath) + "): ",
 	}
 
-	suggestion := c.getDefaultPath(packageName)
+	suggestion := "internal"
 	prompt.Default = suggestion
 
 	path, err := prompt.Run()
 	if err != nil {
 		return "", err
 	}
-	path = "./" + path
 
-	return path, nil
+	return fmt.Sprintf("%s/%s", path, packageName), nil
 }
 
 func (c *Create) askName(packageName string) (string, error) {
@@ -475,8 +490,7 @@ func (c *Create) askName(packageName string) (string, error) {
 }
 
 func (c *Create) getDefaultPath(packageName string) string {
-	nameParts := strings.Split(packageName, "/")
-	return "internal/" + nameParts[len(nameParts)-1]
+	return fmt.Sprintf("internal/%s", packageName)
 }
 
 func (c *Create) askPackage() (string, error) {
@@ -484,9 +498,27 @@ func (c *Create) askPackage() (string, error) {
 		Label: "Enter a Golang package name of the created module (e.g. user): ",
 	}
 
-	pckg, err := prompt.Run()
-	if err != nil {
-		return "", err
+	var pckg string
+	var err error
+	for {
+		pckg, err = prompt.Run()
+		if err != nil {
+			return "", err
+		}
+		if pckg == "" {
+			fmt.Println(color.RedString("The package name cannot be empty"))
+			continue
+		}
+		if !pckgNameRegexp.MatchString(pckg) {
+			fmt.Println(
+				color.RedString(
+					"The package name %s is not valid. Please use lowercase latin symbols without spaces",
+					pckg,
+				),
+			)
+			continue
+		}
+		break
 	}
 
 	return pckg, nil

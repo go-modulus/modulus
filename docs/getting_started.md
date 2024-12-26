@@ -40,3 +40,10 @@ mtools module install
 ```
 
 if you want to install the modules in the current directory.
+
+### Create the new module
+To create a new module, run the following command:
+
+```bash
+mtools module create --proj-path=./testproj --silent --path=internal --package=example
+```

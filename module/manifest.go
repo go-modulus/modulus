@@ -76,5 +76,9 @@ func (m ManifestItem) GetShortPackageName() string {
 }
 
 func (m ManifestItem) StoragePath(projPath string) string {
-	return projPath + "/" + m.LocalPath + "/storage"
+	return m.ModulePath(projPath) + "/storage"
+}
+
+func (m ManifestItem) ModulePath(projPath string) string {
+	return projPath + "/" + m.LocalPath
 }

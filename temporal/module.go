@@ -5,7 +5,6 @@ import (
 	"fmt"
 	cli2 "github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/module"
-	"github.com/sethvargo/go-envconfig"
 	"github.com/urfave/cli/v2"
 	"log/slog"
 
@@ -21,11 +20,6 @@ import (
 
 type Config struct {
 	Address string `env:"TEMPORAL_ADDRESS, default=localhost:7233"`
-}
-
-func NewConfig() (*Config, error) {
-	config := Config{}
-	return &config, envconfig.Process(context.Background(), &config)
 }
 
 type Registerer interface {
@@ -156,8 +150,8 @@ func NewModule() *module.Module {
 	config := Config{}
 	return module.NewModule("github.com/go-modulus/modulus/temporal").
 		AddDependencies(*cli2.NewModule()).
+		InitConfig(config).
 		AddProviders(
-			module.ConfigProvider[Config](config),
 			NewStarter,
 			NewWorker,
 

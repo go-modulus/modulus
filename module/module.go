@@ -9,13 +9,6 @@ import (
 
 var builtModules = make(map[string]*Module)
 
-func ConfigProvider[T any](config T) interface{} {
-	return func() (*T, error) {
-		err := envconfig.Process(context.Background(), &config)
-		return &config, err
-	}
-}
-
 type Module struct {
 	dependencies        []Module
 	cliCommandProviders []interface{}
@@ -105,28 +98,6 @@ func (m *Module) BuildFx() fx.Option {
 		opts...,
 	)
 }
-
-//func (m *Module) FxSupply() fx.Option {
-//	type test struct {
-//		t string
-//	}
-//	supplies := make([]interface{}, 0, len(m.configs))
-//	if len(m.configs) > 0 {
-//		for _, config := range m.configs {
-//			reflValue := reflect.ValueOf(config)
-//			c := reflValue.Elem()
-//			c2 := c.Elem()
-//			c3 := c2.Interface()
-//			err := envconfig.Process(context.Background(), &c2)
-//			if err != nil {
-//				panic(err)
-//			}
-//
-//			supplies = append(supplies, c3)
-//		}
-//	}
-//	return fx.Supply(supplies...)
-//}
 
 func (m *Module) HideCommands() *Module {
 	m.exposeCommands = false

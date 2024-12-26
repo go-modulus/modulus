@@ -11,10 +11,10 @@ type ModuleConfig struct {
 	// e.g. Var1 string `env:"MYMODULE_VAR1, default=test"`
 }
 
-func NewModule(config ModuleConfig) *module.Module {
+func NewModule() *module.Module {
 	return module.NewModule("{{.Name}}").
 		AddProviders(
 			module.ConfigProvider[ModuleConfig](config),
-		)
+		).InitConfig(ModuleConfig{})
 }
 {{end}}
