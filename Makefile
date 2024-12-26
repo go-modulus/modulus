@@ -21,3 +21,9 @@ analyze: ## Run static analyzer
 
 install: ## Make a binary to ./bin folder
 	go build -o ./bin/mtools  ./cmd/mtools/main.go
+
+build-testproject: ## Build the example of a project
+	$(MAKE) install
+	./bin/mtools init --path=./testproj --name=testproj
+	./bin/mtools module install --proj-path=./testproj -m "pgx"
+	mtools module create --proj-path=./testproj --silent --path=internal --package=example

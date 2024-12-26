@@ -24,7 +24,7 @@ func main() {
 		loggerOption,
 	}
 
-	// DO NOT Remove. It will be edited by the add-module CLI command.
+	// DO NOT Remove. It will be edited by the `mtools module create` CLI command.
 	importedModulesOptions := []fx.Option{
 		cli.NewModule().InitConfig(
 			cli.ModuleConfig{

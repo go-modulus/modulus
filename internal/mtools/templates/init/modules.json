@@ -2,6 +2,12 @@
   "name": "Modulus framework modules manifest",
   "version": "1.0.0",
   "description": "List of installed modules for the Modulus framework",
+  "entries": [
+    {
+      "name": "console",
+      "localPath": "cmd/console/main.go"
+    }
+  ],
   "modules": [
     {
       "name": "urfave cli",

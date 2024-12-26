@@ -3,7 +3,6 @@ package module
 import (
 	"bufio"
 	"bytes"
-	"context"
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/go-modulus/modulus/errors"
@@ -17,10 +16,8 @@ import (
 	"html/template"
 	"log/slog"
 	"os"
-	"os/exec"
 	"regexp"
 	"slices"
-	"time"
 )
 
 var moduleNameRegexp = regexp.MustCompile(`module\s+([a-zA-Z0-9_\-\/]+)+`)
@@ -120,9 +117,44 @@ func (c *Create) Invoke(
 	if err != nil {
 		return err
 	}
+
+	err = c.updateEntripoints(projPath, manifestItem)
+	if err != nil {
+		return err
+	}
+
 	fmt.Println(
 		"Congratulations! Your module is created.",
 	)
+
+	return nil
+}
+
+func (c *Create) updateEntripoints(
+	projPath string,
+	md module.ManifestItem,
+) error {
+	fmt.Println(color.BlueString("Updating entrypoints..."))
+
+	manifest, err := module.LoadLocalManifest(projPath)
+	if err != nil {
+		fmt.Println(color.RedString("Cannot get a local manifest: %s", err.Error()))
+		return err
+	}
+	for _, entry := range manifest.Entries {
+		err = files.AddModuleToEntrypoint(md.Package, projPath+"/"+entry.LocalPath)
+		if err != nil {
+			fmt.Println(
+				color.RedString(
+					"Cannot add the module %s to the entrypoint %s: %s. Try to type initialization code manually",
+					md.Name,
+					entry.LocalPath,
+					err.Error(),
+				),
+			)
+			continue
+		}
+	}
 
 	return nil
 }
@@ -281,7 +313,7 @@ func (c *Create) saveManifestItem(manifestItem module.ManifestItem, projPath str
 	for _, item := range manifest.Modules {
 		if item.Package == manifestItem.Package {
 			fmt.Println(color.YellowString("The module %s is already installed", item.Name))
-			return err
+			return errors.New("the module is already installed")
 		}
 	}
 	manifest.Modules = append(
@@ -385,83 +417,6 @@ func (c *Create) getManifestItem(ctx *cli.Context, projPath string) (
 	return res, nil
 }
 
-func (c *Create) saveLocalManifest(
-	manifest module.Manifest,
-) error {
-	data, err := manifest.WriteToJSON()
-	if err != nil {
-		return err
-	}
-	return os.WriteFile("modules.json", data, 0644)
-}
-
-func (c *Create) installModule(
-	ctx context.Context,
-	md module.ManifestItem,
-	entrypoints []entripoint,
-) error {
-
-	if md.Package == "" {
-		return ErrPackageIsEmpty
-	}
-
-	fmt.Println(color.BlueString("Getting a package %s...", md.Package))
-	cmdCtx, cancel := context.WithTimeout(ctx, 5*time.Minute)
-	defer cancel()
-	err := exec.CommandContext(cmdCtx, "go", "get", md.Package).Run()
-	if err != nil {
-		return errors.WrapCause(ErrCannotRunGoGetCommand, err)
-	}
-
-	fmt.Println(color.BlueString("Adding the package %s to the tools.go file...", md.Package))
-	err = files.AddImportToTools(md.Package)
-	if err != nil {
-		return errors.WrapCause(ErrCannotUpdateToolsFile, err)
-	}
-
-	for _, entrypoint := range entrypoints {
-		fmt.Println(color.BlueString("Adding module initialization to the entrypoint %s ...", entrypoint.name))
-		err = files.AddModuleToEntrypoint(md.Package, entrypoint.path)
-		if err != nil {
-			fmt.Println(
-				color.RedString(
-					"Cannot add the module %s to the entrypoint %s: %s. Try to type initialization code manually",
-					md.Name,
-					entrypoint.path,
-					err.Error(),
-				),
-			)
-			continue
-		}
-		fmt.Println(color.BlueString("File %s is updated", entrypoint.path))
-	}
-
-	fmt.Println(color.BlueString("Running go mod tidy..."))
-	err = exec.CommandContext(cmdCtx, "go", "mod", "tidy").Run()
-	if err != nil {
-		return errors.WrapCause(ErrCannotRunGoGetCommand, err)
-	}
-
-	if md.InstallCommand != "" {
-		fmt.Println(
-			color.BlueString(
-				"Running the install command '%s' for the module %s...",
-				md.InstallCommand,
-				md.Name,
-			),
-		)
-		cmdCtx, cancel := context.WithTimeout(ctx, time.Minute)
-		defer cancel()
-		err := exec.CommandContext(cmdCtx, "go", "run", md.InstallCommand).Run()
-		if err != nil {
-			return errors.WrapCause(ErrCannotInstallModule, err)
-		}
-	}
-
-	fmt.Println(color.GreenString("The module %s has been successfully installed.", md.Name))
-	return nil
-}
-
 func (c *Create) askPath(projPath string, packageName string) (string, error) {
 	prompt := promptui.Prompt{
 		Label: "Enter a folder starting from the root of a project (" +
@@ -522,33 +477,4 @@ func (c *Create) askPackage() (string, error) {
 	}
 
 	return pckg, nil
-}
-
-func (c *Create) getEntrypoints() (entripoints []entripoint, err error) {
-	entries, err := os.ReadDir("./cmd")
-	if err != nil {
-		return
-	}
-	entripoints = make([]entripoint, 0, len(entries))
-	for _, entry := range entries {
-		if entry.IsDir() {
-			entryItem := entripoint{
-				name: entry.Name(),
-			}
-			_, err2 := os.Stat("./cmd/" + entry.Name() + "/main.go")
-			if os.IsNotExist(err2) {
-				continue
-			}
-
-			if err2 != nil {
-				err = err2
-				fmt.Println(color.RedString("Error when getting an entrypoint %s: %s", entry.Name(), err.Error()))
-				return
-			}
-			entryItem.path = "./cmd/" + entry.Name() + "/main.go"
-			entripoints = append(entripoints, entryItem)
-		}
-	}
-
-	return
 }

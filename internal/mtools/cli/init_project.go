@@ -53,22 +53,26 @@ func (c *InitProject) Invoke(
 
 	name, path, err := c.getParams(ctx)
 	if err != nil {
+		fmt.Printf("Error getting the parameters: %s\n", color.RedString(err.Error()))
 		return err
 	}
 	fmt.Println("Start initializing a project")
 
 	err = c.walkToProjectFolder(path)
 	if err != nil {
+		fmt.Printf("Error during creation the folder structure: %s\n", color.RedString(err.Error()))
 		return err
 	}
 
 	err = c.createProjectRelatedFiles()
 	if err != nil {
+		fmt.Printf("Error creating project related files: %s\n", color.RedString(err.Error()))
 		return err
 	}
 
 	err = c.initGoModules(context.Background(), name)
 	if err != nil {
+		fmt.Printf("Error initializing the go modules: %s\n", color.RedString(err.Error()))
 		return err
 	}
 
@@ -149,6 +153,11 @@ func (c *InitProject) walkToProjectFolder(path string) error {
 	if err != nil {
 		return err
 	}
+	dir, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	fmt.Println("Changing the folder to " + dir)
 
 	return nil
 }
