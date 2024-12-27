@@ -15,6 +15,9 @@ migrate: ## Run migrations from all modules
 db-update-sqlc: ## Update sqlc.yaml configs in all modules combining definitions from the sqlc.definition.yaml and sqlc.tmpl.yaml
 	mtools db update-sqlc-config
 
+.PHONY: db-gen-sqlc
+db-gen-sqlc: ## Generate sqlc files in all modules
+	mtools db gen-sqlc
 ####################################################################################################
 ## END OF DB COMMANDS
 ####################################################################################################

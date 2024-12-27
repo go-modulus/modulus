@@ -1,9 +1,14 @@
 {{define "module.go.tmpl"}}
-{{- /*gotype:github.com/go-modulus/modulus/module.ManifestItem*/ -}}
-package {{.GetShortPackageName}}
+{{- /*gotype:github.com/go-modulus/modulus/internal/mtools/cli/module.TmplVars*/ -}}
+package {{.Module.GetShortPackageName}}
 
 import (
 	"github.com/go-modulus/modulus/module"
+	{{ if .HasStorage -}}
+	"github.com/go-modulus/modulus/db/pgx"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"{{.Module.StoragePackage}}"
+	{{- end}}
 )
 
 type ModuleConfig struct {
@@ -12,9 +17,25 @@ type ModuleConfig struct {
 }
 
 func NewModule() *module.Module {
-	return module.NewModule("{{.Name}}").
+	return module.NewModule("{{.Module.Name}}").
+		// Add all dependencies of a module here
+		AddDependencies(
+		{{- if .HasStorage }}
+			*pgx.NewModule(),
+		{{- end}}
+		).
+		// Add all your services here. DO NOT DELETE AddProviders call. It is used for code generation
 		AddProviders(
-			module.ConfigProvider[ModuleConfig](config),
-		).InitConfig(ModuleConfig{})
+		{{- if .HasStorage }}
+			func(db *pgxpool.Pool) storage.DBTX {
+				return db
+			},
+			func(db storage.DBTX) *storage.Queries {
+				return storage.New(db)
+			},
+		{{- end}}
+		).
+		// Add all your configs here
+		InitConfig(ModuleConfig{})
 }
 {{end}}

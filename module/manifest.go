@@ -126,3 +126,7 @@ func (m ManifestItem) StoragePath(projPath string) string {
 func (m ManifestItem) ModulePath(projPath string) string {
 	return projPath + "/" + m.LocalPath
 }
+
+func (m ManifestItem) StoragePackage() string {
+	return m.Package + "/storage"
+}

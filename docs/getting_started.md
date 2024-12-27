@@ -47,3 +47,17 @@ To create a new module, run the following command:
 ```bash
 mtools module create --proj-path=./testproj --silent --path=internal --package=example
 ```
+
+It creates a new module in the `internal` directory with the `example` package. Also, the storage based on SQLc will be added to the module.
+All initializations of the module will be done automatically:
+* Adding NewModule to the `cmd/console/main.go`
+* The module file with DI dependencies will be created in the `internal/example` directory.
+* Also, the `internal/example/storage/migraion` and `internal/example/storage/query` directories are initialized with default files. Fill free to remove them and create the own ones.
+
+### Migrate the database
+First, you need to create the new migration. You are free to use any tool that is supported by [SQLc](https://docs.sqlc.dev/en/stable/howto/ddl.html#handling-sql-migrations), 
+but we recommend using [dbmate](https://github.com/amacneil/dbmate) for this purpose. If you agree with this, you can run the following command in mtools to create a new dbmate migration:
+
+```bash
+mtools db add --proj-path=./testproj --module=example --name=create_table
+```

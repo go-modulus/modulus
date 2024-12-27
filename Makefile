@@ -26,4 +26,4 @@ build-testproject: ## Build the example of a project
 	$(MAKE) install
 	./bin/mtools init --path=./testproj --name=testproj
 	./bin/mtools module install --proj-path=./testproj -m "pgx"
-	mtools module create --proj-path=./testproj --silent --path=internal --package=example
+	./bin/mtools module create --proj-path=./testproj --silent --path=internal --package=example

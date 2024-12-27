@@ -28,6 +28,11 @@ type features struct {
 	graphQL bool
 }
 
+type TmplVars struct {
+	Module     module.ManifestItem
+	HasStorage bool
+}
+
 type Create struct {
 	logger         *slog.Logger
 	installStorage *action.InstallStorage
@@ -113,7 +118,7 @@ func (c *Create) Invoke(
 		}
 	}
 
-	err = c.addModuleFile(manifestItem, projPath)
+	err = c.addModuleFile(manifestItem, projPath, selectedFeatures)
 	if err != nil {
 		return err
 	}
@@ -279,7 +284,12 @@ func (c *Create) askYesNo(label string) (bool, error) {
 func (c *Create) addModuleFile(
 	md module.ManifestItem,
 	projPath string,
+	selectedFeatures features,
 ) error {
+	vars := TmplVars{
+		Module:     md,
+		HasStorage: selectedFeatures.storage,
+	}
 	tmpl := template.Must(
 		template.New("module.go.tmpl").
 			ParseFS(
@@ -290,7 +300,7 @@ func (c *Create) addModuleFile(
 
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)
-	err := tmpl.ExecuteTemplate(w, "module.go.tmpl", &md)
+	err := tmpl.ExecuteTemplate(w, "module.go.tmpl", &vars)
 	if err != nil {
 		return err
 	}

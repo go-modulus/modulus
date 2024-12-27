@@ -13,6 +13,7 @@ import (
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"os"
+	"os/exec"
 	"text/template"
 )
 
@@ -60,6 +61,16 @@ func (c *InstallStorage) Install(ctx context.Context, md module.ManifestItem, cf
 		return err
 	}
 
+	err = utils.CopyFromTemplates("create_module/default_schema.sql", storagePath+"/migration/default_schema.sql")
+	if err != nil {
+		return err
+	}
+
+	err = utils.CopyFromTemplates("create_module/default_query.sql", storagePath+"/query/default_query.sql")
+	if err != nil {
+		return err
+	}
+
 	vars := InstallStorageTmplVars{
 		Config:      cfg,
 		Module:      md,
@@ -70,6 +81,17 @@ func (c *InstallStorage) Install(ctx context.Context, md module.ManifestItem, cf
 		return err
 	}
 	err = utils.CopyMakeFileFromTemplates(cfg.ProjPath, "create_module/db.mk", "db.mk")
+	if err != nil {
+		return err
+	}
+
+	// work with sqlc
+	err = exec.CommandContext(ctx, "go", "install", "github.com/sqlc-dev/sqlc/cmd/sqlc@latest").Run()
+	if err != nil {
+		return err
+	}
+	sqlcFile := storagePath + "/sqlc.yaml"
+	err = exec.CommandContext(ctx, "sqlc", "-f", sqlcFile, "generate").Run()
 	if err != nil {
 		return err
 	}
