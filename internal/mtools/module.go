@@ -2,6 +2,7 @@ package mtools
 
 import (
 	"github.com/go-modulus/modulus/cli"
+	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/go-modulus/modulus/internal/mtools/action"
 	cmdRoot "github.com/go-modulus/modulus/internal/mtools/cli"
 	cmdDb "github.com/go-modulus/modulus/internal/mtools/cli/db"
@@ -24,9 +25,12 @@ func NewModule() *module.Module {
 			action.NewInstallStorage,
 			action.NewUpdateSqlcConfig,
 			cmdDb.NewUpdateSQLCConfig,
+			cmdDb.NewAdd,
+			cmdDb.NewMigrate,
 		).
 		AddDependencies(
 			*logger.NewModule(),
 			*cli.NewModule(),
+			*pgx.NewModule(),
 		)
 }
