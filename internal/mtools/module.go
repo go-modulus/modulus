@@ -28,6 +28,7 @@ func NewModule() *module.Module {
 			cmdDb.NewAdd,
 			cmdDb.NewMigrate,
 			cmdDb.NewRollback,
+			cmdDb.NewGenerate,
 		).
 		AddDependencies(
 			*logger.NewModule(),

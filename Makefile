@@ -37,5 +37,6 @@ build-testproject: ## Build the example of a project
 	echo "DROP TABLE example;" >> ./testproj/internal/example/storage/migration/20241228085104_create_table.sql
 	echo "-- name: FindExamples :many" > ./testproj/internal/example/storage/query/example.sql
 	echo "SELECT * FROM example;" >> ./testproj/internal/example/storage/query/example.sql
+	./bin/mtools db update-sqlc-config --proj-path=./testproj
 	./bin/mtools db generate --proj-path=./testproj
 	./bin/mtools db migrate --proj-path=./testproj

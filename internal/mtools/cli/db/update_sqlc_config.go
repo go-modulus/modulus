@@ -26,12 +26,6 @@ func NewUpdateSQLCConfigCommand(updateSqlc *UpdateSQLCConfig) *cli.Command {
 Example: mtools db update-sqlc-config
 `,
 		Action: updateSqlc.Invoke,
-		Flags: []cli.Flag{
-			&cli.StringSliceFlag{
-				Name:  "modules",
-				Usage: "A comma-separated list of modules to add to the project",
-			},
-		},
 	}
 }
 

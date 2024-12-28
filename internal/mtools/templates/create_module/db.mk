@@ -1,6 +1,7 @@
 ####################################################################################################
 ## DB COMMANDS
 ####################################################################################################
+
 .PHONY: db
 db: ## Run all db commands
 	go install github.com/go-modulus/modulus/cmd/mtools@latest
@@ -28,7 +29,9 @@ db-sqlc-update: ## Update sqlc.yaml configs in all modules and geberates Golang 
 
 .PHONY: db-sqlc-generate
 db-sqlc-generate: ## Generate sqlc files in all modules
-	mtools db gen-sqlc
+	mtools db generate
+
+
 ####################################################################################################
 ## END OF DB COMMANDS
 ####################################################################################################

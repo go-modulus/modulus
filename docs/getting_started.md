@@ -110,3 +110,15 @@ FROM example;
 ```
 
 Read more about SQLc and formating its queries [here](https://docs.sqlc.dev/en/stable/tutorials/getting-started-postgresql.html).
+
+After writing all the necessary queries, you need to update the SQLc configuration (`sqlc.yaml`) file if it was changed:
+
+```bash
+mtools db update-sqlc-config --proj-path=./testproj
+```
+
+Then you can generate the code for the queries:
+
+```bash
+mtools db generate --proj-path=./testproj
+```

@@ -71,6 +71,7 @@ func NewDbCommand(
 	add *Add,
 	migrate *Migrate,
 	rollback *Rollback,
+	generate *Generate,
 ) *cli.Command {
 	return &cli.Command{
 		Name: "db",
@@ -82,6 +83,7 @@ Example: mtools db
 			NewAddCommand(add),
 			NewMigrateCommand(migrate),
 			NewRollbackCommand(rollback),
+			NewGenerateCommand(generate),
 		},
 	}
 }
