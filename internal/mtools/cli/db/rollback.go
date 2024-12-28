@@ -9,30 +9,30 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-type Migrate struct {
+type Rollback struct {
 	action *action.UpdateSqlcConfig
 }
 
-func NewMigrate(
+func NewRollback(
 	action *action.UpdateSqlcConfig,
-) *Migrate {
-	return &Migrate{
+) *Rollback {
+	return &Rollback{
 		action: action,
 	}
 }
 
-func NewMigrateCommand(updateSqlc *Migrate) *cli.Command {
+func NewRollbackCommand(updateSqlc *Rollback) *cli.Command {
 	return &cli.Command{
-		Name: "migrate",
-		Usage: `Migrates all migrations in all modules.
-Example: mtools db migrate
-Example: mtools db migrate --proj-path=/path/to/project/root
+		Name: "rollback",
+		Usage: `Rollbacks the last applied migration.
+Example: mtools db rollback
+Example: mtools db rollback --proj-path=/path/to/project/root
 `,
 		Action: updateSqlc.Invoke,
 	}
 }
 
-func (c *Migrate) Invoke(ctx *cli.Context) error {
+func (c *Rollback) Invoke(ctx *cli.Context) error {
 	projPath := ctx.String("proj-path")
 	config, err := newPgxConfig(projPath)
 	if err != nil {
@@ -46,21 +46,21 @@ func (c *Migrate) Invoke(ctx *cli.Context) error {
 	}
 
 	dbMate := newDBMate(config, projFs, []string{"migration"})
-	err = dbMate.Migrate()
+	err = dbMate.Rollback()
 	if err != nil {
 		return errtrace.Wrap(err)
 	}
 
 	fmt.Println(
 		color.GreenString(
-			"All migrations are processed.",
+			"The last migration is rolled back.",
 		),
 	)
 
 	return nil
 }
 
-func (c *Migrate) askModuleName() string {
+func (c *Rollback) askModuleName() string {
 	for {
 		prompt := promptui.Prompt{
 			Label: "What is the name of module to add migration to?: ",
@@ -79,7 +79,7 @@ func (c *Migrate) askModuleName() string {
 	}
 }
 
-func (c *Migrate) askMigrationName() string {
+func (c *Rollback) askMigrationName() string {
 	for {
 		prompt := promptui.Prompt{
 			Label: "Enter a migration name : ",

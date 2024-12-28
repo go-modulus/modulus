@@ -87,6 +87,12 @@ Then you need to run the migration:
 mtools db migrate --proj-path=./testproj
 ```
 
+You can also rollback the migration:
+
+```bash
+mtools db rollback --proj-path=./testproj
+```
+
 
 ### Work with DB
 To work with the database, you need to create a file with queries that you want to use in your project.

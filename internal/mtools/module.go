@@ -27,6 +27,7 @@ func NewModule() *module.Module {
 			cmdDb.NewUpdateSQLCConfig,
 			cmdDb.NewAdd,
 			cmdDb.NewMigrate,
+			cmdDb.NewRollback,
 		).
 		AddDependencies(
 			*logger.NewModule(),

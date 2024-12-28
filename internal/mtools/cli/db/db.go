@@ -1,10 +1,15 @@
 package db
 
 import (
+	"braces.dev/errtrace"
 	"context"
+	"fmt"
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
+	"github.com/fatih/color"
 	"github.com/go-modulus/modulus/config"
 	"github.com/go-modulus/modulus/db/pgx"
+	"github.com/go-modulus/modulus/module"
+	"github.com/laher/mergefs"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/urfave/cli/v2"
 	"io/fs"
@@ -40,10 +45,32 @@ func newPgxConfig(projPath string) (pgx.ModuleConfig, error) {
 	return cfg, nil
 }
 
+func commonMigrationFs(projPath string) (fs.FS, error) {
+	manifest, err := module.LoadLocalManifest(projPath)
+	if err != nil {
+		fmt.Println(color.RedString("Cannot load the project manifest %s/modules.json: %s", projPath, err.Error()))
+		return nil, errtrace.Wrap(err)
+	}
+
+	modulesFs := make([]fs.FS, 0)
+
+	for _, md := range manifest.Modules {
+		if !md.IsLocalModule {
+			continue
+		}
+
+		storagePath := md.StoragePath(projPath)
+		modulesFs = append(modulesFs, os.DirFS(storagePath))
+	}
+
+	return mergefs.Merge(modulesFs...), nil
+}
+
 func NewDbCommand(
 	updateSqlc *UpdateSQLCConfig,
 	add *Add,
 	migrate *Migrate,
+	rollback *Rollback,
 ) *cli.Command {
 	return &cli.Command{
 		Name: "db",
@@ -54,6 +81,7 @@ Example: mtools db
 			NewUpdateSQLCConfigCommand(updateSqlc),
 			NewAddCommand(add),
 			NewMigrateCommand(migrate),
+			NewRollbackCommand(rollback),
 		},
 	}
 }
