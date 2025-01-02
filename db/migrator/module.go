@@ -9,7 +9,6 @@ import (
 	"github.com/urfave/cli/v2"
 	"go.uber.org/fx"
 	"io/fs"
-	"log/slog"
 	"net/url"
 )
 
@@ -19,9 +18,8 @@ type ModuleConfig struct {
 type CreateCommandParams struct {
 	fx.In
 
-	Fs     []fs.FS `group:"migrator.migration-fs"`
-	Pgx    pgx.ModuleConfig
-	Logger *slog.Logger
+	Fs  []fs.FS `group:"migrator.migration-fs"`
+	Pgx pgx.ModuleConfig
 }
 
 func newDBMate(params CreateCommandParams) (*dbmate.DB, error) {
@@ -53,8 +51,8 @@ func newDBMate(params CreateCommandParams) (*dbmate.DB, error) {
 func NewModule() *module.Module {
 	return module.NewModule("github.com/go-modulus/modulus/db/migrator").
 		AddDependencies(
-			*pgx.NewModule(),
-			*infraCli.NewModule(),
+			pgx.NewModule(),
+			infraCli.NewModule(),
 		).
 		InitConfig(ModuleConfig{}).
 		AddProviders(

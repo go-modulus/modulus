@@ -10,7 +10,7 @@ import (
 var builtModules = make(map[string]*Module)
 
 type Module struct {
-	dependencies        []Module
+	dependencies        []*Module
 	cliCommandProviders []interface{}
 	providers           []interface{}
 	invokes             []interface{}
@@ -31,7 +31,7 @@ func NewModule(name string) *Module {
 	}
 }
 
-func (m *Module) AddDependencies(dependency ...Module) *Module {
+func (m *Module) AddDependencies(dependency ...*Module) *Module {
 	m.dependencies = append(m.dependencies, dependency...)
 	return m
 }

@@ -107,7 +107,7 @@ func (c *Install) Invoke(
 		)
 	}
 
-	var modules []module.ManifestItem
+	var modules []module.ManifestModule
 	if len(modulesValue) != 0 {
 		fmt.Printf("Modules to install: %s\n", color.BlueString(strings.Join(modulesValue, ", ")))
 		for _, val := range modulesValue {
@@ -147,7 +147,7 @@ func (c *Install) Invoke(
 	}
 	hasErrors := false
 	for _, md := range modules {
-		err = c.installModule(ctx.Context, md, entrypoints)
+		err = c.installModule(ctx.Context, md, entrypoints, projPath)
 		if err != nil {
 			fmt.Println(color.RedString("Cannot install the module %s: %s", md.Name, err.Error()))
 			if errors.Hint(p, err) != "" {
@@ -186,7 +186,7 @@ func (c *Install) saveLocalManifest(
 
 func (c *Install) getLocalManifest() (module.Manifest, error) {
 	res := module.Manifest{
-		Modules:     make([]module.ManifestItem, 0),
+		Modules:     make([]module.ManifestModule, 0),
 		Version:     "1.0.0",
 		Name:        "Modulus framework modules manifest",
 		Description: "List of installed modules for the Modulus framework",
@@ -204,8 +204,9 @@ func (c *Install) getLocalManifest() (module.Manifest, error) {
 
 func (c *Install) installModule(
 	ctx context.Context,
-	md module.ManifestItem,
+	md module.ManifestModule,
 	entrypoints []entripoint,
+	projPath string,
 ) error {
 
 	if md.Package == "" {
@@ -249,17 +250,11 @@ func (c *Install) installModule(
 		return errors.WrapCause(ErrCannotRunGoGetCommand, err)
 	}
 
-	if md.InstallCommand != "" {
-		fmt.Printf(
-			"Running the install command '%s' for the module %s...\n",
-			color.BlueString(md.InstallCommand),
-			color.BlueString(md.Name),
-		)
-		cmdCtx, cancel := context.WithTimeout(ctx, time.Minute)
-		defer cancel()
-		err := exec.CommandContext(cmdCtx, "go", "run", md.InstallCommand).Run()
+	if len(md.Install.EnvVars) != 0 {
+		err = module.WriteEnvVariablesToFile(md.Install.EnvVars, projPath+"/.env")
 		if err != nil {
-			return errors.WrapCause(ErrCannotInstallModule, err)
+			fmt.Println("Cannot update the .env file:", color.RedString(err.Error()))
+			return err
 		}
 	}
 
@@ -269,9 +264,9 @@ func (c *Install) installModule(
 
 func (c *Install) askModulesFromManifest(
 	availableModulesManifest *module.Manifest,
-	installedModules []module.ManifestItem,
-) ([]module.ManifestItem, error) {
-	res := make([]module.ManifestItem, 0)
+	installedModules []module.ManifestModule,
+) ([]module.ManifestModule, error) {
+	res := make([]module.ManifestModule, 0)
 	resNames := make([]string, 0)
 	fmt.Println(color.BlueString(availableModulesManifest.Name))
 

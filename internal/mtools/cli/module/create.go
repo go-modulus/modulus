@@ -29,7 +29,7 @@ type features struct {
 }
 
 type TmplVars struct {
-	Module     module.ManifestItem
+	Module     module.ManifestModule
 	HasStorage bool
 }
 
@@ -137,7 +137,7 @@ func (c *Create) Invoke(
 
 func (c *Create) updateEntripoints(
 	projPath string,
-	md module.ManifestItem,
+	md module.ManifestModule,
 ) error {
 	fmt.Println(color.BlueString("Updating entrypoints..."))
 
@@ -166,7 +166,7 @@ func (c *Create) updateEntripoints(
 
 func (c *Create) installStorageFeature(
 	ctx *cli.Context,
-	md module.ManifestItem,
+	md module.ManifestModule,
 	projPath string,
 ) error {
 	cfg := action.StorageConfig{
@@ -282,7 +282,7 @@ func (c *Create) askYesNo(label string) (bool, error) {
 }
 
 func (c *Create) addModuleFile(
-	md module.ManifestItem,
+	md module.ManifestModule,
 	projPath string,
 	selectedFeatures features,
 ) error {
@@ -314,7 +314,7 @@ func (c *Create) addModuleFile(
 	return nil
 }
 
-func (c *Create) saveManifestItem(manifestItem module.ManifestItem, projPath string) (err error) {
+func (c *Create) saveManifestItem(manifestItem module.ManifestModule, projPath string) (err error) {
 	manifest, err := module.LoadLocalManifest(projPath)
 	if err != nil {
 		fmt.Println(color.RedString("Cannot get a local manifest: %s", err.Error()))
@@ -358,7 +358,7 @@ func (c *Create) getProjModuleName(projPath string) (string, error) {
 }
 
 func (c *Create) getManifestItem(ctx *cli.Context, projPath string) (
-	res module.ManifestItem,
+	res module.ManifestModule,
 	err error,
 ) {
 	isSilent := ctx.Bool("silent")
@@ -366,7 +366,7 @@ func (c *Create) getManifestItem(ctx *cli.Context, projPath string) (
 	if pckg == "" {
 		if isSilent {
 			fmt.Println(color.RedString("The package name is not provided. Please add the --package flag or remove the --silent=true flag"))
-			return module.ManifestItem{}, errors.New("the package name is not provided")
+			return module.ManifestModule{}, errors.New("the package name is not provided")
 		}
 		pckg, err = c.askPackage()
 	} else {
@@ -377,7 +377,7 @@ func (c *Create) getManifestItem(ctx *cli.Context, projPath string) (
 					pckg,
 				),
 			)
-			return module.ManifestItem{}, errors.New("the package name is not valid")
+			return module.ManifestModule{}, errors.New("the package name is not valid")
 		}
 	}
 
@@ -387,7 +387,7 @@ func (c *Create) getManifestItem(ctx *cli.Context, projPath string) (
 			name, err = c.askName(pckg)
 			if err != nil {
 				fmt.Println(color.RedString("Cannot ask a name: %s", err.Error()))
-				return module.ManifestItem{}, err
+				return module.ManifestModule{}, err
 			}
 		} else {
 			// If we are in a silence mode, we need to get a name from the package
@@ -401,7 +401,7 @@ func (c *Create) getManifestItem(ctx *cli.Context, projPath string) (
 			path, err = c.askPath(projPath, pckg)
 			if err != nil {
 				fmt.Println(color.RedString("Cannot ask a path: %s", err.Error()))
-				return module.ManifestItem{}, err
+				return module.ManifestModule{}, err
 			}
 		} else {
 			path = c.getDefaultPath(pckg)
@@ -412,10 +412,10 @@ func (c *Create) getManifestItem(ctx *cli.Context, projPath string) (
 
 	projPckg, err := c.getProjModuleName(projPath)
 	if err != nil {
-		return module.ManifestItem{}, err
+		return module.ManifestModule{}, err
 	}
 
-	res = module.ManifestItem{
+	res = module.ManifestModule{
 		Name:           name,
 		Package:        projPckg + "/" + path,
 		Description:    "",

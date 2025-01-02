@@ -104,7 +104,7 @@ func (c *Add) Invoke(ctx *cli.Context) error {
 	return nil
 }
 
-func (c *Add) askModuleName(modules []module.ManifestItem) string {
+func (c *Add) askModuleName(modules []module.ManifestModule) string {
 	items := make([]string, 0)
 	for _, md := range modules {
 		if md.IsLocalModule {

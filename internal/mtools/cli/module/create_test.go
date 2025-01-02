@@ -45,7 +45,7 @@ func TestCreateModule_Invoke(t *testing.T) {
 			t.Log("	The new module should be added to the local manifest")
 			require.NoError(t, errCont)
 			require.Contains(
-				t, localManifest.Modules, module.ManifestItem{
+				t, localManifest.Modules, module.ManifestModule{
 					Name:           "mypckg",
 					Package:        "testproj/internal/mypckg",
 					Description:    "",

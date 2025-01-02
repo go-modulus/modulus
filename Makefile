@@ -22,6 +22,11 @@ analyze: ## Run static analyzer
 install: ## Make a binary to ./bin folder
 	go build -o ./bin/mtools  ./cmd/mtools/main.go
 
+update-manifest: ## Update the manifest file
+	go run ./logger/install/main.go
+	go run ./db/migrator/install/main.go
+	go run ./db/pgx/install/main.go
+
 build-testproject: ## Build the example of a project
 	$(MAKE) install
 	./bin/mtools init --path=./testproj --name=testproj
@@ -40,3 +45,4 @@ build-testproject: ## Build the example of a project
 	./bin/mtools db update-sqlc-config --proj-path=./testproj
 	./bin/mtools db generate --proj-path=./testproj
 	./bin/mtools db migrate --proj-path=./testproj
+	./bin/mtools module install --proj-path=./testproj -m "db migrator"

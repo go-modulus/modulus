@@ -31,8 +31,8 @@ func NewModule() *module.Module {
 			cmdDb.NewGenerate,
 		).
 		AddDependencies(
-			*logger.NewModule(),
-			*cli.NewModule(),
-			*pgx.NewModule(),
+			logger.NewModule(),
+			cli.NewModule(),
+			pgx.NewModule(),
 		)
 }

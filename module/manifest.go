@@ -12,14 +12,14 @@ import (
 
 var ErrCannotReadEntries = fmt.Errorf("cannot read entries")
 
-type ManifestItem struct {
-	Name           string `json:"name"`
-	Package        string `json:"package"`
-	Description    string `json:"description"`
-	InstallCommand string `json:"install"`
-	Version        string `json:"version"`
-	LocalPath      string `json:"localPath"`
-	IsLocalModule  bool   `json:"isLocalModule"`
+type ManifestModule struct {
+	Name          string          `json:"name"`
+	Package       string          `json:"package"`
+	Description   string          `json:"description"`
+	Install       InstallManifest `json:"install,omitempty"`
+	Version       string          `json:"version"`
+	LocalPath     string          `json:"localPath,omitempty"`
+	IsLocalModule bool            `json:"isLocalModule,omitempty"`
 }
 
 type Entrypoint struct {
@@ -28,11 +28,11 @@ type Entrypoint struct {
 }
 
 type Manifest struct {
-	Name        string         `json:"name"`
-	Description string         `json:"description"`
-	Version     string         `json:"version"`
-	Modules     []ManifestItem `json:"modules"`
-	Entries     []Entrypoint   `json:"entries"`
+	Name        string           `json:"name"`
+	Description string           `json:"description"`
+	Version     string           `json:"version"`
+	Modules     []ManifestModule `json:"modules"`
+	Entries     []Entrypoint     `json:"entries,omitempty"`
 }
 
 func (m *Manifest) ReadFromJSON(data []byte) error {
@@ -41,6 +41,20 @@ func (m *Manifest) ReadFromJSON(data []byte) error {
 
 func (m *Manifest) WriteToJSON() ([]byte, error) {
 	return json.MarshalIndent(m, "", "  ")
+}
+
+func (m *Manifest) AddModule(module ManifestModule) {
+	m.Modules = append(m.Modules, module)
+}
+
+func (m *Manifest) UpdateModule(module ManifestModule) {
+	for i, mod := range m.Modules {
+		if mod.Package == module.Package {
+			m.Modules[i] = module
+			return
+		}
+	}
+	m.AddModule(module)
 }
 
 func NewFromFs(manifestFs fs.FS, filename string) (*Manifest, error) {
@@ -62,7 +76,7 @@ func LoadLocalManifest(projPath string) (Manifest, error) {
 		return Manifest{}, errors.WrapCause(ErrCannotReadEntries, err)
 	}
 	res := Manifest{
-		Modules:     make([]ManifestItem, 0),
+		Modules:     make([]ManifestModule, 0),
 		Version:     "1.0.0",
 		Name:        "Modulus framework modules manifest",
 		Description: "List of installed modules for the Modulus framework",
@@ -115,18 +129,18 @@ func (m *Manifest) SaveAsLocalManifest(projPath string) error {
 	return os.WriteFile(projPath+"/modules.json", data, 0644)
 }
 
-func (m ManifestItem) GetShortPackageName() string {
+func (m ManifestModule) GetShortPackageName() string {
 	return m.Package[strings.LastIndex(m.Package, "/")+1:]
 }
 
-func (m ManifestItem) StoragePath(projPath string) string {
+func (m ManifestModule) StoragePath(projPath string) string {
 	return m.ModulePath(projPath) + "/storage"
 }
 
-func (m ManifestItem) ModulePath(projPath string) string {
+func (m ManifestModule) ModulePath(projPath string) string {
 	return projPath + "/" + m.LocalPath
 }
 
-func (m ManifestItem) StoragePackage() string {
+func (m ManifestModule) StoragePackage() string {
 	return m.Package + "/storage"
 }

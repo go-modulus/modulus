@@ -4,6 +4,7 @@ import (
 	"braces.dev/errtrace"
 	"context"
 	"fmt"
+	"github.com/go-modulus/modulus/logger"
 	"github.com/go-modulus/modulus/module"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/tracelog"
@@ -12,7 +13,7 @@ import (
 )
 
 type ModuleConfig struct {
-	DSN string `env:"PGX_DSN, default=postgres://postgres:foobar@localhost:5432/test?sslmode=disable"`
+	DSN string `env:"PGX_DSN, default=postgres://postgres:foobar@localhost:5432/test?sslmode=disable" comment:"Use this variable to set the DSN for the PGX connection. It overwrites the other PG_* variables."`
 
 	ConnectionConfig *ConnectionConfig `env:",prefix=PG_"`
 }
@@ -94,5 +95,9 @@ func NewModule() *module.Module {
 	return module.NewModule("github.com/go-modulus/modulus/db/pgx").
 		AddProviders(
 			NewPgxPool,
-		).InitConfig(ModuleConfig{})
+		).
+		AddDependencies(
+			logger.NewModule(),
+		).
+		InitConfig(ModuleConfig{})
 }

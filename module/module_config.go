@@ -11,9 +11,9 @@ import (
 )
 
 type ConfigEnvVariable struct {
-	Key     string
-	Value   string
-	Comment string
+	Key     string `json:"key"`
+	Value   string `json:"value"`
+	Comment string `json:"comment"`
 }
 
 func (v *ConfigEnvVariable) SetComment(comment string) {
@@ -23,8 +23,8 @@ func (v *ConfigEnvVariable) SetComment(comment string) {
 func GetEnvVariablesFromConfig[T any](config T) []ConfigEnvVariable {
 	vars := getVariables[T](config, true)
 	var envVars []ConfigEnvVariable
-	for key, value := range vars {
-		envVars = append(envVars, ConfigEnvVariable{Key: key, Value: value})
+	for _, value := range vars {
+		envVars = append(envVars, value)
 	}
 	sort.Slice(
 		envVars, func(i, j int) bool {
@@ -74,8 +74,8 @@ func WriteEnvVariablesToFile(
 	return os.WriteFile(filePath, []byte(strings.Join(lines, "\n")), 0644)
 }
 
-func getVariables[T any](config T, initDefaults bool) map[string]string {
-	envVariables := make(map[string]string)
+func getVariables[T any](config T, initDefaults bool) map[string]ConfigEnvVariable {
+	envVariables := make(map[string]ConfigEnvVariable)
 	if !structs.IsStruct(config) {
 		return envVariables
 	}
@@ -90,30 +90,36 @@ func getVariables[T any](config T, initDefaults bool) map[string]string {
 	for _, field := range fields {
 		tag := field.Tag("env")
 		fieldValue := field.Value()
-		if structs.IsStruct(fieldValue) {
-			tagParts := strings.Split(tag, ",")
-			prefix := ""
-			if len(tagParts) > 1 {
-				for _, part := range tagParts {
-					optParts := strings.Split(part, "=")
-					if len(optParts) < 2 {
-						continue
-					}
-					optKey := strings.TrimSpace(optParts[0])
-					if optKey == "prefix" {
-						prefix = strings.TrimSpace(optParts[1])
-					}
+		tagParts := strings.Split(tag, ",")
+		prefix := ""
+		comment := field.Tag("comment")
+		fieldName := strings.TrimSpace(tagParts[0])
+		if len(tagParts) > 1 {
+			for _, part := range tagParts {
+				optParts := strings.Split(part, "=")
+				if len(optParts) < 2 {
+					continue
+				}
+				optKey := strings.TrimSpace(optParts[0])
+				if optKey == "prefix" {
+					prefix = strings.TrimSpace(optParts[1])
+				}
+				if optKey == "comment" {
+					comment = strings.TrimSpace(optParts[1])
 				}
 			}
-			//fieldName := tagParts[0]
+		}
+		if structs.IsStruct(fieldValue) {
 			subFields := getVariables(fieldValue, false)
 			for subFieldName, subFieldValue := range subFields {
 				envVariables[prefix+subFieldName] = subFieldValue
 			}
 		} else {
-			tagParts := strings.Split(tag, ",")
-			fieldName := strings.TrimSpace(tagParts[0])
-			envVariables[fieldName] = fmt.Sprint(fieldValue)
+			envVariables[fieldName] = ConfigEnvVariable{
+				Key:     fieldName,
+				Value:   fmt.Sprint(fieldValue),
+				Comment: comment,
+			}
 		}
 	}
 

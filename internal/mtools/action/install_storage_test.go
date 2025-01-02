@@ -25,13 +25,13 @@ func TestInstallStorage_Install(t *testing.T) {
 			err = os.Mkdir(moduleDir, 0755)
 			require.NoError(t, err)
 
-			md := module.ManifestItem{
-				Name:           "My package",
-				Package:        "mypckg",
-				Description:    "",
-				InstallCommand: "",
-				Version:        "",
-				LocalPath:      "mypckg",
+			md := module.ManifestModule{
+				Name:        "My package",
+				Package:     "mypckg",
+				Description: "",
+				Install:     module.InstallManifest{},
+				Version:     "",
+				LocalPath:   "mypckg",
 			}
 			err = installStorage.Install(
 				context.Background(), md, action.StorageConfig{
