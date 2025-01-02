@@ -5,16 +5,14 @@ import (
 	"context"
 	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
 )
 
 type Rollback struct {
-	cfg    ModuleConfig
-	logger *zap.Logger
+	params CreateCommandParams
 }
 
-func NewRollback(cfg ModuleConfig, logger *zap.Logger) *Rollback {
-	return &Rollback{cfg: cfg, logger: logger}
+func NewRollback(params CreateCommandParams) *Rollback {
+	return &Rollback{params: params}
 }
 
 func (c *Rollback) Command() *cli.Command {
@@ -28,7 +26,7 @@ func (c *Rollback) Command() *cli.Command {
 }
 
 func (c *Rollback) Invoke(ctx context.Context) error {
-	db, err := newDBMate(c.cfg)
+	db, err := newDBMate(c.params)
 	if err != nil {
 		return errtrace.Wrap(err)
 	}

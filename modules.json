@@ -27,7 +27,7 @@
     {
       "name": "db migrations",
       "package": "github.com/go-modulus/modulus/db/migrator",
-      "description": "Several CLI commands to use DBMate (https://github.com/amacneil/dbmate) migration tool inside the Modulus framework.",
+      "description": "Several CLI commands to use DBMate (https://github.com/amacneil/dbmate) migration tool inside your application.",
       "install": "github.com/go-modulus/modulus/db/migrator/install",
       "version": "1.0.0"
     },

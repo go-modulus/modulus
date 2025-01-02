@@ -19,8 +19,8 @@ type ModuleConfig struct {
 type CreateCommandParams struct {
 	fx.In
 
-	Fs     []fs.FS `group:"migrator.directories"`
-	Pgx    *pgx.ModuleConfig
+	Fs     []fs.FS `group:"migrator.migration-fs"`
+	Pgx    pgx.ModuleConfig
 	Logger *slog.Logger
 }
 
@@ -30,11 +30,22 @@ func newDBMate(params CreateCommandParams) (*dbmate.DB, error) {
 	db.FS = mergefs.Merge(params.Fs...)
 	db.AutoDumpSchema = false
 
+	//manifest, err := module.LoadLocalManifest("./")
+	//if err != nil {
+	//	return nil, errtrace.Wrap(err)
+	//}
+	//migrationDirs := make([]string, 0)
+	//for _, md := range manifest.Modules {
+	//	if !md.IsLocalModule {
+	//		continue
+	//	}
+	//	migrationDirs = append(migrationDirs, md.Path+"/storage/migration")
+	//}
 	//migrationsDir, err := fs.Glob(cfg.FS, "./*/storage/migration")
 	//if err != nil {
 	//	return nil, errtrace.Wrap(err)
 	//}
-	//db.MigrationsDir = migrationsDir
+	db.MigrationsDir = []string{"./storage/migration"}
 
 	return db, nil
 }
@@ -48,13 +59,11 @@ func NewModule() *module.Module {
 		InitConfig(ModuleConfig{}).
 		AddProviders(
 			NewMigrate,
-			NewAdd,
 			NewRollback,
 			NewRollbackAll,
 		).AddCliCommands(
 		func(
 			migrate *Migrate,
-			add *Add,
 			rollback *Rollback,
 			rollbackAll *RollbackAll,
 		) *cli.Command {
@@ -63,7 +72,6 @@ func NewModule() *module.Module {
 				Usage: "Migrate your database",
 				Subcommands: []*cli.Command{
 					migrate.Command(),
-					add.Command(),
 					rollback.Command(),
 					rollbackAll.Command(),
 				},

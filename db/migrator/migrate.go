@@ -6,16 +6,14 @@ import (
 	"fmt"
 	_ "github.com/amacneil/dbmate/v2/pkg/driver/postgres"
 	"github.com/urfave/cli/v2"
-	"go.uber.org/zap"
 )
 
 type Migrate struct {
-	cfg    ModuleConfig
-	logger *zap.Logger
+	params CreateCommandParams
 }
 
-func NewMigrate(cfg ModuleConfig, logger *zap.Logger) *Migrate {
-	return &Migrate{cfg: cfg, logger: logger}
+func NewMigrate(params CreateCommandParams) *Migrate {
+	return &Migrate{params: params}
 }
 
 func (c *Migrate) Command() *cli.Command {
@@ -29,7 +27,7 @@ func (c *Migrate) Command() *cli.Command {
 }
 
 func (c *Migrate) Invoke(ctx context.Context) error {
-	db, err := newDBMate(c.cfg)
+	db, err := newDBMate(c.params)
 	if err != nil {
 		return errtrace.Wrap(err)
 	}

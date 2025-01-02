@@ -122,3 +122,14 @@ Then you can generate the code for the queries:
 ```bash
 mtools db generate --proj-path=./testproj
 ```
+
+### Burn migrations into the binary
+If you want to have all the migrations in your binary, you can burn them into it.
+In this case mtools cannot help you, but you can add the `migrator` module to the `cmd/console/main.go` to have the migrate and rollback commands in the binary.
+
+```bash
+mtools module install --proj-path=./testproj -m "migrator"
+```
+
+Then you can run the following command to
+```

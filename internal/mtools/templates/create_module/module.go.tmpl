@@ -5,11 +5,18 @@ package {{.Module.GetShortPackageName}}
 import (
 	"github.com/go-modulus/modulus/module"
 	{{ if .HasStorage -}}
+	"embed"
+	"io/fs"
 	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"{{.Module.StoragePackage}}"
 	{{- end}}
 )
+
+{{ if .HasStorage -}}
+//go:embed storage/migration/*.sql
+var migrationFS embed.FS
+{{- end}}
 
 type ModuleConfig struct {
 	// Add your module configuration here
@@ -33,6 +40,7 @@ func NewModule() *module.Module {
 			func(db storage.DBTX) *storage.Queries {
 				return storage.New(db)
 			},
+			fx.Annotate(func() fs.FS { return migrationFS }, fx.ResultTags(`group:"migrator.migration-fs"`))
 		{{- end}}
 		).
 		// Add all your configs here
