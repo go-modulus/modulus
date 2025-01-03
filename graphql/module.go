@@ -8,7 +8,7 @@ import (
 func NewModule() *module.Module {
 	return module.NewModule("github.com/go-modulus/modulus/graphql").
 		AddDependencies(
-			*infraHttp.NewModule(),
+			infraHttp.NewModule(),
 		).
 		AddProviders(
 			NewConfig,

@@ -43,4 +43,4 @@ build-testproject: ## Build the example of a project
 	./bin/mtools db update-sqlc-config --proj-path=./testproj
 	./bin/mtools db generate --proj-path=./testproj
 	./bin/mtools db migrate --proj-path=./testproj
-	./bin/mtools module install --proj-path=./testproj -m "db migrator"
+	./bin/mtools module install --proj-path=./testproj -m "dbmate migrator"

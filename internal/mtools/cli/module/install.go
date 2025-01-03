@@ -178,7 +178,7 @@ func (c *Install) Invoke(
 	}
 	hasErrors := false
 	for _, md := range modules {
-		err = c.installModule(ctx.Context, md, entrypoints, projPath)
+		err = c.installModule(ctx.Context, md, entrypoints)
 		if err != nil {
 			fmt.Println(color.RedString("Cannot install the module %s: %s", md.Name, err.Error()))
 			if errors.Hint(p, err) != "" {
@@ -237,7 +237,6 @@ func (c *Install) installModule(
 	ctx context.Context,
 	md module.ManifestModule,
 	entrypoints []entripoint,
-	projPath string,
 ) error {
 
 	if md.Package == "" {
@@ -282,7 +281,7 @@ func (c *Install) installModule(
 	}
 
 	if len(md.Install.EnvVars) != 0 {
-		err = module.WriteEnvVariablesToFile(md.Install.EnvVars, projPath+"/.env")
+		err = module.WriteEnvVariablesToFile(md.Install.EnvVars, ".env")
 		if err != nil {
 			fmt.Println("Cannot update the .env file:", color.RedString(err.Error()))
 			return err

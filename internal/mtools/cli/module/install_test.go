@@ -23,18 +23,18 @@ const localModulesJson = `{
     }
   ]
 }`
+
 const availableModulesJson = ` {
+  "name": "Modulus framework modules manifest",
+  "description": "List of modules available for the Modulus framework",
+  "version": "1.0.0",
+  "modules": [
+    {
       "name": "urfave cli",
       "package": "github.com/go-modulus/modulus/cli",
-      "description": "Adds HTTP server capabilities to the Modulus framework. Uses the CHI router.",
-      "install": {},
-      "version": "1.0.0"
-    },
-    {
-      "name": "http router",
-      "package": "github.com/go-modulus/modulus/http",
-      "description": "Adds HTTP server capabilities to the Modulus framework. Uses the CHI router.",
-      "install": {},
+      "description": "Adds ability to create cli applications in the Modulus framework.",
+      "install": {
+      },
       "version": "1.0.0"
     },
     {
@@ -46,44 +46,17 @@ const availableModulesJson = ` {
           {
             "key": "DB_NAME",
             "value": "test",
-            "comment": ""
-          },
-          {
-            "key": "HOST",
-            "value": "localhost",
-            "comment": ""
-          },
-          {
-            "key": "PASSWORD",
-            "value": "foobar",
-            "comment": ""
-          },
-          {
-            "key": "PGX_DSN",
-            "value": "postgres://postgres:foobar@localhost:5432/test?sslmode=disable",
-            "comment": "Use this variable to set the DSN for the PGX connection. It overwrites the other PG_* variables."
-          },
-          {
-            "key": "PORT",
-            "value": "5432",
-            "comment": ""
-          },
-          {
-            "key": "SSL_MODE",
-            "value": "disable",
-            "comment": ""
-          },
-          {
-            "key": "USER",
-            "value": "postgres",
-            "comment": ""
+            "comment": "Test comment"
           }
+        ],
+        "dependencies": [
+          "slog logger"
         ]
       },
       "version": "1.0.0"
     },
-{
-      "name": "Slog Logger with Zap Backend",
+    {
+      "name": "slog logger",
       "package": "github.com/go-modulus/modulus/logger",
       "description": "Adds a slog logger with a zap backend to the Modulus framework.",
       "install": {
@@ -92,27 +65,25 @@ const availableModulesJson = ` {
             "key": "LOGGER_APP",
             "value": "modulus",
             "comment": ""
-          },
-          {
-            "key": "LOGGER_FX_EVENT_LEVEL",
-            "value": "info",
-            "comment": "Use one of \"debug\", \"info\", \"warn\", \"error\". It sets the maximum level of the fx events that should be logged"
-          },
-          {
-            "key": "LOGGER_LEVEL",
-            "value": "debug",
-            "comment": "Use one of \"debug\", \"info\", \"warn\", \"error\". It sets the maximum level of the log messages that should be logged"
-          },
-          {
-            "key": "LOGGER_TYPE",
-            "value": "console",
-            "comment": "Use either \"console\" or \"json\" value"
           }
         ]
       },
       "version": "1.0.0"
+    },
+    {
+      "name": "dbmate migrator",
+      "package": "github.com/go-modulus/modulus/db/migrator",
+      "description": "Several CLI commands to use DBMate (https://github.com/amacneil/dbmate) migration tool inside your application.",
+      "install": {
+        "dependencies": [
+          "pgx",
+          "urfave cli"
+        ]
+      },
+      "version": "1.0.0"
     }
-]}`
+  ]
+}`
 
 const localToolsGo = `//go:build tools
 // +build tools
@@ -208,8 +179,14 @@ func initProject(t *testing.T, projDir string) func() {
 		if err != nil {
 			t.Fatal("Cannot create "+projDir+" dir", err)
 		}
+		manifestDir := projDir + "/manifest"
+		err = os.Mkdir(manifestDir, 0755)
+		if err != nil {
+			t.Fatal("Cannot create "+manifestDir+" dir", err)
+		}
 		createFile(t, projDir, "tools.go", localToolsGo)
 		createFile(t, projDir, "modules.json", localModulesJson)
+		createFile(t, manifestDir, "modules.json", availableModulesJson)
 		createFile(t, projDir, ".env", envFile)
 		createFile(t, projDir, "go.mod", goModFile)
 
@@ -229,9 +206,9 @@ func initProject(t *testing.T, projDir string) func() {
 	}
 }
 
-func TestAddModule_Invoke(t *testing.T) {
+func TestInstall_Invoke(t *testing.T) {
 	t.Run(
-		"update tools.go with new module", func(t *testing.T) {
+		"install module without dependencies", func(t *testing.T) {
 			projDir := "/tmp/testproj"
 			rb := initProject(t, projDir)
 			defer rb()
@@ -241,6 +218,7 @@ func TestAddModule_Invoke(t *testing.T) {
 			app := cli.NewApp()
 			set := flag.NewFlagSet("test", 0)
 			set.Var(cli.NewStringSlice("pgx"), "modules", "doc")
+			set.String("manifest", "file://"+projDir+"/manifest", "doc")
 			ctx := cli.NewContext(app, set, nil)
 			err = installModule.Invoke(ctx)
 
@@ -262,13 +240,58 @@ func TestAddModule_Invoke(t *testing.T) {
 			require.Contains(t, string(entrypointFileContent), "pgx.NewModule().BuildFx()")
 			t.Log("	The .env file should be changed with new env variables")
 			require.NoError(t, errCont3)
-			require.Contains(t, string(envContent), "PGX_DSN=")
+			require.Contains(t, string(envContent), "DB_NAME=test")
 			t.Log("	The old env variables should not be overwritten")
 			require.Contains(t, string(envContent), "APP_ENV=local")
 			require.Contains(t, string(envContent), "PG_HOST=myhost")
+			t.Log("	The comment should be added to the new env variable")
+			require.Contains(t, string(envContent), "# Test comment")
 			t.Log("	The modules.json file should be updated with the new module")
 			require.NoError(t, errCont4)
 			require.Contains(t, string(modulesContent), "github.com/go-modulus/modulus/db/pgx")
+		},
+	)
+
+	t.Run(
+		"install module with dependencies", func(t *testing.T) {
+			projDir := "/tmp/testproj"
+			rb := initProject(t, projDir)
+			defer rb()
+
+			err := os.Chdir(projDir)
+			require.NoError(t, err)
+			app := cli.NewApp()
+			set := flag.NewFlagSet("test", 0)
+			set.Var(cli.NewStringSlice("dbmate migrator"), "modules", "doc")
+			set.String("manifest", "file://"+projDir+"/manifest", "doc")
+			ctx := cli.NewContext(app, set, nil)
+			err = installModule.Invoke(ctx)
+
+			toolsFileContent, errCont := os.ReadFile(fmt.Sprintf("%s/tools.go", projDir))
+			entrypointFileContent, errCont2 := os.ReadFile(fmt.Sprintf("%s/cmd/console/main.go", projDir))
+			envContent, errCont3 := os.ReadFile(fmt.Sprintf("%s/.env", projDir))
+			modulesContent, errCont4 := os.ReadFile(fmt.Sprintf("%s/modules.json", projDir))
+
+			t.Log("Given the tools.go file in the root of the project")
+			t.Log("When install a migrator that has dependencies on pgx")
+			t.Log("	The error should be nil")
+			require.NoError(t, err)
+			t.Log("	Both pgx and migrator packages should be added to the tools.go file")
+			require.NoError(t, errCont)
+			require.Contains(t, string(toolsFileContent), "github.com/go-modulus/modulus/db/pgx")
+			require.Contains(t, string(toolsFileContent), "github.com/go-modulus/modulus/db/migrator")
+			t.Log("	The entrypoint file should be updated with the new two modules")
+			require.NoError(t, errCont2)
+			require.Contains(t, string(entrypointFileContent), "github.com/go-modulus/modulus/db/pgx")
+			require.Contains(t, string(entrypointFileContent), "pgx.NewModule().BuildFx()")
+			require.Contains(t, string(entrypointFileContent), "migrator.NewModule().BuildFx()")
+			t.Log("	The .env file should be changed with pgx env variables")
+			require.NoError(t, errCont3)
+			require.Contains(t, string(envContent), "DB_NAME=test")
+			t.Log("	The modules.json file should be updated with the new 2 modules")
+			require.NoError(t, errCont4)
+			require.Contains(t, string(modulesContent), "github.com/go-modulus/modulus/db/pgx")
+			require.Contains(t, string(modulesContent), "github.com/go-modulus/modulus/db/migrator")
 		},
 	)
 }

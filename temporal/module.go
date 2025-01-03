@@ -149,7 +149,7 @@ func ShouldContunueAsNew(ctx workflow.Context) bool {
 func NewModule() *module.Module {
 	config := Config{}
 	return module.NewModule("github.com/go-modulus/modulus/temporal").
-		AddDependencies(*cli2.NewModule()).
+		AddDependencies(cli2.NewModule()).
 		InitConfig(config).
 		AddProviders(
 			NewStarter,
