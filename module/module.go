@@ -5,6 +5,7 @@ import (
 	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/fx"
 	"reflect"
+	"sort"
 )
 
 var builtModules = make(map[string]*Module)
@@ -16,6 +17,7 @@ type Module struct {
 	invokes             []interface{}
 	configs             map[string]interface{}
 	name                string
+	envVars             []ConfigEnvVariable
 	fxOptions           []fx.Option
 	//@TODO: Add route handlers implementation
 	//routeHandlers []interface{}
@@ -126,11 +128,23 @@ func (m *Module) InitConfig(config any) *Module {
 	if err != nil {
 		panic(err)
 	}
+
 	val = reflect.ValueOf(config)
 
 	filledConfig := val.Elem().Interface()
 	m.configs[m.getConfigName(config)] = filledConfig
 
+	vars := getVariables(config, false)
+	var envVars []ConfigEnvVariable
+	for _, value := range vars {
+		envVars = append(envVars, value)
+	}
+	sort.Slice(
+		envVars, func(i, j int) bool {
+			return envVars[i].Key < envVars[j].Key
+		},
+	)
+	m.envVars = envVars
 	return m
 }
 

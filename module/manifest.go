@@ -22,6 +22,31 @@ type ManifestModule struct {
 	IsLocalModule bool            `json:"isLocalModule,omitempty"`
 }
 
+func NewManifestModule(
+	module *Module,
+	pckg string,
+	description string,
+	version string,
+) ManifestModule {
+	deps := make([]string, 0, len(module.dependencies))
+	for _, dep := range module.dependencies {
+		deps = append(deps, dep.name)
+	}
+	install := InstallManifest{}
+	install.AppendEnvVars(module.envVars...)
+	install.AppendDependencies(deps...)
+
+	currentModule := ManifestModule{
+		Name:        module.name,
+		Package:     pckg,
+		Install:     install,
+		Version:     version,
+		Description: description,
+	}
+
+	return currentModule
+}
+
 type Entrypoint struct {
 	LocalPath string `json:"localPath"`
 	Name      string `json:"name"`

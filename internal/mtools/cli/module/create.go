@@ -416,13 +416,12 @@ func (c *Create) getManifestItem(ctx *cli.Context, projPath string) (
 	}
 
 	res = module.ManifestModule{
-		Name:           name,
-		Package:        projPckg + "/" + path,
-		Description:    "",
-		InstallCommand: "",
-		Version:        "",
-		LocalPath:      path,
-		IsLocalModule:  true,
+		Name:          name,
+		Package:       projPckg + "/" + path,
+		Description:   "",
+		Version:       "",
+		LocalPath:     path,
+		IsLocalModule: true,
 	}
 	return res, nil
 }

@@ -46,13 +46,12 @@ func TestCreateModule_Invoke(t *testing.T) {
 			require.NoError(t, errCont)
 			require.Contains(
 				t, localManifest.Modules, module.ManifestModule{
-					Name:           "mypckg",
-					Package:        "testproj/internal/mypckg",
-					Description:    "",
-					InstallCommand: "",
-					Version:        "",
-					LocalPath:      "internal/mypckg",
-					IsLocalModule:  true,
+					Name:          "mypckg",
+					Package:       "testproj/internal/mypckg",
+					Description:   "",
+					Version:       "",
+					LocalPath:     "internal/mypckg",
+					IsLocalModule: true,
 				},
 			)
 			t.Log("	The module file should be created")

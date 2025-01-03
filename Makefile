@@ -23,9 +23,7 @@ install: ## Make a binary to ./bin folder
 	go build -o ./bin/mtools  ./cmd/mtools/main.go
 
 update-manifest: ## Update the manifest file
-	go run ./logger/install/main.go
-	go run ./db/migrator/install/main.go
-	go run ./db/pgx/install/main.go
+	go run ./cmd/manifest/main.go
 
 build-testproject: ## Build the example of a project
 	$(MAKE) install

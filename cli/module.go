@@ -79,7 +79,7 @@ func Start(
 }
 
 func NewModule() *module.Module {
-	return module.NewModule("github.com/go-modulus/modulus/cli").
+	return module.NewModule("urfave cli").
 		AddProviders(
 			NewApp,
 			NewRunner,

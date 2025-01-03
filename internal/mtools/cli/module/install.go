@@ -10,10 +10,14 @@ import (
 	"github.com/go-modulus/modulus/internal/mtools/files"
 	"github.com/go-modulus/modulus/internal/mtools/utils"
 	"github.com/go-modulus/modulus/module"
+	"github.com/hairyhenderson/go-fsimpl"
+	"github.com/hairyhenderson/go-fsimpl/filefs"
+	"github.com/hairyhenderson/go-fsimpl/httpfs"
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"io/fs"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -49,13 +53,19 @@ Uses interactive prompts to make a choice.
 Adds the chosen module to the project and inits it with default files.
 Example: mtools module install
 Example without UI: mtools module install --modules="urfave cli,pgx"
+Example with a custom manifest located at https://example.com/modules.json: mtools module install --manifest="https://example.com"
 `,
 		Action: addModule.Invoke,
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
 				Name:    "modules",
-				Usage:   "A comma-separated list of modules to add to the project",
+				Usage:   "A comma-separated list of modules names to add to the project",
 				Aliases: []string{"m"},
+			},
+			&cli.StringFlag{
+				Name:    "manifest",
+				Usage:   "A path to the global manifest with all available modules to install. For the local path it is folder where the modules.json is located. For the remote file it is a URL where the modules.json file is available as a file",
+				Aliases: []string{"mf"},
 			},
 		},
 	}
@@ -86,7 +96,22 @@ func (c *Install) Invoke(
 		defer os.Chdir(curDir)
 	}
 
-	availableModulesManifest, err := module.NewFromFs(modulus.ManifestFs, "modules.json")
+	manifestPath := ctx.String("manifest")
+	var manifestFs fs.FS
+	var err error
+	if manifestPath != "" {
+		mux := fsimpl.NewMux()
+		mux.Add(filefs.FS)
+		mux.Add(httpfs.FS)
+		manifestFs, err = mux.Lookup(manifestPath)
+		if err != nil {
+			fmt.Println(color.RedString("Cannot get the manifest fs: %s", err.Error()))
+			return err
+		}
+	} else {
+		manifestFs = modulus.ManifestFs
+	}
+	availableModulesManifest, err := module.NewFromFs(manifestFs, "modules.json")
 	if err != nil {
 		fmt.Println(color.RedString("Cannot read from the manifest file: %s", err.Error()))
 		return err
@@ -128,6 +153,12 @@ func (c *Install) Invoke(
 	if len(modules) == 0 {
 		fmt.Println(color.YellowString("No modules were chosen. Exiting..."))
 		return nil
+	}
+
+	modules, err = c.addDependedModulesToInstall(availableModulesManifest, manifest.Modules, modules)
+	if err != nil {
+		fmt.Println(color.RedString("Cannot add depended modules to the install: %s", err.Error()))
+		return err
 	}
 
 	entrypoints, err := c.getEntrypoints()
@@ -260,6 +291,41 @@ func (c *Install) installModule(
 
 	fmt.Println(color.GreenString("The module %s has been successfully installed.", color.BlueString(md.Name)))
 	return nil
+}
+
+func (c *Install) addDependedModulesToInstall(
+	availableModulesManifest *module.Manifest,
+	installedModules []module.ManifestModule,
+	modulesToInstall []module.ManifestModule,
+) ([]module.ManifestModule, error) {
+	addedModules := make([]module.ManifestModule, 0)
+	addedModulesMap := make(map[string]struct{})
+	availableModulesMap := make(map[string]module.ManifestModule)
+	for _, md := range availableModulesManifest.Modules {
+		availableModulesMap[md.Name] = md
+	}
+	for _, md := range installedModules {
+		addedModulesMap[md.Name] = struct{}{}
+	}
+	for _, md := range modulesToInstall {
+		addedModulesMap[md.Package] = struct{}{}
+	}
+
+	for _, md := range modulesToInstall {
+		if len(md.Install.Dependencies) == 0 {
+			continue
+		}
+		for _, depName := range md.Install.Dependencies {
+			if availableDep, ok := availableModulesMap[depName]; ok {
+				if _, ok := addedModulesMap[availableDep.Name]; !ok {
+					addedModules = append(addedModules, availableDep)
+					addedModulesMap[availableDep.Name] = struct{}{}
+				}
+			}
+		}
+	}
+
+	return append(modulesToInstall, addedModules...), nil
 }
 
 func (c *Install) askModulesFromManifest(

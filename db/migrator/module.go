@@ -27,29 +27,13 @@ func newDBMate(params CreateCommandParams) (*dbmate.DB, error) {
 	db := dbmate.New(u)
 	db.FS = mergefs.Merge(params.Fs...)
 	db.AutoDumpSchema = false
-
-	//manifest, err := module.LoadLocalManifest("./")
-	//if err != nil {
-	//	return nil, errtrace.Wrap(err)
-	//}
-	//migrationDirs := make([]string, 0)
-	//for _, md := range manifest.Modules {
-	//	if !md.IsLocalModule {
-	//		continue
-	//	}
-	//	migrationDirs = append(migrationDirs, md.Path+"/storage/migration")
-	//}
-	//migrationsDir, err := fs.Glob(cfg.FS, "./*/storage/migration")
-	//if err != nil {
-	//	return nil, errtrace.Wrap(err)
-	//}
 	db.MigrationsDir = []string{"./storage/migration"}
 
 	return db, nil
 }
 
 func NewModule() *module.Module {
-	return module.NewModule("github.com/go-modulus/modulus/db/migrator").
+	return module.NewModule("dbmate migrator").
 		AddDependencies(
 			pgx.NewModule(),
 			infraCli.NewModule(),

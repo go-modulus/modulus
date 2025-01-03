@@ -6,15 +6,16 @@
     {
       "name": "urfave cli",
       "package": "github.com/go-modulus/modulus/cli",
-      "description": "Adds HTTP server capabilities to the Modulus framework. Uses the CHI router.",
-      "install": {},
-      "version": "1.0.0"
-    },
-    {
-      "name": "http router",
-      "package": "github.com/go-modulus/modulus/http",
-      "description": "Adds HTTP server capabilities to the Modulus framework. Uses the CHI router.",
-      "install": {},
+      "description": "Adds ability to create cli applications in the Modulus framework.",
+      "install": {
+        "envVars": [
+          {
+            "key": "",
+            "value": "[]",
+            "comment": ""
+          }
+        ]
+      },
       "version": "1.0.0"
     },
     {
@@ -58,26 +59,15 @@
             "value": "postgres",
             "comment": ""
           }
+        ],
+        "dependencies": [
+          "slog logger"
         ]
       },
       "version": "1.0.0"
     },
     {
-      "name": "db migrator",
-      "package": "github.com/go-modulus/modulus/db/migrator",
-      "description": "Several CLI commands to use DBMate (https://github.com/amacneil/dbmate) migration tool inside your application.",
-      "install": {},
-      "version": "1.0.0"
-    },
-    {
-      "name": "GraphQL gqlgen",
-      "package": "github.com/go-modulus/modulus/graphql",
-      "description": "Integration of the GraphQL generator gqlgen (https://gqlgen.com/).",
-      "install": {},
-      "version": "1.0.0"
-    },
-    {
-      "name": "Slog Logger with Zap Backend",
+      "name": "slog logger",
       "package": "github.com/go-modulus/modulus/logger",
       "description": "Adds a slog logger with a zap backend to the Modulus framework.",
       "install": {
@@ -102,6 +92,18 @@
             "value": "console",
             "comment": "Use either \"console\" or \"json\" value"
           }
+        ]
+      },
+      "version": "1.0.0"
+    },
+    {
+      "name": "dbmate migrator",
+      "package": "github.com/go-modulus/modulus/db/migrator",
+      "description": "Several CLI commands to use DBMate (https://github.com/amacneil/dbmate) migration tool inside your application.",
+      "install": {
+        "dependencies": [
+          "pgx",
+          "urfave cli"
         ]
       },
       "version": "1.0.0"

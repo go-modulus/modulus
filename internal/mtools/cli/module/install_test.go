@@ -18,11 +18,101 @@ const localModulesJson = `{
       "name": "urfave cli",
       "package": "github.com/go-modulus/modulus/cli",
       "description": "Adds ability to create cli applications in the Modulus framework.",
-      "install": "",
+      "install": null,
       "version": "1.0.0"
     }
   ]
 }`
+const availableModulesJson = ` {
+      "name": "urfave cli",
+      "package": "github.com/go-modulus/modulus/cli",
+      "description": "Adds HTTP server capabilities to the Modulus framework. Uses the CHI router.",
+      "install": {},
+      "version": "1.0.0"
+    },
+    {
+      "name": "http router",
+      "package": "github.com/go-modulus/modulus/http",
+      "description": "Adds HTTP server capabilities to the Modulus framework. Uses the CHI router.",
+      "install": {},
+      "version": "1.0.0"
+    },
+    {
+      "name": "pgx",
+      "package": "github.com/go-modulus/modulus/db/pgx",
+      "description": "A wrapper for the pgx package to integrate it into the Modulus framework.",
+      "install": {
+        "envVars": [
+          {
+            "key": "DB_NAME",
+            "value": "test",
+            "comment": ""
+          },
+          {
+            "key": "HOST",
+            "value": "localhost",
+            "comment": ""
+          },
+          {
+            "key": "PASSWORD",
+            "value": "foobar",
+            "comment": ""
+          },
+          {
+            "key": "PGX_DSN",
+            "value": "postgres://postgres:foobar@localhost:5432/test?sslmode=disable",
+            "comment": "Use this variable to set the DSN for the PGX connection. It overwrites the other PG_* variables."
+          },
+          {
+            "key": "PORT",
+            "value": "5432",
+            "comment": ""
+          },
+          {
+            "key": "SSL_MODE",
+            "value": "disable",
+            "comment": ""
+          },
+          {
+            "key": "USER",
+            "value": "postgres",
+            "comment": ""
+          }
+        ]
+      },
+      "version": "1.0.0"
+    },
+{
+      "name": "Slog Logger with Zap Backend",
+      "package": "github.com/go-modulus/modulus/logger",
+      "description": "Adds a slog logger with a zap backend to the Modulus framework.",
+      "install": {
+        "envVars": [
+          {
+            "key": "LOGGER_APP",
+            "value": "modulus",
+            "comment": ""
+          },
+          {
+            "key": "LOGGER_FX_EVENT_LEVEL",
+            "value": "info",
+            "comment": "Use one of \"debug\", \"info\", \"warn\", \"error\". It sets the maximum level of the fx events that should be logged"
+          },
+          {
+            "key": "LOGGER_LEVEL",
+            "value": "debug",
+            "comment": "Use one of \"debug\", \"info\", \"warn\", \"error\". It sets the maximum level of the log messages that should be logged"
+          },
+          {
+            "key": "LOGGER_TYPE",
+            "value": "console",
+            "comment": "Use either \"console\" or \"json\" value"
+          }
+        ]
+      },
+      "version": "1.0.0"
+    }
+]}`
 
 const localToolsGo = `//go:build tools
 // +build tools

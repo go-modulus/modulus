@@ -92,7 +92,7 @@ func NewPgxPool(
 }
 
 func NewModule() *module.Module {
-	return module.NewModule("github.com/go-modulus/modulus/db/pgx").
+	return module.NewModule("pgx").
 		AddProviders(
 			NewPgxPool,
 		).
