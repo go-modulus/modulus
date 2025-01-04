@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/config"
 	"github.com/go-modulus/modulus/module"
@@ -9,6 +10,9 @@ import (
 )
 
 func main() {
+	fmt.Println("Starting the application...")
+	config.LoadDefaultEnv()
+
 	// DO NOT Remove. It will be edited by the `mtools module create` CLI command.
 	modules := []*module.Module{
 		cli.NewModule().InitConfig(
@@ -29,8 +33,4 @@ func main() {
 	)
 
 	app.Run()
-}
-
-func init() {
-	config.LoadDefaultEnv()
 }
