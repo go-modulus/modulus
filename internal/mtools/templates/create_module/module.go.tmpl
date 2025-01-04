@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.uber.org/fx"
 	"{{.Module.StoragePackage}}"
 	{{- end}}
 )
@@ -28,7 +29,7 @@ func NewModule() *module.Module {
 		// Add all dependencies of a module here
 		AddDependencies(
 		{{- if .HasStorage }}
-			*pgx.NewModule(),
+			pgx.NewModule(),
 		{{- end}}
 		).
 		// Add all your services here. DO NOT DELETE AddProviders call. It is used for code generation
@@ -40,7 +41,7 @@ func NewModule() *module.Module {
 			func(db storage.DBTX) *storage.Queries {
 				return storage.New(db)
 			},
-			fx.Annotate(func() fs.FS { return migrationFS }, fx.ResultTags(`group:"migrator.migration-fs"`))
+			fx.Annotate(func() fs.FS { return migrationFS }, fx.ResultTags(`group:"migrator.migration-fs"`)),
 		{{- end}}
 		).
 		// Add all your configs here

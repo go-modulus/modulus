@@ -2,13 +2,12 @@ package module
 
 import (
 	"context"
+	"fmt"
 	"github.com/sethvargo/go-envconfig"
 	"go.uber.org/fx"
 	"reflect"
 	"sort"
 )
-
-var builtModules = make(map[string]*Module)
 
 type Module struct {
 	dependencies        []*Module
@@ -61,7 +60,7 @@ func (m *Module) AddFxOptions(option ...fx.Option) *Module {
 	return m
 }
 
-func (m *Module) BuildFx() fx.Option {
+func (m *Module) buildFx() fx.Option {
 	opts := make([]fx.Option, 0, 2+len(m.dependencies))
 	providers := make([]interface{}, 0, len(m.providers)+len(m.cliCommandProviders))
 	providers = append(providers, m.providers...)
@@ -72,12 +71,6 @@ func (m *Module) BuildFx() fx.Option {
 	}
 	if len(m.providers) > 0 {
 		opts = append(opts, fx.Provide(providers...))
-		builtModules[m.name] = m
-		for _, dep := range m.dependencies {
-			if _, ok := builtModules[dep.name]; !ok {
-				opts = append(opts, dep.BuildFx())
-			}
-		}
 	}
 	if len(m.configs) > 0 {
 		supplies := make([]interface{}, 0, len(m.configs))
@@ -154,4 +147,37 @@ func (m *Module) getConfigName(config any) string {
 	nameOfType := t.Name()
 
 	return pckgPath + "." + nameOfType
+}
+
+func BuildFx(modules ...*Module) fx.Option {
+	var builtModules = make(map[string]struct{})
+	return buildFx(modules, builtModules, 0)
+}
+
+func buildFx(
+	modules []*Module,
+	builtModules map[string]struct{},
+	level int,
+) fx.Option {
+	opts := make([]fx.Option, 0, len(modules))
+	for _, module := range modules {
+		opts = append(opts, module.buildFx())
+		builtModules[module.name] = struct{}{}
+	}
+
+	// Add dependencies
+	deps := make([]*Module, 0, len(builtModules))
+	for _, module := range modules {
+		for _, dep := range module.dependencies {
+			if _, ok := builtModules[dep.name]; !ok {
+				deps = append(deps, dep)
+			}
+		}
+	}
+
+	if len(deps) > 0 {
+		opts = append(opts, buildFx(deps, builtModules, level+1))
+	}
+
+	return fx.Module(fmt.Sprintf("system-container-level-%d", level), opts...)
 }

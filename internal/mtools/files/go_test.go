@@ -26,6 +26,7 @@ var entrypointContent = `package main
 import (
 	"github.com/go-modulus/modulus/cli"
 	cfg "github.com/go-modulus/modulus/config"
+	"github.com/go-modulus/modulus/module"
 
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
@@ -33,28 +34,14 @@ import (
 )
 
 func main() {
-	loggerOption := fx.WithLogger(
-		func(logger *zap.Logger) fxevent.Logger {
-			logger = logger.WithOptions(zap.IncreaseLevel(zap.WarnLevel))
-
-			return &fxevent.ZapLogger{Logger: logger}
-		},
-	)
-	// Add your project modules here
-	// for example:
-	// cli.NewModule().BuildFx(),
-	projectModulesOptions := []fx.Option{
-		loggerOption,
-	}
-
 	// DO NOT Remove. It will be edited by the add-module CLI command.
-	importedModulesOptions := []fx.Option{
+	modules := []*module.Module{
 		cli.NewModule(
 			cli.ModuleConfig{
 				Version: "0.1.0",
 				Usage:   "Run project commands",
 			},
-		).BuildFx(),
+		),
 	}
 
 	invokes := []fx.Option{
@@ -63,10 +50,8 @@ func main() {
 
 	app := fx.New(
 		append(
-			append(
-				projectModulesOptions,
-				importedModulesOptions...,
-			), invokes...,
+			module.BuildFx(modules...),
+			invokes...,
 		)...,
 	)
 
@@ -178,7 +163,7 @@ func TestAddModuleToEntrypoint(t *testing.T) {
 			t.Log("Given a list of packages in the go file that does not contain the new package alias")
 			t.Log("When add a new module to the go file")
 			t.Log("	The new module should be added to the array of imported modules")
-			assert.Contains(t, string(fc), "testify.NewModule().BuildFx(),")
+			assert.Contains(t, string(fc), "testify.NewModule(),")
 			t.Log("	The new import should be added to the go file")
 			assert.Contains(t, string(fc), "\"github.com/stretchr/testify\"")
 
@@ -204,7 +189,7 @@ func TestAddModuleToEntrypoint(t *testing.T) {
 			t.Log("Given an imported package with alias in the go file")
 			t.Log("When add a new module to the go file with different package but the same alias")
 			t.Log("	The new module should be added to the array of imported modules with the new alias")
-			assert.Contains(t, string(fc), "cfg2.NewModule().BuildFx(),")
+			assert.Contains(t, string(fc), "cfg2.NewModule(),")
 			t.Log("	The new import should be added to the go file with the new alias")
 			assert.Contains(t, string(fc), "cfg2 \"github.com/stretchr/cfg\"")
 
@@ -227,7 +212,7 @@ func TestAddModuleToEntrypoint(t *testing.T) {
 			fc, err := os.ReadFile(fn)
 			require.NoError(t, err)
 
-			// one cli.NewModule().BuildFx() is present in comment and one is present in the array of imported modules
+			// one cli.NewModule() is present in comment and one is present in the array of imported modules
 			modulesInitsCount := strings.Count(string(fc), "cli.NewModule(")
 			importsCount := strings.Count(string(fc), "\"github.com/go-modulus/modulus/cli\"")
 

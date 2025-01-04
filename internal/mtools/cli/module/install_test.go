@@ -106,28 +106,15 @@ import (
 )
 
 func main() {
-	loggerOption := fx.WithLogger(
-		func(logger *zap.Logger) fxevent.Logger {
-			logger = logger.WithOptions(zap.IncreaseLevel(zap.WarnLevel))
-
-			return &fxevent.ZapLogger{Logger: logger}
-		},
-	)
-	// Add your project modules here
-	// for example:
-	// cli.NewModule(cli.ModuleConfig{}).BuildFx(),
-	projectModulesOptions := []fx.Option{
-		loggerOption,
-	}
 
 	// DO NOT Remove. It will be edited by the add-module CLI command.
-	importedModulesOptions := []fx.Option{
+	modules := []*module.Module{
 		cli.NewModule(
 			cli.ModuleConfig{
 				Version: "0.1.0",
 				Usage:   "Run project commands",
 			},
-		).BuildFx(),
+		),
 	}
 
 	invokes := []fx.Option{
@@ -136,10 +123,8 @@ func main() {
 
 	app := fx.New(
 		append(
-			append(
-				projectModulesOptions,
-				importedModulesOptions...,
-			), invokes...,
+			module.BuildFx(modules),
+			invokes...,
 		)...,
 	)
 
@@ -237,7 +222,7 @@ func TestInstall_Invoke(t *testing.T) {
 			t.Log("	The entrypoint file should be updated with the new module")
 			require.NoError(t, errCont2)
 			require.Contains(t, string(entrypointFileContent), "github.com/go-modulus/modulus/db/pgx")
-			require.Contains(t, string(entrypointFileContent), "pgx.NewModule().BuildFx()")
+			require.Contains(t, string(entrypointFileContent), "pgx.NewModule()")
 			t.Log("	The .env file should be changed with new env variables")
 			require.NoError(t, errCont3)
 			require.Contains(t, string(envContent), "DB_NAME=test")
@@ -283,8 +268,8 @@ func TestInstall_Invoke(t *testing.T) {
 			t.Log("	The entrypoint file should be updated with the new two modules")
 			require.NoError(t, errCont2)
 			require.Contains(t, string(entrypointFileContent), "github.com/go-modulus/modulus/db/pgx")
-			require.Contains(t, string(entrypointFileContent), "pgx.NewModule().BuildFx()")
-			require.Contains(t, string(entrypointFileContent), "migrator.NewModule().BuildFx()")
+			require.Contains(t, string(entrypointFileContent), "pgx.NewModule()")
+			require.Contains(t, string(entrypointFileContent), "migrator.NewModule()")
 			t.Log("	The .env file should be changed with pgx env variables")
 			require.NoError(t, errCont3)
 			require.Contains(t, string(envContent), "DB_NAME=test")

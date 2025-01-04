@@ -73,9 +73,9 @@ It updates:
 * adds all environment variables that are required by the installed modules to the `.env` file.
 * inits a module in the entrypoint of the project. For example, in the `cmd/console/main.go` file.
 ```go
-importedModulesOptions := []fx.Option{
+modules := []*module.Module{
 		...
-		pgx.NewModule().BuildFx(),
+		pgx.NewModule(),
 	}
 ```
 

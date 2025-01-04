@@ -44,3 +44,4 @@ build-testproject: ## Build the example of a project
 	./bin/mtools db generate --proj-path=./testproj
 	./bin/mtools db migrate --proj-path=./testproj
 	./bin/mtools module install --proj-path=./testproj -m "dbmate migrator"
+	cd ./testproj && go run cmd/console/main.go migrator migrate

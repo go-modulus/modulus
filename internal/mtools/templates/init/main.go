@@ -3,19 +3,20 @@ package main
 import (
 	"github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/config"
+	"github.com/go-modulus/modulus/module"
 
 	"go.uber.org/fx"
 )
 
 func main() {
 	// DO NOT Remove. It will be edited by the `mtools module create` CLI command.
-	importedModulesOptions := []fx.Option{
+	modules := []*module.Module{
 		cli.NewModule().InitConfig(
 			cli.ModuleConfig{
 				Version: "0.1.0",
 				Usage:   "Run project commands",
 			},
-		).BuildFx(),
+		),
 	}
 
 	invokes := []fx.Option{
@@ -23,10 +24,8 @@ func main() {
 	}
 
 	app := fx.New(
-		append(
-			importedModulesOptions,
-			invokes...,
-		)...,
+		module.BuildFx(modules...),
+		fx.Module("invokes", invokes...),
 	)
 
 	app.Run()

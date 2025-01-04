@@ -165,7 +165,7 @@ func initImportedModule(alias string) astutil.ApplyFunc {
 				if !ok {
 					continue
 				}
-				if expr.Name == "importedModulesOptions" {
+				if expr.Name == "modules" {
 					arExpr, ok := astmt.Rhs[0].(*ast.CompositeLit)
 					if !ok {
 						continue
@@ -177,7 +177,7 @@ func initImportedModule(alias string) astutil.ApplyFunc {
 						arExpr.Elts,
 						&ast.BasicLit{
 							Kind:  token.STRING,
-							Value: "\n" + alias + ".NewModule().BuildFx(),\n",
+							Value: "\n" + alias + ".NewModule(),\n",
 						},
 					)
 					break
