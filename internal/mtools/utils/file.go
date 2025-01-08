@@ -1,7 +1,10 @@
 package utils
 
 import (
+	"bufio"
+	"bytes"
 	"github.com/go-modulus/modulus/internal/mtools/templates"
+	"html/template"
 	"os"
 )
 
@@ -49,4 +52,37 @@ func CopyMakeFileFromTemplates(projPath, srcTmplPath, destName string) error {
 		return err
 	}
 	return CopyFromTemplates(srcTmplPath, projPath+"/mk/"+destName)
+}
+
+func ProcessTemplate(
+	tplMainBlock string,
+	tplPath string,
+	dest string,
+	vars interface{},
+) error {
+	if FileExists(dest) {
+		return nil
+	}
+
+	tmpl := template.Must(
+		template.New(tplMainBlock).
+			ParseFS(
+				templates.TemplateFiles,
+				tplPath,
+			),
+	)
+
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	err := tmpl.ExecuteTemplate(w, tplMainBlock, &vars)
+	if err != nil {
+		return err
+	}
+	w.Flush()
+
+	err = os.WriteFile(dest, b.Bytes(), 0644)
+	if err != nil {
+		return err
+	}
+	return nil
 }

@@ -77,30 +77,11 @@ func AddImportToGoFile(
 		}
 	}
 
-	var importName *ast.Ident
-	if alias != "" {
-		importName = &ast.Ident{Name: alias}
+	if alias == "" {
+		astutil.AddImport(fset, astFile, packageName)
+	} else {
+		astutil.AddNamedImport(fset, astFile, alias, packageName)
 	}
-	importSpec := &ast.ImportSpec{
-		Doc:     nil,
-		Name:    importName,
-		Path:    &ast.BasicLit{Value: strconv.Quote(packageName), Kind: token.STRING},
-		Comment: nil,
-		EndPos:  0,
-	}
-
-	importDecl := &ast.GenDecl{
-		Doc:    nil,
-		TokPos: 0,
-		Tok:    token.IMPORT,
-		Lparen: 0,
-		Specs:  []ast.Spec{importSpec},
-		Rparen: 0,
-	}
-	astFile.Decls = append(
-		astFile.Decls,
-		importDecl,
-	)
 
 	ast.SortImports(fset, astFile)
 	var output []byte
@@ -264,4 +245,113 @@ func getUniqAlias(
 		}
 	}
 	return alias, nil
+}
+
+func AddConstructorToProvider(
+	packagePath string,
+	constructor string,
+	filename string,
+) error {
+	fset := token.NewFileSet()
+
+	astFile, err := parser.ParseFile(fset, filename, nil, parser.ParseComments)
+	if err != nil {
+		return err
+	}
+
+	imports := astutil.Imports(fset, astFile)
+
+	alias, err := getUniqAlias(packagePath, 0, imports)
+	if err != nil {
+		return err
+	}
+	if alias == getDefPkgName(packagePath) {
+		astutil.AddImport(fset, astFile, packagePath)
+	} else {
+		astutil.AddNamedImport(fset, astFile, alias, packagePath)
+	}
+
+	//astFile.
+	astutil.Apply(astFile, addProvider(alias, constructor), nil)
+
+	var output []byte
+	buffer := bytes.NewBuffer(output)
+	if err := printer.Fprint(buffer, fset, astFile); err != nil {
+		return err
+	}
+	source, err := format.Source(buffer.Bytes())
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(filename, source, 0644)
+}
+
+func addProvider(alias string, constructor string) astutil.ApplyFunc {
+	return func(cursor *astutil.Cursor) bool {
+		//add a value to a slice with name s
+		if cursor.Name() == "Body" {
+			body, ok := cursor.Node().(*ast.BlockStmt)
+			if !ok {
+				return true
+			}
+			//check if the new module is returned from function
+			// func NewModule() *Module {
+			// 	return module.NewModule().AddProvider()
+			// }
+			for _, stmt := range body.List {
+				rstmt, ok := stmt.(*ast.ReturnStmt)
+				if !ok {
+					continue
+				}
+				if len(rstmt.Results) == 1 {
+					nextNode := rstmt.Results[0]
+					if injectConstructorToAddProviders(nextNode, alias, constructor) {
+						return false
+					}
+				}
+			}
+
+			// check if the new module is saved into the variable
+			// m := module.NewModule().AddProvider()
+			// return m
+			for _, stmt := range body.List {
+				astmt, ok := stmt.(*ast.AssignStmt)
+				if !ok {
+					continue
+				}
+
+				nextNode := astmt.Rhs[0]
+				if injectConstructorToAddProviders(nextNode, alias, constructor) {
+					return false
+				}
+			}
+		}
+		return true
+	}
+}
+
+func injectConstructorToAddProviders(nextNode ast.Expr, alias string, constructor string) bool {
+	for {
+		callExpr, ok := nextNode.(*ast.CallExpr)
+		if !ok {
+			return false
+		}
+		selectorExpr, ok := callExpr.Fun.(*ast.SelectorExpr)
+		if !ok {
+			return false
+		}
+		if selectorExpr.Sel.Name == "AddProviders" {
+			position := callExpr.Rparen
+			callExpr.Args = append(
+				callExpr.Args,
+				&ast.SelectorExpr{
+					X:   &ast.Ident{Name: alias, NamePos: position},
+					Sel: &ast.Ident{Name: constructor + ",\n", NamePos: position},
+				},
+			)
+
+			return true
+		}
+		nextNode = selectorExpr.X
+	}
 }

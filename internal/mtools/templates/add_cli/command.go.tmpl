@@ -1,0 +1,37 @@
+{{define "command.go.tmpl"}}
+{{- /*gotype:github.com/go-modulus/modulus/internal/mtools/cli/module.AddCliTmplVars*/ -}}
+package cli
+
+import (
+	"context"
+	"fmt"
+	"github.com/urfave/cli/v2"
+)
+
+type {{.StructName}} struct {
+}
+
+func New{{.StructName}}() *{{.StructName}} {
+	return &{{.StructName}}{
+	}
+}
+
+func New{{.StructName}}Command(c *{{.StructName}}) *cli.Command {
+	return &cli.Command{
+		Name: "{{.CommandName}}",
+		Usage: `
+Example: ./bin/console {{.CommandName}}
+	`,
+		Action: c.Invoke,
+		Flags: []cli.Flag{},
+	}
+}
+
+func (c *{{.StructName}}) Invoke(
+	ctx *cli.Context,
+) error {
+	fmt.Println("Starting the program...")
+	return nil
+}
+
+{{end}}

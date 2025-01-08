@@ -131,7 +131,14 @@ In this case mtools cannot help you, but you can add the `dbmate migrator` modul
 mtools module install --proj-path=./testproj -m "dbmate migrator"
 ```
 
-Then you can run the following command to
+Then you can run the following command to migrate the database using the binary of the project:
 ```bash
 go run cmd/console/main.go migrator migrate
+```
+
+### Create the new command
+To create a new CLI command, run the following command:
+
+```bash
+mtools module add-cli --proj-path=./testproj --module=example --name=hello-world
 ```

@@ -44,6 +44,8 @@ func NewModule() *module.Module {
 			fx.Annotate(func() fs.FS { return migrationFS }, fx.ResultTags(`group:"migrator.migration-fs"`)),
 		{{- end}}
 		).
+		// Add all your CLI commands here
+		AddCliCommands().
 		// Add all your configs here
 		InitConfig(ModuleConfig{})
 }

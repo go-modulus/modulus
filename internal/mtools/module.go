@@ -6,7 +6,7 @@ import (
 	"github.com/go-modulus/modulus/internal/mtools/action"
 	cmdRoot "github.com/go-modulus/modulus/internal/mtools/cli"
 	cmdDb "github.com/go-modulus/modulus/internal/mtools/cli/db"
-	cmdMmodule "github.com/go-modulus/modulus/internal/mtools/cli/module"
+	cmdModule "github.com/go-modulus/modulus/internal/mtools/cli/module"
 	"github.com/go-modulus/modulus/logger"
 	"github.com/go-modulus/modulus/module"
 )
@@ -16,12 +16,13 @@ func NewModule() *module.Module {
 		AddCliCommands(
 			cmdDb.NewDbCommand,
 			cmdRoot.NewInitProjectCommand,
-			cmdMmodule.NewModuleCommand,
+			cmdModule.NewModuleCommand,
 		).
 		AddProviders(
 			cmdRoot.NewInitProject,
-			cmdMmodule.NewInstall,
-			cmdMmodule.NewCreate,
+			cmdModule.NewInstall,
+			cmdModule.NewCreate,
+			cmdModule.NewAddCli,
 			action.NewInstallStorage,
 			action.NewUpdateSqlcConfig,
 			cmdDb.NewUpdateSQLCConfig,

@@ -154,6 +154,25 @@ func (m *Manifest) SaveAsLocalManifest(projPath string) error {
 	return os.WriteFile(projPath+"/modules.json", data, 0644)
 }
 
+func (m *Manifest) LocalModules() []ManifestModule {
+	res := make([]ManifestModule, 0)
+	for _, mod := range m.Modules {
+		if mod.IsLocalModule {
+			res = append(res, mod)
+		}
+	}
+	return res
+}
+
+func (m *Manifest) FindLocalModule(moduleName string) (ManifestModule, bool) {
+	for _, mod := range m.Modules {
+		if mod.IsLocalModule && strings.ToLower(mod.Name) == strings.ToLower(moduleName) {
+			return mod, true
+		}
+	}
+	return ManifestModule{}, false
+}
+
 func (m ManifestModule) GetShortPackageName() string {
 	return m.Package[strings.LastIndex(m.Package, "/")+1:]
 }
@@ -168,4 +187,12 @@ func (m ManifestModule) ModulePath(projPath string) string {
 
 func (m ManifestModule) StoragePackage() string {
 	return m.Package + "/storage"
+}
+
+func (m ManifestModule) CliPath(projPath string) string {
+	return m.ModulePath(projPath) + "/cli"
+}
+
+func (m ManifestModule) CliPackage() string {
+	return m.Package + "/cli"
 }

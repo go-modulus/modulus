@@ -64,6 +64,108 @@ func init() {
 
 `
 
+const moduleContent = `package example
+
+import (
+	"go.uber.org/fx"
+)
+
+type ModuleConfig struct {
+}
+
+func NewModule() *module.Module {
+	return module.NewModule("example").
+		// Add all dependencies of a module here
+		AddDependencies(
+			pgx.NewModule(),
+		).
+		// Add all your services here. DO NOT DELETE AddProviders call. It is used for code generation
+		AddProviders(
+			func(db *pgxpool.Pool) storage.DBTX {
+				return db
+			},
+			func(db storage.DBTX) *storage.Queries {
+				return storage.New(db)
+			},
+			fx.Annotate(func() fs.FS { return migrationFS }, fx.ResultTags("group:\"migrator.migration-fs\"")),
+		).
+		// Add all your CLI commands here
+		AddCliCommands().
+		// Add all your configs here
+		InitConfig(ModuleConfig{})
+}
+
+`
+
+const moduleContentEmptyProvider = `package example
+
+import (
+	"go.uber.org/fx"
+)
+
+func NewModule() *module.Module {
+	return module.NewModule("example").
+		// Add all your services here. DO NOT DELETE AddProviders call. It is used for code generation
+		AddProviders()
+}
+
+`
+
+const moduleContentEmptyProviderNotTheLast = `package example
+
+import (
+	"go.uber.org/fx"
+)
+
+func NewModule() *module.Module {
+	return module.NewModule("example").
+		// Add all your services here. DO NOT DELETE AddProviders call. It is used for code generation
+		AddProviders().
+		// Add all your CLI commands here
+		AddCliCommands()
+}
+
+`
+
+const moduleContentModuleInVar = `package example
+
+import (
+	"go.uber.org/fx"
+)
+
+func NewModule() *module.Module {
+	m := module.NewModule("example").
+		// Add all your services here. DO NOT DELETE AddProviders call. It is used for code generation
+		AddProviders().
+		// Add all your CLI commands here
+		AddCliCommands()
+	return m
+}
+
+`
+
+const moduleContentImportIsAlreadyAdded = `package example
+
+import (
+	"go.uber.org/fx"
+	tes "github.com/stretchr/testify"
+)
+
+func NewModule() *module.Module {
+	m := module.NewModule("example").
+		// Add all your services here. DO NOT DELETE AddProviders call. It is used for code generation
+		AddProviders(
+			tes.NewTest,
+		).
+		// Add all your CLI commands here
+		AddCliCommands()
+	return m
+}
+
+`
+
+// use http://goast.yuroyoro.net/ to see the AST of the code
+// https://astexplorer.net/ to see the AST of the code
 func TestAddPackageToGoFile(t *testing.T) {
 	t.Run(
 		"Add a new package to the go file if import is not exist", func(t *testing.T) {
@@ -223,6 +325,136 @@ func TestAddModuleToEntrypoint(t *testing.T) {
 			t.Log("	The new import should be added to the go file")
 			assert.Equal(t, 1, importsCount)
 
+		},
+	)
+}
+
+func TestAddConstructorToProvider(t *testing.T) {
+	t.Run(
+		"add provider to the empty AddProviders() function", func(t *testing.T) {
+			fn := fmt.Sprintf("/tmp/%s.go", randstr.String(10))
+			err := os.WriteFile(fn, []byte(moduleContentEmptyProvider), 0644)
+			defer os.Remove(fn)
+			if err != nil {
+				t.Fatal("Cannot create "+fn+" file", err)
+			}
+			err = files.AddConstructorToProvider(
+				"github.com/stretchr/testify",
+				"NewTestProvider",
+				fn,
+			)
+			require.NoError(t, err)
+			fc, err := os.ReadFile(fn)
+			require.NoError(t, err)
+
+			t.Log("Given a module constructor with the empty AddProviders() function")
+			t.Log("When new provider is added to the module")
+			t.Log("	The new provider should be added to the AddProviders() function")
+			assert.Contains(t, string(fc), "testify.NewTestProvider")
+			t.Log("	The new import should be added to the go file")
+			assert.Contains(t, string(fc), "\"github.com/stretchr/testify\"")
+		},
+	)
+
+	t.Run(
+		"add provider to the empty AddProviders() if the function is not the last", func(t *testing.T) {
+			fn := fmt.Sprintf("/tmp/%s.go", randstr.String(10))
+			err := os.WriteFile(fn, []byte(moduleContentEmptyProviderNotTheLast), 0644)
+			defer os.Remove(fn)
+			if err != nil {
+				t.Fatal("Cannot create "+fn+" file", err)
+			}
+			err = files.AddConstructorToProvider(
+				"github.com/stretchr/testify",
+				"NewTestProvider",
+				fn,
+			)
+			require.NoError(t, err)
+			fc, err := os.ReadFile(fn)
+			require.NoError(t, err)
+
+			t.Log("Given a module constructor with the empty AddProviders() function that has a call after it")
+			t.Log("When new provider is added to the module")
+			t.Log("	The new provider should be added to the AddProviders() function")
+			assert.Contains(t, string(fc), "testify.NewTestProvider")
+			t.Log("	The new import should be added to the go file")
+			assert.Contains(t, string(fc), "\"github.com/stretchr/testify\"")
+		},
+	)
+
+	t.Run(
+		"add provider if the module is created to variable", func(t *testing.T) {
+			fn := fmt.Sprintf("/tmp/%s.go", randstr.String(10))
+			err := os.WriteFile(fn, []byte(moduleContentModuleInVar), 0644)
+			defer os.Remove(fn)
+			if err != nil {
+				t.Fatal("Cannot create "+fn+" file", err)
+			}
+			err = files.AddConstructorToProvider(
+				"github.com/stretchr/testify",
+				"NewTestProvider",
+				fn,
+			)
+			require.NoError(t, err)
+			fc, err := os.ReadFile(fn)
+			require.NoError(t, err)
+
+			t.Log("Given a module constructor assigned to a variable")
+			t.Log("When new provider is added to the module")
+			t.Log("	The new provider should be added to the AddProviders() function")
+			assert.Contains(t, string(fc), "testify.NewTestProvider")
+			t.Log("	The new import should be added to the go file")
+			assert.Contains(t, string(fc), "\"github.com/stretchr/testify\"")
+		},
+	)
+
+	t.Run(
+		"add provider if AddProviders() has params", func(t *testing.T) {
+			fn := fmt.Sprintf("/tmp/%s.go", randstr.String(10))
+			err := os.WriteFile(fn, []byte(moduleContent), 0644)
+			defer os.Remove(fn)
+			if err != nil {
+				t.Fatal("Cannot create "+fn+" file", err)
+			}
+			err = files.AddConstructorToProvider(
+				"github.com/stretchr/testify",
+				"NewTestProvider",
+				fn,
+			)
+			require.NoError(t, err)
+			fc, err := os.ReadFile(fn)
+			require.NoError(t, err)
+
+			t.Log("Given AddProviders() function with params")
+			t.Log("When new provider is added to the module")
+			t.Log("	The new provider should be added to the AddProviders() function")
+			assert.Contains(t, string(fc), "testify.NewTestProvider")
+			t.Log("	The new import should be added to the go file")
+			assert.Contains(t, string(fc), "\"github.com/stretchr/testify\"")
+		},
+	)
+
+	t.Run(
+		"use already created import", func(t *testing.T) {
+			fn := fmt.Sprintf("/tmp/%s.go", randstr.String(10))
+			err := os.WriteFile(fn, []byte(moduleContentImportIsAlreadyAdded), 0644)
+			defer os.Remove(fn)
+			if err != nil {
+				t.Fatal("Cannot create "+fn+" file", err)
+			}
+			err = files.AddConstructorToProvider(
+				"github.com/stretchr/testify",
+				"NewTestProvider",
+				fn,
+			)
+			require.NoError(t, err)
+			fc, err := os.ReadFile(fn)
+			require.NoError(t, err)
+
+			t.Log("Given added import to the go file")
+			t.Log("When new provider is added to the module")
+			t.Log("	The new provider should be added to the AddProviders() function with the existing import alias")
+			assert.Contains(t, string(fc), "tes.NewTestProvider")
 		},
 	)
 }
