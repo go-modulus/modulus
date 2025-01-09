@@ -252,6 +252,23 @@ func AddConstructorToProvider(
 	constructor string,
 	filename string,
 ) error {
+	return addConstructor(packagePath, constructor, filename, "AddProviders")
+}
+
+func AddCliCommand(
+	packagePath string,
+	constructor string,
+	filename string,
+) error {
+	return addConstructor(packagePath, constructor, filename, "AddCliCommands")
+}
+
+func addConstructor(
+	packagePath string,
+	constructor string,
+	filename string,
+	extendedMethodName string,
+) error {
 	fset := token.NewFileSet()
 
 	astFile, err := parser.ParseFile(fset, filename, nil, parser.ParseComments)
@@ -272,7 +289,7 @@ func AddConstructorToProvider(
 	}
 
 	//astFile.
-	astutil.Apply(astFile, addProvider(alias, constructor), nil)
+	astutil.Apply(astFile, addProvider(alias, constructor, extendedMethodName), nil)
 
 	var output []byte
 	buffer := bytes.NewBuffer(output)
@@ -286,7 +303,7 @@ func AddConstructorToProvider(
 	return os.WriteFile(filename, source, 0644)
 }
 
-func addProvider(alias string, constructor string) astutil.ApplyFunc {
+func addProvider(alias string, constructor string, extendedMethodName string) astutil.ApplyFunc {
 	return func(cursor *astutil.Cursor) bool {
 		//add a value to a slice with name s
 		if cursor.Name() == "Body" {
@@ -305,7 +322,7 @@ func addProvider(alias string, constructor string) astutil.ApplyFunc {
 				}
 				if len(rstmt.Results) == 1 {
 					nextNode := rstmt.Results[0]
-					if injectConstructorToAddProviders(nextNode, alias, constructor) {
+					if injectConstructorToAddProviders(nextNode, alias, constructor, extendedMethodName) {
 						return false
 					}
 				}
@@ -321,7 +338,7 @@ func addProvider(alias string, constructor string) astutil.ApplyFunc {
 				}
 
 				nextNode := astmt.Rhs[0]
-				if injectConstructorToAddProviders(nextNode, alias, constructor) {
+				if injectConstructorToAddProviders(nextNode, alias, constructor, extendedMethodName) {
 					return false
 				}
 			}
@@ -330,7 +347,12 @@ func addProvider(alias string, constructor string) astutil.ApplyFunc {
 	}
 }
 
-func injectConstructorToAddProviders(nextNode ast.Expr, alias string, constructor string) bool {
+func injectConstructorToAddProviders(
+	nextNode ast.Expr,
+	alias string,
+	constructor string,
+	extendedMethodName string,
+) bool {
 	for {
 		callExpr, ok := nextNode.(*ast.CallExpr)
 		if !ok {
@@ -340,7 +362,7 @@ func injectConstructorToAddProviders(nextNode ast.Expr, alias string, constructo
 		if !ok {
 			return false
 		}
-		if selectorExpr.Sel.Name == "AddProviders" {
+		if selectorExpr.Sel.Name == extendedMethodName {
 			position := callExpr.Rparen
 			callExpr.Args = append(
 				callExpr.Args,

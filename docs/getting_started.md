@@ -142,3 +142,14 @@ To create a new CLI command, run the following command:
 ```bash
 mtools module add-cli --proj-path=./testproj --module=example --name=hello-world
 ```
+
+It creates a new CLI command in the `internal/example/cli/hello_world.go` file. 
+All constructors are also added to the `internal/example/module.go` file. 
+So you are ready to write any business logic in the created CLI command without boring configuration of the command.
+Fill free to change the command according to your needs.
+After that, you are able to run the command:
+
+```bash
+cd testproj
+go run cmd/console/main.go hello-world
+```

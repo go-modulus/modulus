@@ -141,6 +141,14 @@ func (a *AddCli) createCommandFile(
 		return err
 	}
 
+	err = files.AddCliCommand(pckg, "New"+structName+"Command", moduleFile)
+	if err != nil {
+		fmt.Println(
+			color.RedString("Cannot add a CLI command constructor to the module.go file: %s", err.Error()),
+		)
+		return err
+	}
+
 	return nil
 }
 
