@@ -107,6 +107,31 @@
         ]
       },
       "version": "1.0.0"
+    },
+    {
+      "name": "chi http",
+      "package": "github.com/go-modulus/modulus/http",
+      "description": "HTTP module based on the Chi router.",
+      "install": {
+        "envVars": [
+          {
+            "key": "HTTP_HOST",
+            "value": "localhost:8001",
+            "comment": ""
+          },
+          {
+            "key": "ROUTER_REQUEST_SIZE_LIMIT",
+            "value": "5MB",
+            "comment": ""
+          },
+          {
+            "key": "ROUTER_TTL",
+            "value": "15s",
+            "comment": ""
+          }
+        ]
+      },
+      "version": "1.0.0"
     }
   ]
 }

@@ -18,10 +18,10 @@ type Module struct {
 	name                string
 	envVars             []ConfigEnvVariable
 	fxOptions           []fx.Option
-	//@TODO: Add route handlers implementation
-	//routeHandlers []interface{}
+	taggedProviders     map[string][]interface{}
 
 	exposeCommands bool
+	hiddenTags     map[string]struct{}
 }
 
 func NewModule(name string) *Module {
@@ -60,6 +60,24 @@ func (m *Module) AddFxOptions(option ...fx.Option) *Module {
 	return m
 }
 
+func (m *Module) AddTaggedProviders(tag string, providers ...interface{}) *Module {
+	if m.taggedProviders == nil {
+		m.taggedProviders = make(map[string][]interface{})
+	}
+	m.taggedProviders[tag] = append(m.taggedProviders[tag], providers...)
+	return m
+}
+
+func (m *Module) HideTags(tags ...string) *Module {
+	if m.hiddenTags == nil {
+		m.hiddenTags = make(map[string]struct{})
+	}
+	for _, tag := range tags {
+		m.hiddenTags[tag] = struct{}{}
+	}
+	return m
+}
+
 func (m *Module) buildFx() fx.Option {
 	opts := make([]fx.Option, 0, 2+len(m.dependencies))
 	providers := make([]interface{}, 0, len(m.providers)+len(m.cliCommandProviders))
@@ -71,6 +89,13 @@ func (m *Module) buildFx() fx.Option {
 	}
 	if len(m.providers) > 0 {
 		opts = append(opts, fx.Provide(providers...))
+	}
+	if len(m.taggedProviders) > 0 {
+		for tag, taggedProviders := range m.taggedProviders {
+			if _, ok := m.hiddenTags[tag]; !ok {
+				opts = append(opts, fx.Provide(taggedProviders...))
+			}
+		}
 	}
 	if len(m.configs) > 0 {
 		supplies := make([]interface{}, 0, len(m.configs))

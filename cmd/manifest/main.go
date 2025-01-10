@@ -6,6 +6,7 @@ import (
 	"github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/db/migrator"
 	"github.com/go-modulus/modulus/db/pgx"
+	"github.com/go-modulus/modulus/http"
 	"github.com/go-modulus/modulus/logger"
 	"github.com/go-modulus/modulus/module"
 	"os"
@@ -35,6 +36,12 @@ func main() {
 			migrator.NewModule(),
 			"github.com/go-modulus/modulus/db/migrator",
 			"Several CLI commands to use DBMate (https://github.com/amacneil/dbmate) migration tool inside your application.",
+			"1.0.0",
+		),
+		module.NewManifestModule(
+			http.NewModule(),
+			"github.com/go-modulus/modulus/http",
+			"HTTP module based on the Chi router.",
 			"1.0.0",
 		),
 	}

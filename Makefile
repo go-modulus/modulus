@@ -46,3 +46,5 @@ build-testproject: ## Build the example of a project
 	./bin/mtools module install --proj-path=./testproj -m "dbmate migrator"
 	cd ./testproj && go run cmd/console/main.go migrator migrate
 	mtools module add-cli --proj-path=./testproj --module=example --name=hello-world
+	cd ./testproj && go run cmd/console/main.go hello-world
+	./bin/mtools module install --proj-path=./testproj --manifest="modules.json" -m "chi http"

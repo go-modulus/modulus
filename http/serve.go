@@ -7,7 +7,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	infraCli "github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/errors/errhttp"
-	"github.com/sethvargo/go-envconfig"
 	"github.com/urfave/cli/v2"
 	"log/slog"
 	netHttp "net/http"
@@ -22,17 +21,13 @@ type ServeConfig struct {
 	RequestSizeLimit datasize.ByteSize `env:"ROUTER_REQUEST_SIZE_LIMIT, default=5mb"`
 }
 
-func NewServeConfig() (*ServeConfig, error) {
-	config := ServeConfig{}
-	return &config, envconfig.Process(context.Background(), &config)
-}
-
 type Serve struct {
 	runner     *infraCli.Runner
 	router     chi.Router
 	registrars []HandlerRegistrar `group:"http.handlerRegistrars"`
+	routes     []Route
 	logger     *slog.Logger
-	config     *ServeConfig
+	config     ServeConfig
 }
 
 type ServeParams struct {
@@ -41,8 +36,9 @@ type ServeParams struct {
 	Runner     *infraCli.Runner
 	Router     chi.Router
 	Registrars []HandlerRegistrar `group:"http.handlerRegistrars"`
+	Routes     []Route            `group:"http.routes"`
 	Logger     *slog.Logger
-	Config     *ServeConfig
+	Config     ServeConfig
 }
 
 func NewServe(params ServeParams) *Serve {
@@ -50,12 +46,13 @@ func NewServe(params ServeParams) *Serve {
 		runner:     params.Runner,
 		router:     params.Router,
 		registrars: params.Registrars,
+		routes:     params.Routes,
 		logger:     params.Logger,
 		config:     params.Config,
 	}
 }
 
-func (s *Serve) Command() *cli.Command {
+func NewServeCommand(s *Serve) *cli.Command {
 	return &cli.Command{
 		Name:   "serve",
 		Action: s.Invoke,
@@ -78,6 +75,9 @@ func (s *Serve) Invoke(cliCtx *cli.Context) error {
 	routes := NewRoutes()
 	for _, registrar := range s.registrars {
 		registrar.Register(routes)
+	}
+	for _, route := range s.routes {
+		routes.Add(route)
 	}
 	for _, route := range routes.List() {
 		logger.Info("registering route", slog.String("method", route.Method), slog.String("path", route.Path))

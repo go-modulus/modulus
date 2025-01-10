@@ -4,20 +4,16 @@ import (
 	"context"
 	"fmt"
 	"github.com/fatih/color"
-	"github.com/go-modulus/modulus"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/errors/errbuilder"
+	"github.com/go-modulus/modulus/internal/mtools/cli/flag"
 	"github.com/go-modulus/modulus/internal/mtools/files"
 	"github.com/go-modulus/modulus/internal/mtools/utils"
 	"github.com/go-modulus/modulus/module"
-	"github.com/hairyhenderson/go-fsimpl"
-	"github.com/hairyhenderson/go-fsimpl/filefs"
-	"github.com/hairyhenderson/go-fsimpl/httpfs"
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	"io/fs"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -62,11 +58,10 @@ Example with a custom manifest located at https://example.com/modules.json: mtoo
 				Usage:   "A comma-separated list of modules names to add to the project",
 				Aliases: []string{"m"},
 			},
-			&cli.StringFlag{
-				Name:    "manifest",
-				Usage:   "A path to the global manifest with all available modules to install. For the local path it is folder where the modules.json is located. For the remote file it is a URL where the modules.json file is available as a file",
-				Aliases: []string{"mf"},
-			},
+			flag.NewManifest(
+				`A path to the global manifest with all available modules to install.
+Example: mtools module install --manifest="local_folder/modules.json"`,
+			),
 		},
 	}
 }
@@ -79,6 +74,7 @@ func (c *Install) Invoke(
 	if len(modulesValue) == 0 {
 		utils.PrintLogo()
 	}
+	availableModulesManifest, err := flag.ManifestValue(ctx)
 	projPath := ctx.String("proj-path")
 	if projPath != "" {
 		curDir, err := os.Getwd()
@@ -94,27 +90,6 @@ func (c *Install) Invoke(
 		curDirAfterChange, _ := os.Getwd()
 		fmt.Printf("Changing the current dir to %s\n", color.BlueString(curDirAfterChange))
 		defer os.Chdir(curDir)
-	}
-
-	manifestPath := ctx.String("manifest")
-	var manifestFs fs.FS
-	var err error
-	if manifestPath != "" {
-		mux := fsimpl.NewMux()
-		mux.Add(filefs.FS)
-		mux.Add(httpfs.FS)
-		manifestFs, err = mux.Lookup(manifestPath)
-		if err != nil {
-			fmt.Println(color.RedString("Cannot get the manifest fs: %s", err.Error()))
-			return err
-		}
-	} else {
-		manifestFs = modulus.ManifestFs
-	}
-	availableModulesManifest, err := module.NewFromFs(manifestFs, "modules.json")
-	if err != nil {
-		fmt.Println(color.RedString("Cannot read from the manifest file: %s", err.Error()))
-		return err
 	}
 
 	manifest, err := c.getLocalManifest()

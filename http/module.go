@@ -7,7 +7,6 @@ import (
 	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/go-modulus/modulus/errors/errwrap"
 	"github.com/go-modulus/modulus/module"
-	"github.com/urfave/cli/v2"
 	"log/slog"
 	"net/http"
 )
@@ -23,7 +22,7 @@ var (
 	)
 )
 
-func NewRouter(logger *slog.Logger, config *ServeConfig) chi.Router {
+func NewRouter(logger *slog.Logger, config ServeConfig) chi.Router {
 	r := chi.NewRouter()
 	r.MethodNotAllowed(
 		errhttp2.WrapHandler(
@@ -47,15 +46,12 @@ func NewRouter(logger *slog.Logger, config *ServeConfig) chi.Router {
 }
 
 func NewModule() *module.Module {
-	return module.NewModule("github.com/go-modulus/modulus/http").
+	return module.NewModule("chi http").
 		AddCliCommands(
-			func(serve *Serve) *cli.Command {
-				return serve.Command()
-			},
+			NewServeCommand,
 		).
 		AddProviders(
 			NewRouter,
-			NewServeConfig,
 			NewServe,
-		)
+		).InitConfig(ServeConfig{})
 }

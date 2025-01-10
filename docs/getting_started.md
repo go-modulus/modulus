@@ -41,6 +41,17 @@ mtools module install
 
 if you want to install the modules in the current directory.
 
+By default, module installer is using the manifest with available modules burned into its binary.
+See it here [manifest](https://github.com/go-modulus/modulus/blob/main/modules.json) for your version of mtools.
+In a case if you have the own manifest with your favorite modules, you can specify the path to the local manifest file with the `--manifest` flag.
+
+For example:
+
+```bash
+mtools module install --proj-path=./testproj --manifest="file://./modules.json" -m "pgx"
+```
+
+
 ### Create the new module
 To create a new module, run the following command:
 
@@ -152,4 +163,17 @@ After that, you are able to run the command:
 ```bash
 cd testproj
 go run cmd/console/main.go hello-world
+```
+
+### Add HTTP endpoint
+Previously we worked only with the CLI commands, but now we are going to add an HTTP endpoint to our project.
+To do this, you need to install the `chi http` module. It adds your ability to create HTTP server in your application.
+
+```bash
+mtools module install --proj-path=./testproj -m "chi http"
+```
+
+Then you need to create a new HTTP handler:
+
+```bash
 ```

@@ -2,6 +2,7 @@ package http
 
 import (
 	"github.com/go-modulus/modulus/errors/errhttp"
+	"go.uber.org/fx"
 	"net/http"
 )
 
@@ -9,6 +10,22 @@ type Route struct {
 	Method  string
 	Path    string
 	Handler errhttp.Handler
+}
+
+type RouteProvider struct {
+	fx.Out
+	Route Route `group:"http.routes"`
+}
+
+func NewRouteProvider[B any](method, path string, handler InputHandler[B]) RouteProvider {
+	h := WrapInputHandler(handler)
+	return RouteProvider{
+		Route: Route{
+			Method:  method,
+			Path:    path,
+			Handler: h,
+		},
+	}
 }
 
 type Routes struct {
@@ -71,4 +88,7 @@ func (r *Routes) Delete(path string, handler errhttp.Handler) {
 }
 func (r *Routes) List() []Route {
 	return r.routes
+}
+func (r *Routes) Add(route Route) {
+	r.routes = append(r.routes, route)
 }
