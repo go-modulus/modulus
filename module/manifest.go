@@ -196,3 +196,11 @@ func (m ManifestModule) CliPath(projPath string) string {
 func (m ManifestModule) CliPackage() string {
 	return m.Package + "/cli"
 }
+
+func (m ManifestModule) ApiPath(projPath string) string {
+	return m.ModulePath(projPath) + "/api"
+}
+
+func (m ManifestModule) ApiPackage() string {
+	return m.Package + "/api"
+}

@@ -167,13 +167,34 @@ go run cmd/console/main.go hello-world
 
 ### Add HTTP endpoint
 Previously we worked only with the CLI commands, but now we are going to add an HTTP endpoint to our project.
-To do this, you need to install the `chi http` module. It adds your ability to create HTTP server in your application.
+To do this, you need to install the `chi http` module. It adds you the ability to create HTTP server in your application.
 
 ```bash
 mtools module install --proj-path=./testproj -m "chi http"
 ```
 
-Then you need to create a new HTTP handler:
+After that you need to create a new HTTP handler:
 
 ```bash
+mtools module add-json-api --proj-path=./testproj --module=example --uri=/hello-world --name=HelloWorld --method=GET --silent
 ```
+
+It creates a new HTTP handler in the `internal/example/http/hello_world.go` file.
+Fill free to change the handler according to your needs.
+After that, you are able to run the HTTP server:
+
+```bash
+cd testproj
+make install
+./bin/console serve
+```
+
+If everything is ok, you will see such an output in the console:
+
+```bash
+2025-01-13T14:24:58+02:00       INFO    registering route       {"app": "modulus", "path": "/hello-world", "component": "http", "method": "GET"}
+2025-01-13T14:24:58+02:00       INFO    http server is starting {"app": "modulus", "component": "http"}
+2025-01-13T14:24:59+02:00       INFO    http server has started {"app": "modulus", "component": "http", "address": "localhost:8001"}
+```
+
+Now you can open the browser and go to the `http://localhost:8001/hello-world` to see the result of the handler.

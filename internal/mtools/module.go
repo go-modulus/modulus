@@ -23,6 +23,7 @@ func NewModule() *module.Module {
 			cmdModule.NewInstall,
 			cmdModule.NewCreate,
 			cmdModule.NewAddCli,
+			cmdModule.NewAddJsonApi,
 			action.NewInstallStorage,
 			action.NewUpdateSqlcConfig,
 			cmdDb.NewUpdateSQLCConfig,

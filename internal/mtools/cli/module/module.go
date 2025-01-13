@@ -6,6 +6,7 @@ func NewModuleCommand(
 	create *Create,
 	install *Install,
 	addCli *AddCli,
+	addJsonApi *AddJsonApi,
 ) *cli.Command {
 	return &cli.Command{
 		Name: "module",
@@ -16,6 +17,7 @@ Example: mtools module
 			NewCreateCommand(create),
 			NewInstallCommand(install),
 			NewAddCliCommand(addCli),
+			NewAddJsonApiCommand(addJsonApi),
 		},
 	}
 }

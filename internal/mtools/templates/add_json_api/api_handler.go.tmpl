@@ -1,0 +1,51 @@
+{{define "api_handler.go.tmpl"}}
+{{- /*gotype:github.com/go-modulus/modulus/internal/mtools/cli/module.AddJsonApiTmplVars*/ -}}
+package {{.PackageName}}
+
+import (
+	"encoding/json"
+	mHttp "github.com/go-modulus/modulus/http"
+	"net/http"
+)
+
+type {{.StructName}} struct {
+}
+
+func New{{.StructName}}() *{{.StructName}} {
+	return &{{.StructName}}{}
+}
+
+func New{{.StructName}}Route(handler *{{.StructName}}) mHttp.RouteProvider {
+	return mHttp.NewRouteProvider(
+		"{{.Method}}",
+		"{{.Uri}}",
+		handler.Handle,
+	)
+}
+
+type {{.StructName}}Input struct {
+	// Use https://github.com/ggicci/httpin to define the input parameters
+	// Example:
+    // Name string    `in:"query=name"`
+	{{ if .IsBodyRequired -}}
+	Body {{.StructName}}InputBody `in:"body=optionalJson"`
+	{{- end}}
+}
+
+{{ if .IsBodyRequired -}}
+type {{.StructName}}InputBody struct {
+	Name string `json:"name"`
+}
+{{- end}}
+
+type {{.StructName}}Response struct {
+	Ok bool `json:"ok"`
+}
+
+func (h *{{.StructName}}) Handle(rw http.ResponseWriter, r mHttp.RequestWithInput[{{.StructName}}Input]) error {
+
+	return json.NewEncoder(rw).Encode({{.StructName}}Response{Ok: true})
+}
+
+
+{{end}}
