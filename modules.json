@@ -201,6 +201,22 @@
           {
             "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/gqlgen.mk",
             "destFile": "mk/gqlgen.mk"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/module.go.tmpl",
+            "destFile": "internal/graphql/module.go"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/generated/tools.go",
+            "destFile": "internal/graphql/generated/tools.go"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/model/tools.go",
+            "destFile": "internal/graphql/model/tools.go"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/resolver/resolver.go.tmpl",
+            "destFile": "internal/graphql/resolver/resolver.go"
           }
         ],
         "postInstallCommands": [
@@ -212,7 +228,8 @@
           }
         ]
       },
-      "version": "1.0.0"
+      "version": "1.0.0",
+      "localPath": "internal/graphql"
     }
   ]
 }

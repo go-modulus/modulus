@@ -74,12 +74,15 @@ func (c *UpdateSqlcConfig) Update(ctx context.Context, storagePath string, projP
 		tmpl[key] = val
 	}
 
-	tmplContent, err = yaml.Marshal(tmpl)
+	_, err = yaml.Marshal(tmpl)
 	if err != nil {
 		return errors2.WrapCause(ErrCannotUpdateSqlcConfig, err)
 	}
 
 	sqlcContent, err := yaml.Marshal(tmpl["sqlc-tmpl"])
+	if err != nil {
+		return errors2.WrapCause(ErrCannotUpdateSqlcConfig, err)
+	}
 
 	err = os.WriteFile(storagePath+"/sqlc.yaml", sqlcContent, 0644)
 	if err != nil {

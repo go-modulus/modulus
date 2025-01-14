@@ -35,8 +35,8 @@ var ErrCannotUpdateToolsFile = errbuilder.New("cannot update the tools file").
 	WithHint("Check the existence and rights for the tools.go file at the root folder of your project.").Build()
 
 type InstalledFileVars struct {
-	ModuleName  string
-	ProjPackage string
+	ModuleName     string
+	ProjectPackage string
 }
 
 type Install struct {
@@ -85,6 +85,10 @@ func (c *Install) Invoke(
 		utils.PrintLogo()
 	}
 	availableModulesManifest, err := flag.ManifestValue(ctx)
+	if err != nil {
+		fmt.Println(color.RedString("Cannot get the manifest file: %s", err.Error()))
+		return err
+	}
 	projPath := ctx.String("proj-path")
 	if projPath != "" {
 		curDir, err := os.Getwd()
@@ -99,7 +103,7 @@ func (c *Install) Invoke(
 		}
 		curDirAfterChange, _ := os.Getwd()
 		fmt.Printf("Changing the current dir to %s\n", color.BlueString(curDirAfterChange))
-		defer os.Chdir(curDir)
+		defer func() { _ = os.Chdir(curDir) }()
 	}
 
 	manifest, err := c.getLocalManifest()
@@ -190,16 +194,6 @@ func (c *Install) Invoke(
 	return nil
 }
 
-func (c *Install) saveLocalManifest(
-	manifest module.Manifest,
-) error {
-	data, err := manifest.WriteToJSON()
-	if err != nil {
-		return err
-	}
-	return os.WriteFile("modules.json", data, 0644)
-}
-
 func (c *Install) getLocalManifest() (module.Manifest, error) {
 	res := module.Manifest{
 		Modules:     make([]module.ManifestModule, 0),
@@ -283,6 +277,30 @@ func (c *Install) installModule(
 			}
 		}
 	}
+	if md.LocalPath != "" {
+		fmt.Println("Initializing the local module...")
+		projPackage, err := c.getProjPackage()
+		if err != nil {
+			return err
+		}
+		localModulePackage := projPackage + "/" + md.LocalPath
+		for _, entrypoint := range entrypoints {
+			fmt.Printf("Adding module initialization to the entrypoint %s ...\n", color.BlueString(entrypoint.name))
+			err = files.AddModuleToEntrypoint(localModulePackage, entrypoint.path)
+			if err != nil {
+				fmt.Println(
+					color.RedString(
+						"Cannot add the module %s to the entrypoint %s: %s. Try to type initialization code manually",
+						color.BlueString(md.Name),
+						color.BlueString(entrypoint.path),
+						err.Error(),
+					),
+				)
+				continue
+			}
+			fmt.Printf("File %s is updated\n", color.BlueString(entrypoint.path))
+		}
+	}
 	if len(md.Install.PostInstallCommands) != 0 {
 		fmt.Printf("Running the post install commands for the module %s...\n", color.BlueString(md.Name))
 		for _, cmd := range md.Install.PostInstallCommands {
@@ -312,9 +330,17 @@ func (c *Install) copyRemoteFile(
 	md module.ManifestModule,
 	file module.InstalledFile,
 ) error {
+	if utils.FileExists(file.DestFile) {
+		fmt.Printf(
+			color.YellowString("The file"),
+			color.BlueString(file.DestFile),
+			color.YellowString("already exists. Skipping..."),
+		)
+		return nil
+	}
 	//download file
 	resp, err := http.Get(file.SourceUrl)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if err != nil {
 		return err
 	}
@@ -341,8 +367,8 @@ func (c *Install) copyRemoteFile(
 	var b bytes.Buffer
 	w := bufio.NewWriter(&b)
 	vars := InstalledFileVars{
-		ModuleName:  md.Name,
-		ProjPackage: projPackage,
+		ModuleName:     md.Name,
+		ProjectPackage: projPackage,
 	}
 	err = tmpl.ExecuteTemplate(w, "main", &vars)
 	if err != nil {

@@ -369,6 +369,10 @@ func (c *Create) getManifestItem(ctx *cli.Context, projPath string) (
 			return module.ManifestModule{}, errors.New("the package name is not provided")
 		}
 		pckg, err = c.askPackage()
+		if err != nil {
+			fmt.Println(color.RedString("Cannot ask a package name: %s", err.Error()))
+			return module.ManifestModule{}, err
+		}
 	} else {
 		if !pckgNameRegexp.MatchString(pckg) {
 			fmt.Println(

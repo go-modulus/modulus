@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/go-modulus/modulus/internal/mtools/action"
-	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
 )
 
@@ -58,42 +57,4 @@ func (c *Rollback) Invoke(ctx *cli.Context) error {
 	)
 
 	return nil
-}
-
-func (c *Rollback) askModuleName() string {
-	for {
-		prompt := promptui.Prompt{
-			Label: "What is the name of module to add migration to?: ",
-		}
-
-		moduleName, err := prompt.Run()
-		if err != nil {
-			fmt.Println(color.RedString("Cannot ask module name: %s", err.Error()))
-			return ""
-		}
-		if moduleName == "" {
-			fmt.Println(color.RedString("The module name cannot be empty"))
-			continue
-		}
-		return moduleName
-	}
-}
-
-func (c *Rollback) askMigrationName() string {
-	for {
-		prompt := promptui.Prompt{
-			Label: "Enter a migration name : ",
-		}
-
-		migrationName, err := prompt.Run()
-		if err != nil {
-			fmt.Println(color.RedString("Cannot ask migration name: %s", err.Error()))
-			return ""
-		}
-		if migrationName == "" {
-			fmt.Println(color.RedString("The migration name cannot be empty"))
-			continue
-		}
-		return migrationName
-	}
 }

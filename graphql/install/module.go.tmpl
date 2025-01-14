@@ -1,0 +1,25 @@
+package graphql
+
+import (
+	"{{.ProjectPackage}}/internal/graphql/generated"
+	"{{.ProjectPackage}}/internal/graphql/resolver"
+
+	"github.com/99designs/gqlgen/graphql"
+	"go.uber.org/fx"
+)
+
+func NewSchema(r *resolver.Resolver) graphql.ExecutableSchema {
+	c := generated.Config{Resolvers: r, Directives: r.GetDirectives()}
+
+	return generated.NewExecutableSchema(c)
+}
+
+func NewModule() fx.Option {
+	return fx.Module(
+		"graphql",
+		fx.Provide(
+			resolver.NewResolver,
+			NewSchema,
+		),
+	)
+}

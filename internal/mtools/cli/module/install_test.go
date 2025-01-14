@@ -203,7 +203,7 @@ func TestInstall_Invoke(t *testing.T) {
 			app := cli.NewApp()
 			set := flag.NewFlagSet("test", 0)
 			set.Var(cli.NewStringSlice("pgx"), "modules", "doc")
-			os.Chdir(projDir)
+			_ = os.Chdir(projDir)
 			set.String("manifest", "manifest/modules.json", "doc")
 			ctx := cli.NewContext(app, set, nil)
 			err = installModule.Invoke(ctx)

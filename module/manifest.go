@@ -167,7 +167,7 @@ func (m *Manifest) LocalModules() []ManifestModule {
 
 func (m *Manifest) FindLocalModule(moduleName string) (ManifestModule, bool) {
 	for _, mod := range m.Modules {
-		if mod.IsLocalModule && strings.ToLower(mod.Name) == strings.ToLower(moduleName) {
+		if mod.IsLocalModule && strings.EqualFold(mod.Name, moduleName) {
 			return mod, true
 		}
 	}

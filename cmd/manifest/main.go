@@ -102,12 +102,30 @@ func getGraphqlModule() module.ManifestModule {
 			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/gqlgen.mk",
 			DestFile:  "mk/gqlgen.mk",
 		},
+		module.InstalledFile{
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/module.go.tmpl",
+			DestFile:  "internal/graphql/module.go",
+		},
+		module.InstalledFile{
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/generated/tools.go",
+			DestFile:  "internal/graphql/generated/tools.go",
+		},
+		module.InstalledFile{
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/model/tools.go",
+			DestFile:  "internal/graphql/model/tools.go",
+		},
+		module.InstalledFile{
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/resolver/resolver.go.tmpl",
+			DestFile:  "internal/graphql/resolver/resolver.go",
+		},
 	).AppendPostInstallCommands(
 		module.PostInstallCommand{
 			CmdPackage: "github.com/99designs/gqlgen",
 			Params:     []string{"init"},
 		},
 	)
+
+	graphqlModule.LocalPath = "internal/graphql"
 
 	return graphqlModule
 }

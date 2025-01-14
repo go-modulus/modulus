@@ -152,27 +152,6 @@ func (a *AddCli) createCommandFile(
 	return nil
 }
 
-func (a *AddCli) askModuleName(
-	manifest *module.Manifest,
-) (string, error) {
-	items := make([]string, 0)
-	for _, md := range manifest.LocalModules() {
-		items = append(items, md.Name)
-	}
-	sel := promptui.Select{
-		Label: "Select a module",
-		Items: items,
-	}
-
-	_, val, err := sel.Run()
-	if err != nil {
-		fmt.Println(color.RedString("Cannot ask module name: %s", err.Error()))
-		return "", err
-	}
-
-	return val, nil
-}
-
 func (a *AddCli) askCommandName() string {
 	for {
 		prompt := promptui.Prompt{
