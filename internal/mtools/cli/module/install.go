@@ -313,7 +313,6 @@ func (c *Install) copyRemoteFile(
 	file module.InstalledFile,
 ) error {
 	//download file
-	//copy to the destination
 	resp, err := http.Get(file.SourceUrl)
 	defer resp.Body.Close()
 	if err != nil {

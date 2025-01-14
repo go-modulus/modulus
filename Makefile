@@ -49,3 +49,5 @@ build-testproject: ## Build the example of a project
 	cd ./testproj && go run cmd/console/main.go hello-world
 	./bin/mtools module install --proj-path=./testproj --manifest="modules.json" -m "chi http"
 	./bin/mtools module add-json-api --proj-path=./testproj --module=example --uri=/hello-world --name=HelloWorld --method=GET --silent
+	./bin/mtools module install --proj-path=./testproj --manifest="modules.json" -m "gqlgen"
+

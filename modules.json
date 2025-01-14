@@ -175,31 +175,31 @@
         ],
         "files": [
           {
-            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/schema.graphql",
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/schema.graphql",
             "destFile": "internal/graphql/schema.graphql"
           },
           {
-            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/gqlgen.yaml",
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/gqlgen.yaml",
             "destFile": "gqlgen.yaml"
           },
           {
-            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/types/time.go",
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/time.go",
             "destFile": "internal/graphql/types/time.go"
           },
           {
-            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/types/time.graphql",
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/time.graphql",
             "destFile": "internal/graphql/types/time.graphql"
           },
           {
-            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/types/uuid.go",
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/uuid.go",
             "destFile": "internal/graphql/types/uuid.go"
           },
           {
-            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/types/void.go",
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/void.go",
             "destFile": "internal/graphql/types/void.go"
           },
           {
-            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/gqlgen.mk",
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/gqlgen.mk",
             "destFile": "mk/gqlgen.mk"
           }
         ],

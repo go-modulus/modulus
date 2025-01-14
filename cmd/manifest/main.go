@@ -75,31 +75,31 @@ func getGraphqlModule() module.ManifestModule {
 	)
 	graphqlModule.Install.AppendFiles(
 		module.InstalledFile{
-			SourceUrl: "https://github.com/go-modulus/modulus/tree/main/graphql/install/schema.graphql",
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/schema.graphql",
 			DestFile:  "internal/graphql/schema.graphql",
 		},
 		module.InstalledFile{
-			SourceUrl: "https://github.com/go-modulus/modulus/tree/main/graphql/install/gqlgen.yaml",
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/gqlgen.yaml",
 			DestFile:  "gqlgen.yaml",
 		},
 		module.InstalledFile{
-			SourceUrl: "https://github.com/go-modulus/modulus/tree/main/graphql/install/types/time.go",
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/time.go",
 			DestFile:  "internal/graphql/types/time.go",
 		},
 		module.InstalledFile{
-			SourceUrl: "https://github.com/go-modulus/modulus/tree/main/graphql/install/types/time.graphql",
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/time.graphql",
 			DestFile:  "internal/graphql/types/time.graphql",
 		},
 		module.InstalledFile{
-			SourceUrl: "https://github.com/go-modulus/modulus/tree/main/graphql/install/types/uuid.go",
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/uuid.go",
 			DestFile:  "internal/graphql/types/uuid.go",
 		},
 		module.InstalledFile{
-			SourceUrl: "https://github.com/go-modulus/modulus/tree/main/graphql/install/types/void.go",
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/void.go",
 			DestFile:  "internal/graphql/types/void.go",
 		},
 		module.InstalledFile{
-			SourceUrl: "https://github.com/go-modulus/modulus/tree/main/graphql/install/gqlgen.mk",
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/gqlgen.mk",
 			DestFile:  "mk/gqlgen.mk",
 		},
 	).AppendPostInstallCommands(
