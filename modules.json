@@ -132,6 +132,87 @@
         ]
       },
       "version": "1.0.0"
+    },
+    {
+      "name": "gqlgen",
+      "package": "github.com/go-modulus/modulus/graphql",
+      "description": "Graphql server and generator. It is based on the gqlgen library. It also provides a playground for the graphql server. You need to install the `chi http` module to use this module.",
+      "install": {
+        "envVars": [
+          {
+            "key": "GQL_API_URL",
+            "value": "/graphql",
+            "comment": ""
+          },
+          {
+            "key": "GQL_COMPLEXITY_LIMIT",
+            "value": "200",
+            "comment": ""
+          },
+          {
+            "key": "GQL_INTROSPECTION_ENABLED",
+            "value": "true",
+            "comment": ""
+          },
+          {
+            "key": "GQL_PLAYGROUND_ENABLED",
+            "value": "true",
+            "comment": ""
+          },
+          {
+            "key": "GQL_PLAYGROUND_URL",
+            "value": "/playground",
+            "comment": ""
+          },
+          {
+            "key": "GQL_TRACING_ENABLED",
+            "value": "false",
+            "comment": ""
+          }
+        ],
+        "dependencies": [
+          "chi http"
+        ],
+        "files": [
+          {
+            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/schema.graphql",
+            "destFile": "internal/graphql/schema.graphql"
+          },
+          {
+            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/gqlgen.yaml",
+            "destFile": "gqlgen.yaml"
+          },
+          {
+            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/types/time.go",
+            "destFile": "internal/graphql/types/time.go"
+          },
+          {
+            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/types/time.graphql",
+            "destFile": "internal/graphql/types/time.graphql"
+          },
+          {
+            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/types/uuid.go",
+            "destFile": "internal/graphql/types/uuid.go"
+          },
+          {
+            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/types/void.go",
+            "destFile": "internal/graphql/types/void.go"
+          },
+          {
+            "sourceUrl": "https://github.com/go-modulus/modulus/tree/main/graphql/install/gqlgen.mk",
+            "destFile": "mk/gqlgen.mk"
+          }
+        ],
+        "postInstallCommands": [
+          {
+            "cmdPackage": "github.com/99designs/gqlgen",
+            "params": [
+              "init"
+            ]
+          }
+        ]
+      },
+      "version": "1.0.0"
     }
   ]
 }

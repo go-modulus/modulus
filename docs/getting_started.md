@@ -198,3 +198,12 @@ If everything is ok, you will see such an output in the console:
 ```
 
 Now you can open the browser and go to the `http://localhost:8001/hello-world` to see the result of the handler.
+
+
+### Install GraphQL module
+We use the `gqlgen` module to add GraphQL support to our project. It is based on the https://gqlgen.com library which is a powerful tool that helps you to create a GraphQL server in your application from graphql schemas.
+
+To install the `gqlgen` module, run the following command:
+```bash
+mtools module install --proj-path=./testproj -m "gqlgen"
+```

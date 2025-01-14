@@ -27,9 +27,12 @@ func NewHandler(
 	}
 }
 
-func (h *Handler) Register(routes *http.Routes) {
-	routes.Get(h.config.Path, h.Handle)
-	routes.Post(h.config.Path, h.Handle)
+func NewHandlerGetRoute(handler *Handler) http.RouteProvider {
+	return http.NewRouteFromHandler(oHttp.MethodGet, handler.config.Path, handler.Handle)
+}
+
+func NewHandlerPostRoute(handler *Handler) http.RouteProvider {
+	return http.NewRouteFromHandler(oHttp.MethodPost, handler.config.Path, handler.Handle)
 }
 
 func (h *Handler) Handle(w oHttp.ResponseWriter, req *oHttp.Request) error {
@@ -45,6 +48,14 @@ type PlaygroundHandler struct {
 
 func NewPlaygroundHandler(config *Config, handler *handler.Server) *PlaygroundHandler {
 	return &PlaygroundHandler{config: config, handler: handler}
+}
+
+func NewPlaygroundHandlerRoute(handler *PlaygroundHandler) http.RouteProvider {
+	if handler.config.Playground.Enabled {
+		return http.NewRouteFromHandler(oHttp.MethodGet, handler.config.Playground.Path, handler.Handle)
+	}
+
+	return http.RouteProvider{}
 }
 
 func (h *PlaygroundHandler) Register(routes *http.Routes) {

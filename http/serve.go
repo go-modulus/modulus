@@ -77,6 +77,9 @@ func (s *Serve) Invoke(cliCtx *cli.Context) error {
 		registrar.Register(routes)
 	}
 	for _, route := range s.routes {
+		if route.Handler == nil || route.Path == "" {
+			continue
+		}
 		routes.Add(route)
 	}
 	for _, route := range routes.List() {

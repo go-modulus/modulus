@@ -28,6 +28,16 @@ func NewRouteProvider[B any](method, path string, handler InputHandler[B]) Route
 	}
 }
 
+func NewRouteFromHandler(method, path string, handler errhttp.Handler) RouteProvider {
+	return RouteProvider{
+		Route: Route{
+			Method:  method,
+			Path:    path,
+			Handler: handler,
+		},
+	}
+}
+
 type Routes struct {
 	routes []Route
 }

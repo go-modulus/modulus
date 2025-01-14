@@ -1,6 +1,8 @@
 package module
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/fatih/color"
@@ -14,9 +16,12 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"html/template"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"strings"
 	"time"
 )
@@ -28,6 +33,11 @@ var ErrCannotInstallModule = errbuilder.New("cannot install the module").
 	WithHint("The install field in the manifest file should be a valid command running under 'go run'").Build()
 var ErrCannotUpdateToolsFile = errbuilder.New("cannot update the tools file").
 	WithHint("Check the existence and rights for the tools.go file at the root folder of your project.").Build()
+
+type InstalledFileVars struct {
+	ModuleName  string
+	ProjPackage string
+}
 
 type Install struct {
 	logger *slog.Logger
@@ -262,9 +272,119 @@ func (c *Install) installModule(
 			return err
 		}
 	}
+	if len(md.Install.Files) != 0 {
+		fmt.Println("Downloading the files...")
+		for _, file := range md.Install.Files {
+			fmt.Printf("Downloading the file %s...\n", color.BlueString(file.SourceUrl))
+			err = c.copyRemoteFile(md, file)
+			if err != nil {
+				fmt.Println("Cannot download the file:", color.RedString(err.Error()))
+				return err
+			}
+		}
+	}
+	if len(md.Install.PostInstallCommands) != 0 {
+		fmt.Printf("Running the post install commands for the module %s...\n", color.BlueString(md.Name))
+		for _, cmd := range md.Install.PostInstallCommands {
+			fmt.Printf("Adding the package %s to the tools.go file...\n", color.BlueString(md.Package))
+			err = exec.CommandContext(cmdCtx, "go", "get", cmd.CmdPackage).Run()
+			if err != nil {
+				return errors.WrapCause(ErrCannotRunGoGetCommand, err)
+			}
+			err = files.AddImportToTools(cmd.CmdPackage)
+			if err != nil {
+				return errors.WrapCause(ErrCannotUpdateToolsFile, err)
+			}
+			fmt.Printf("Running %s...\n", color.BlueString("go run "+cmd.CmdPackage))
+			params := append([]string{"run", cmd.CmdPackage}, cmd.Params...)
+			err = exec.CommandContext(cmdCtx, "go", params...).Run()
+			if err != nil {
+				return errors.WrapCause(ErrCannotInstallModule, err)
+			}
+		}
+	}
 
 	fmt.Println(color.GreenString("The module %s has been successfully installed.", color.BlueString(md.Name)))
 	return nil
+}
+
+func (c *Install) copyRemoteFile(
+	md module.ManifestModule,
+	file module.InstalledFile,
+) error {
+	//download file
+	//copy to the destination
+	resp, err := http.Get(file.SourceUrl)
+	defer resp.Body.Close()
+	if err != nil {
+		return err
+	}
+
+	var rb bytes.Buffer
+	_, err = rb.ReadFrom(resp.Body)
+	if err != nil {
+		fmt.Println("Cannot read the response body:", color.RedString(err.Error()))
+		return err
+	}
+	tpl := `{{define "main"}}` + rb.String() + `{{end}}`
+
+	tmpl := template.Must(
+		template.New("main").
+			Parse(
+				tpl,
+			),
+	)
+
+	projPackage, err := c.getProjPackage()
+	if err != nil {
+		return err
+	}
+	var b bytes.Buffer
+	w := bufio.NewWriter(&b)
+	vars := InstalledFileVars{
+		ModuleName:  md.Name,
+		ProjPackage: projPackage,
+	}
+	err = tmpl.ExecuteTemplate(w, "main", &vars)
+	if err != nil {
+		return err
+	}
+	w.Flush()
+
+	dir := path.Dir(file.DestFile)
+	if dir != "." && dir != "" && dir != "/" {
+		fmt.Println("Preparing directory for the file...")
+		err = utils.CreateDirIfNotExists(dir)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = os.WriteFile(file.DestFile, b.Bytes(), 0644)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *Install) getProjPackage() (string, error) {
+	if _, err := os.Stat("go.mod"); os.IsNotExist(err) {
+		fmt.Println(color.RedString("The go.mod file is not found. Try to run the command in the root of the project"))
+		return "", err
+	}
+	content, err := os.ReadFile("go.mod")
+	if err != nil {
+		fmt.Println(color.RedString("Cannot read a go.mod file: %s", err.Error()))
+		return "", err
+	}
+
+	moduleStr := moduleNameRegexp.FindStringSubmatch(string(content))
+	if len(moduleStr) < 2 {
+		fmt.Println(color.RedString("Cannot find a module name in the go.mod file"))
+		return "", errors.New("cannot find a module name in the go.mod file")
+	}
+
+	return moduleStr[1], nil
 }
 
 func (c *Install) addDependedModulesToInstall(

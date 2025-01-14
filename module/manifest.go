@@ -33,8 +33,9 @@ func NewManifestModule(
 		deps = append(deps, dep.name)
 	}
 	install := InstallManifest{}
-	install.AppendEnvVars(module.envVars...)
-	install.AppendDependencies(deps...)
+	install.
+		AppendEnvVars(module.envVars...).
+		AppendDependencies(deps...)
 
 	currentModule := ManifestModule{
 		Name:        module.name,

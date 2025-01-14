@@ -9,7 +9,6 @@ import (
 	"github.com/go-modulus/modulus/errors/errlog"
 	httpContext "github.com/go-modulus/modulus/http/context"
 	context2 "github.com/go-modulus/modulus/translation"
-	"github.com/sethvargo/go-envconfig"
 	"github.com/vektah/gqlparser/v2/ast"
 	"log/slog"
 
@@ -34,11 +33,6 @@ type Config struct {
 	IntrospectionEnabled bool   `env:"GQL_INTROSPECTION_ENABLED, default=true"`
 	TracingEnabled       bool   `env:"GQL_TRACING_ENABLED, default=false"`
 	Playground           PlaygroundConfig
-}
-
-func NewConfig() (*Config, error) {
-	config := Config{}
-	return &config, envconfig.Process(context.Background(), &config)
 }
 
 type UserError interface {
