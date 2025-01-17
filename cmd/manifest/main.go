@@ -45,7 +45,7 @@ func main() {
 			"HTTP module based on the Chi router.",
 			"1.0.0",
 		),
-		getGraphqlModule(),
+		graphql.NewManifestModule(),
 	}
 
 	manifest, err := module.LoadLocalManifest("./")
@@ -64,68 +64,4 @@ func main() {
 		fmt.Println("Cannot save the manifest file modules.json:", color.RedString(err.Error()))
 		os.Exit(1)
 	}
-}
-
-func getGraphqlModule() module.ManifestModule {
-	graphqlModule := module.NewManifestModule(
-		graphql.NewModule(),
-		"github.com/go-modulus/modulus/graphql",
-		"Graphql server and generator. It is based on the gqlgen library. It also provides a playground for the graphql server. You need to install the `chi http` module to use this module.",
-		"1.0.0",
-	)
-	graphqlModule.Install.AppendFiles(
-		module.InstalledFile{
-			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/schema.graphql",
-			DestFile:  "internal/graphql/schema.graphql",
-		},
-		module.InstalledFile{
-			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/gqlgen.yaml",
-			DestFile:  "gqlgen.yaml",
-		},
-		module.InstalledFile{
-			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/time.go",
-			DestFile:  "internal/graphql/types/time.go",
-		},
-		module.InstalledFile{
-			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/time.graphql",
-			DestFile:  "internal/graphql/types/time.graphql",
-		},
-		module.InstalledFile{
-			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/uuid.go",
-			DestFile:  "internal/graphql/types/uuid.go",
-		},
-		module.InstalledFile{
-			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/void.go",
-			DestFile:  "internal/graphql/types/void.go",
-		},
-		module.InstalledFile{
-			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/gqlgen.mk",
-			DestFile:  "mk/gqlgen.mk",
-		},
-		module.InstalledFile{
-			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/module.go.tmpl",
-			DestFile:  "internal/graphql/module.go",
-		},
-		module.InstalledFile{
-			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/generated/tools.go",
-			DestFile:  "internal/graphql/generated/tools.go",
-		},
-		module.InstalledFile{
-			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/model/tools.go",
-			DestFile:  "internal/graphql/model/tools.go",
-		},
-		module.InstalledFile{
-			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/resolver/resolver.go.tmpl",
-			DestFile:  "internal/graphql/resolver/resolver.go",
-		},
-	).AppendPostInstallCommands(
-		module.PostInstallCommand{
-			CmdPackage: "github.com/99designs/gqlgen",
-			Params:     []string{"generate", "--config", "gqlgen.yaml"},
-		},
-	)
-
-	graphqlModule.LocalPath = "internal/graphql"
-
-	return graphqlModule
 }

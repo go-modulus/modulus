@@ -38,6 +38,33 @@ mocks:
 ## END OF MAIN COMMANDS
 ####################################################################################################
 
+####################################################################################################
+## MODULE COMMANDS
+####################################################################################################
+.PHONY: module-install
+module-install: ## install the modules from the modules manifest file https://github.com/go-modulus/modulus/blob/main/modules.json
+	go install github.com/go-modulus/modulus/cmd/modulus@latest
+	modulus module install
+
+.PHONY: module-create
+module-create: ## create a new module in the project
+	go install github.com/go-modulus/modulus/cmd/modulus@latest
+	modulus module create
+
+.PHONY: module-add-cli
+module-add-cli: ## add a new cli command to the module
+	go install github.com/go-modulus/modulus/cmd/modulus@latest
+	modulus module add-cli
+
+module-add-json-api: ## add a new json api route to process in the module
+	go install github.com/go-modulus/modulus/cmd/modulus@latest
+	modulus module add-json-api
+
+####################################################################################################
+## END OF MODULE COMMANDS
+####################################################################################################
+
+
 MAKEFILE_FOLDER := ./mk
 
 exist := $(wildcard $(MAKEFILE_FOLDER))

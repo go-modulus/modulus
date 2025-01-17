@@ -1,11 +1,11 @@
 package graphql
 
 import (
+	"github.com/go-modulus/modulus/module"
 	"{{.ProjectPackage}}/internal/graphql/generated"
 	"{{.ProjectPackage}}/internal/graphql/resolver"
 
 	"github.com/99designs/gqlgen/graphql"
-	"go.uber.org/fx"
 )
 
 func NewSchema(r *resolver.Resolver) graphql.ExecutableSchema {
@@ -14,12 +14,11 @@ func NewSchema(r *resolver.Resolver) graphql.ExecutableSchema {
 	return generated.NewExecutableSchema(c)
 }
 
-func NewModule() fx.Option {
-	return fx.Module(
+func NewModule() *module.Module {
+	return module.NewModule(
 		"graphql",
-		fx.Provide(
-			resolver.NewResolver,
-			NewSchema,
-		),
+	).AddProviders(
+		resolver.NewResolver,
+		NewSchema,
 	)
 }
