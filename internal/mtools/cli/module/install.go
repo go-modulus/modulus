@@ -331,7 +331,7 @@ func (c *Install) copyRemoteFile(
 	file module.InstalledFile,
 ) error {
 	if utils.FileExists(file.DestFile) {
-		fmt.Printf(
+		fmt.Println(
 			color.YellowString("The file"),
 			color.BlueString(file.DestFile),
 			color.YellowString("already exists. Skipping..."),

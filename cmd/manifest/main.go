@@ -121,7 +121,7 @@ func getGraphqlModule() module.ManifestModule {
 	).AppendPostInstallCommands(
 		module.PostInstallCommand{
 			CmdPackage: "github.com/99designs/gqlgen",
-			Params:     []string{"init"},
+			Params:     []string{"generate", "--config", "gqlgen.yaml"},
 		},
 	)
 

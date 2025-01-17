@@ -223,7 +223,9 @@
           {
             "cmdPackage": "github.com/99designs/gqlgen",
             "params": [
-              "init"
+              "generate",
+              "--config",
+              "gqlgen.yaml"
             ]
           }
         ]
