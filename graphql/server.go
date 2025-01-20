@@ -40,7 +40,7 @@ type UserError interface {
 }
 
 func NewGraphqlServer(
-	config *Config,
+	config Config,
 	schema graphql.ExecutableSchema,
 	loadersInitializer *LoadersInitializer,
 	logger *slog.Logger,

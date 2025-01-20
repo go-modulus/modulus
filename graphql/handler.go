@@ -1,7 +1,6 @@
 package graphql
 
 import (
-	"github.com/go-modulus/modulus/auth"
 	"github.com/go-modulus/modulus/http"
 	oHttp "net/http"
 
@@ -10,20 +9,17 @@ import (
 )
 
 type Handler struct {
-	config        *Config
-	handler       *handler.Server
-	authenticator auth.Authenticator
+	config  Config
+	handler *handler.Server
 }
 
 func NewHandler(
-	config *Config,
+	config Config,
 	handler *handler.Server,
-	authenticator auth.Authenticator,
 ) *Handler {
 	return &Handler{
-		config:        config,
-		handler:       handler,
-		authenticator: authenticator,
+		config:  config,
+		handler: handler,
 	}
 }
 
@@ -42,11 +38,11 @@ func (h *Handler) Handle(w oHttp.ResponseWriter, req *oHttp.Request) error {
 }
 
 type PlaygroundHandler struct {
-	config  *Config
+	config  Config
 	handler *handler.Server
 }
 
-func NewPlaygroundHandler(config *Config, handler *handler.Server) *PlaygroundHandler {
+func NewPlaygroundHandler(config Config, handler *handler.Server) *PlaygroundHandler {
 	return &PlaygroundHandler{config: config, handler: handler}
 }
 

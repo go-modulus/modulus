@@ -16,13 +16,13 @@ import (
 	"github.com/urfave/cli/v2"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	"html/template"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -166,6 +166,10 @@ func (c *Install) Invoke(
 		return nil
 	}
 	hasErrors := false
+	localModulesMap := make(map[string]struct{})
+	for _, md := range manifest.Modules {
+		localModulesMap[md.Package] = struct{}{}
+	}
 	for _, md := range modules {
 		err = c.installModule(ctx.Context, md, entrypoints)
 		if err != nil {
@@ -176,11 +180,14 @@ func (c *Install) Invoke(
 			hasErrors = true
 			continue
 		}
-		manifest.Modules = append(manifest.Modules, md)
-		err = manifest.SaveAsLocalManifest("./")
-		if err != nil {
-			fmt.Println(color.RedString("Cannot save the local manifest file modules.json: %s", err.Error()))
-			hasErrors = true
+		if _, ok := localModulesMap[md.Package]; !ok {
+			manifest.Modules = append(manifest.Modules, md)
+
+			err = manifest.SaveAsLocalManifest("./")
+			if err != nil {
+				fmt.Println(color.RedString("Cannot save the local manifest file modules.json: %s", err.Error()))
+				hasErrors = true
+			}
 		}
 	}
 	if hasErrors {

@@ -105,6 +105,14 @@ func AddModuleToEntrypoint(
 
 	imports := astutil.Imports(fset, astFile)
 
+	for _, specs := range imports {
+		for _, spec := range specs {
+			if spec.Path.Value == "\""+packagePath+"\"" {
+				return nil
+			}
+		}
+	}
+
 	alias, err := getUniqAlias(packagePath, 0, imports)
 	if err != nil {
 		return err

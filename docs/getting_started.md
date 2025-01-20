@@ -207,3 +207,37 @@ To install the `gqlgen` module, run the following command:
 ```bash
 mtools module install --proj-path=./testproj -m "gqlgen"
 ```
+
+After that, you can test the GraphQL server by running the following command:
+
+```bash
+cd testproj
+make install
+./bin/console serve
+```
+
+If everything is ok, you will see such an output in the console:
+
+```bash
+2025-01-20T15:03:35+02:00       INFO    http server has started {"app": "modulus", "component": "http", "address": "localhost:8001"}
+```
+
+Now you can open the browser and go to the `http://localhost:8001/playground` to see the GraphQL playground.
+
+Write and run the following query in the playground:
+
+```graphql
+{
+  ping
+}
+```
+
+You should see the following result:
+
+```json
+{
+  "data": {
+    "ping": "pong"
+  }
+}
+```
