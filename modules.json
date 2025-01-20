@@ -217,6 +217,10 @@
           {
             "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/resolver/resolver.go.tmpl",
             "destFile": "internal/graphql/resolver/resolver.go"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/resolver/schema.resolvers.go.tmpl",
+            "destFile": "internal/graphql/resolver/schema.resolvers.go"
           }
         ],
         "postInstallCommands": [
