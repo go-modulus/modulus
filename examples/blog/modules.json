@@ -1,0 +1,20 @@
+{
+  "name": "Modulus framework modules manifest",
+  "version": "1.0.0",
+  "description": "List of installed modules for the Modulus framework",
+  "entries": [
+    {
+      "name": "console",
+      "localPath": "cmd/console/main.go"
+    }
+  ],
+  "modules": [
+    {
+      "name": "urfave cli",
+      "package": "github.com/go-modulus/modulus/cli",
+      "description": "Adds ability to create cli applications in the Modulus framework.",
+      "install": {},
+      "version": "1.0.0"
+    }
+  ]
+}
