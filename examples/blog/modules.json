@@ -1,13 +1,7 @@
 {
   "name": "Modulus framework modules manifest",
-  "version": "1.0.0",
   "description": "List of installed modules for the Modulus framework",
-  "entries": [
-    {
-      "name": "console",
-      "localPath": "cmd/console/main.go"
-    }
-  ],
+  "version": "1.0.0",
   "modules": [
     {
       "name": "urfave cli",
@@ -15,6 +9,304 @@
       "description": "Adds ability to create cli applications in the Modulus framework.",
       "install": {},
       "version": "1.0.0"
+    },
+    {
+      "name": "pgx",
+      "package": "github.com/go-modulus/modulus/db/pgx",
+      "description": "A wrapper for the pgx package to integrate it into the Modulus framework.",
+      "install": {
+        "envVars": [
+          {
+            "key": "DB_NAME",
+            "value": "test",
+            "comment": ""
+          },
+          {
+            "key": "HOST",
+            "value": "localhost",
+            "comment": ""
+          },
+          {
+            "key": "PASSWORD",
+            "value": "foobar",
+            "comment": ""
+          },
+          {
+            "key": "PGX_DSN",
+            "value": "postgres://postgres:foobar@localhost:5432/test?sslmode=disable",
+            "comment": "Use this variable to set the DSN for the PGX connection. It overwrites the other PG_* variables."
+          },
+          {
+            "key": "PORT",
+            "value": "5432",
+            "comment": ""
+          },
+          {
+            "key": "SSL_MODE",
+            "value": "disable",
+            "comment": ""
+          },
+          {
+            "key": "USER",
+            "value": "postgres",
+            "comment": ""
+          }
+        ],
+        "dependencies": [
+          "slog logger"
+        ]
+      },
+      "version": "1.0.0"
+    },
+    {
+      "name": "dbmate migrator",
+      "package": "github.com/go-modulus/modulus/db/migrator",
+      "description": "Several CLI commands to use DBMate (https://github.com/amacneil/dbmate) migration tool inside your application.",
+      "install": {
+        "dependencies": [
+          "pgx",
+          "urfave cli"
+        ]
+      },
+      "version": "1.0.0"
+    },
+    {
+      "name": "chi http",
+      "package": "github.com/go-modulus/modulus/http",
+      "description": "HTTP module based on the Chi router.",
+      "install": {
+        "envVars": [
+          {
+            "key": "HTTP_HOST",
+            "value": "localhost:8001",
+            "comment": ""
+          },
+          {
+            "key": "ROUTER_REQUEST_SIZE_LIMIT",
+            "value": "5MB",
+            "comment": ""
+          },
+          {
+            "key": "ROUTER_TTL",
+            "value": "15s",
+            "comment": ""
+          }
+        ]
+      },
+      "version": "1.0.0"
+    },
+    {
+      "name": "slog logger",
+      "package": "github.com/go-modulus/modulus/logger",
+      "description": "Adds a slog logger with a zap backend to the Modulus framework.",
+      "install": {
+        "envVars": [
+          {
+            "key": "LOGGER_APP",
+            "value": "modulus",
+            "comment": ""
+          },
+          {
+            "key": "LOGGER_FX_EVENT_LEVEL",
+            "value": "info",
+            "comment": "Use one of \"debug\", \"info\", \"warn\", \"error\". It sets the maximum level of the fx events that should be logged"
+          },
+          {
+            "key": "LOGGER_LEVEL",
+            "value": "debug",
+            "comment": "Use one of \"debug\", \"info\", \"warn\", \"error\". It sets the maximum level of the log messages that should be logged"
+          },
+          {
+            "key": "LOGGER_TYPE",
+            "value": "console",
+            "comment": "Use either \"console\" or \"json\" value"
+          }
+        ]
+      },
+      "version": "1.0.0"
+    },
+    {
+      "name": "pgx",
+      "package": "github.com/go-modulus/modulus/db/pgx",
+      "description": "A wrapper for the pgx package to integrate it into the Modulus framework.",
+      "install": {
+        "envVars": [
+          {
+            "key": "DB_NAME",
+            "value": "test",
+            "comment": ""
+          },
+          {
+            "key": "HOST",
+            "value": "localhost",
+            "comment": ""
+          },
+          {
+            "key": "PASSWORD",
+            "value": "foobar",
+            "comment": ""
+          },
+          {
+            "key": "PGX_DSN",
+            "value": "postgres://postgres:foobar@localhost:5432/test?sslmode=disable",
+            "comment": "Use this variable to set the DSN for the PGX connection. It overwrites the other PG_* variables."
+          },
+          {
+            "key": "PORT",
+            "value": "5432",
+            "comment": ""
+          },
+          {
+            "key": "SSL_MODE",
+            "value": "disable",
+            "comment": ""
+          },
+          {
+            "key": "USER",
+            "value": "postgres",
+            "comment": ""
+          }
+        ],
+        "dependencies": [
+          "slog logger"
+        ]
+      },
+      "version": "1.0.0"
+    },
+    {
+      "name": "chi http",
+      "package": "github.com/go-modulus/modulus/http",
+      "description": "HTTP module based on the Chi router.",
+      "install": {
+        "envVars": [
+          {
+            "key": "HTTP_HOST",
+            "value": "localhost:8001",
+            "comment": ""
+          },
+          {
+            "key": "ROUTER_REQUEST_SIZE_LIMIT",
+            "value": "5MB",
+            "comment": ""
+          },
+          {
+            "key": "ROUTER_TTL",
+            "value": "15s",
+            "comment": ""
+          }
+        ]
+      },
+      "version": "1.0.0"
+    },
+    {
+      "name": "gqlgen",
+      "package": "github.com/go-modulus/modulus/graphql",
+      "description": "Graphql server and generator. It is based on the gqlgen library. It also provides a playground for the graphql server. You need to install the `chi http` module to use this module.",
+      "install": {
+        "envVars": [
+          {
+            "key": "GQL_API_URL",
+            "value": "/graphql",
+            "comment": ""
+          },
+          {
+            "key": "GQL_COMPLEXITY_LIMIT",
+            "value": "200",
+            "comment": ""
+          },
+          {
+            "key": "GQL_INTROSPECTION_ENABLED",
+            "value": "true",
+            "comment": ""
+          },
+          {
+            "key": "GQL_PLAYGROUND_ENABLED",
+            "value": "true",
+            "comment": ""
+          },
+          {
+            "key": "GQL_PLAYGROUND_URL",
+            "value": "/playground",
+            "comment": ""
+          },
+          {
+            "key": "GQL_TRACING_ENABLED",
+            "value": "false",
+            "comment": ""
+          }
+        ],
+        "dependencies": [
+          "chi http"
+        ],
+        "files": [
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/schema.graphql",
+            "destFile": "internal/graphql/schema.graphql"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/gqlgen.yaml",
+            "destFile": "gqlgen.yaml"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/time.go",
+            "destFile": "internal/graphql/types/time.go"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/time.graphql",
+            "destFile": "internal/graphql/types/time.graphql"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/uuid.go",
+            "destFile": "internal/graphql/types/uuid.go"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/void.go",
+            "destFile": "internal/graphql/types/void.go"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/gqlgen.mk",
+            "destFile": "mk/gqlgen.mk"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/module.go.tmpl",
+            "destFile": "internal/graphql/module.go"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/generated/tools.go",
+            "destFile": "internal/graphql/generated/tools.go"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/model/tools.go",
+            "destFile": "internal/graphql/model/tools.go"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/resolver/resolver.go.tmpl",
+            "destFile": "internal/graphql/resolver/resolver.go"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/resolver/schema.resolvers.go.tmpl",
+            "destFile": "internal/graphql/resolver/schema.resolvers.go"
+          }
+        ],
+        "postInstallCommands": [
+          {
+            "cmdPackage": "github.com/99designs/gqlgen",
+            "params": [
+              "generate",
+              "--config",
+              "gqlgen.yaml"
+            ]
+          }
+        ]
+      },
+      "version": "1.0.0",
+      "localPath": "internal/graphql"
+    }
+  ],
+  "entries": [
+    {
+      "localPath": "cmd/console/main.go",
+      "name": "console"
     }
   ]
 }

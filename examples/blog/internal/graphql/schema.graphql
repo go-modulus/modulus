@@ -1,0 +1,36 @@
+schema {
+    query: Query,
+    mutation: Mutation
+    subscription: Subscription
+}
+
+type Query {
+    ping:String!
+}
+type Mutation {
+    ping:String!
+}
+type Subscription {
+    ping:String!
+}
+
+scalar Upload
+
+directive @goModel(model: String, models: [String!]) on OBJECT
+    | INPUT_OBJECT
+    | SCALAR
+    | ENUM
+    | INTERFACE
+    | UNION
+
+directive @goField(forceResolver: Boolean, name: String) on INPUT_FIELD_DEFINITION
+    | FIELD_DEFINITION
+
+directive @positiveInt(max: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
+
+type PageInfo {
+    endCursor: String!
+    startCursor: String!
+    hasNextPage: Boolean!
+    hasPreviousPage: Boolean!
+}

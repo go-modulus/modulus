@@ -1,0 +1,4 @@
+"""
+Time scalar type represents a time value in RFC3339/ISO8601 format.
+"""
+scalar Time

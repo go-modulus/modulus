@@ -1,9 +1,15 @@
 package main
 
 import (
+	graphql2 "blog/internal/graphql"
 	"fmt"
 	"github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/config"
+	"github.com/go-modulus/modulus/db/migrator"
+	"github.com/go-modulus/modulus/db/pgx"
+	"github.com/go-modulus/modulus/graphql"
+	"github.com/go-modulus/modulus/http"
+	"github.com/go-modulus/modulus/logger"
 	"github.com/go-modulus/modulus/module"
 
 	"go.uber.org/fx"
@@ -21,6 +27,12 @@ func main() {
 				Usage:   "Run project commands",
 			},
 		),
+		pgx.NewModule(),
+		migrator.NewModule(),
+		http.NewModule(),
+		graphql.NewModule(),
+		graphql2.NewModule(),
+		logger.NewModule(),
 	}
 
 	invokes := []fx.Option{
