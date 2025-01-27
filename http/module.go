@@ -40,8 +40,12 @@ func NewRouter(logger *slog.Logger, config ServeConfig) chi.Router {
 			},
 		),
 	)
-	r.Use(chiMiddleware.Timeout(config.TTL))
-	r.Use(chiMiddleware.RequestSize(int64(config.RequestSizeLimit.Bytes())))
+	if config.TTL > 0 {
+		r.Use(chiMiddleware.Timeout(config.TTL))
+	}
+	if config.RequestSizeLimit > 0 {
+		r.Use(chiMiddleware.RequestSize(int64(config.RequestSizeLimit.Bytes())))
+	}
 	return r
 }
 

@@ -19,6 +19,7 @@ type Module struct {
 	envVars             []ConfigEnvVariable
 	fxOptions           []fx.Option
 	taggedProviders     map[string][]interface{}
+	overriddenProviders map[string]interface{}
 
 	exposeCommands bool
 	hiddenTags     map[string]struct{}
@@ -68,6 +69,22 @@ func (m *Module) AddTaggedProviders(tag string, providers ...interface{}) *Modul
 	return m
 }
 
+func (m *Module) SetOverriddenProvider(name string, provider interface{}) *Module {
+	if m.overriddenProviders == nil {
+		m.overriddenProviders = make(map[string]interface{})
+	}
+	m.overriddenProviders[name] = provider
+	return m
+}
+
+func (m *Module) RemoveOverriddenProvider(name string) *Module {
+	if m.overriddenProviders == nil {
+		return m
+	}
+	delete(m.overriddenProviders, name)
+	return m
+}
+
 func (m *Module) HideTags(tags ...string) *Module {
 	if m.hiddenTags == nil {
 		m.hiddenTags = make(map[string]struct{})
@@ -95,6 +112,11 @@ func (m *Module) buildFx() fx.Option {
 			if _, ok := m.hiddenTags[tag]; !ok {
 				opts = append(opts, fx.Provide(taggedProviders...))
 			}
+		}
+	}
+	if len(m.overriddenProviders) > 0 {
+		for _, provider := range m.overriddenProviders {
+			opts = append(opts, fx.Provide(provider))
 		}
 	}
 	if len(m.configs) > 0 {

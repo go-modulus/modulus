@@ -51,3 +51,6 @@ build-testproject: ## Build the example of a project
 	./bin/mtools module add-json-api --proj-path=./testproj --module=example --uri=/hello-world --name=HelloWorld --method=GET --silent
 	./bin/mtools module install --proj-path=./testproj --manifest="modules.json" -m "gqlgen"
 
+.PHONY: db-sqlc-generate
+db-sqlc-generate: ## Generate sqlc files in all modules
+	sqlc -f auth/storage/sqlc.yaml generate

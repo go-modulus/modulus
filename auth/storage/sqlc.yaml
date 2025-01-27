@@ -1,0 +1,101 @@
+options:
+  golang:
+    overrides:
+      - db_type: uuid
+        engine: postgresql
+        go_type:
+          import: github.com/gofrs/uuid
+          package: uuid
+          type: NullUUID
+        gql_type: Uuid
+        nullable: true
+      - db_type: uuid
+        engine: postgresql
+        go_type:
+          import: github.com/gofrs/uuid
+          package: uuid
+          type: UUID
+        gql_type: Uuid
+        nullable: false
+      - db_type: text
+        go_type:
+          import: gopkg.in/guregu/null.v4
+          package: "null"
+          type: String
+        gql_type: String
+        nullable: true
+      - db_type: pg_catalog.timestamp
+        go_type:
+          import: gopkg.in/guregu/null.v4
+          package: "null"
+          type: Time
+        gql_type: Time
+        nullable: true
+      - db_type: timestamp
+        go_type:
+          import: gopkg.in/guregu/null.v4
+          package: "null"
+          type: Time
+        gql_type: Time
+        nullable: true
+      - db_type: pg_catalog.timestamptz
+        go_type:
+          import: gopkg.in/guregu/null.v4
+          package: "null"
+          type: Time
+        gql_type: Time
+        nullable: true
+      - db_type: timestamptz
+        go_type:
+          import: gopkg.in/guregu/null.v4
+          package: "null"
+          type: Time
+        gql_type: Time
+        nullable: true
+      - db_type: pg_catalog.timestamp
+        go_type:
+          import: time
+          type: Time
+        gql_type: Time
+      - db_type: timestamp
+        go_type:
+          import: time
+          type: Time
+        gql_type: Time
+      - db_type: pg_catalog.timestamptz
+        go_type:
+          import: time
+          type: Time
+        gql_type: Time
+      - db_type: timestamptz
+        go_type:
+          import: time
+          type: Time
+        gql_type: Time
+plugins:
+  - name: fixture
+    wasm:
+      sha256: 0dcc0043d3239ad99bcd96d3a92f10d7503814afb3e6673cb4815b24726be401
+      url: https://github.com/debugger84/sqlc-fixture/releases/download/v0.1.4/sqlc-fixture.wasm
+  - name: golang
+    wasm:
+      sha256: 420c334803aef2d0656384789a9486fa3158cb37b71f7ff245c51f8a860bb460
+      url: https://github.com/debugger84/sqlc-gen-go/releases/download/v1.3.4/sqlc-gen-go.wasm
+sql:
+  - codegen:
+      - options:
+          default_schema: auth
+          emit_all_enum_values: true
+          emit_db_tags: true
+          emit_json_tags: true
+          json_tags_case_style: camel
+          out: ./
+          overrides: null
+          package: storage
+          sql_package: pgx/v5
+        out: ./
+        plugin: golang
+    engine: postgresql
+    queries: query
+    schema: migration
+version: "2"

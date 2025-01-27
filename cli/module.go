@@ -83,5 +83,7 @@ func NewModule() *module.Module {
 		AddProviders(
 			NewApp,
 			NewRunner,
-		).InitConfig(ModuleConfig{})
+		).
+		//AddInvokes(Start).
+		InitConfig(ModuleConfig{})
 }

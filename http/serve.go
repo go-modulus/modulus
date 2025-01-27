@@ -22,12 +22,13 @@ type ServeConfig struct {
 }
 
 type Serve struct {
-	runner     *infraCli.Runner
-	router     chi.Router
-	registrars []HandlerRegistrar `group:"http.handlerRegistrars"`
-	routes     []Route
-	logger     *slog.Logger
-	config     ServeConfig
+	runner      *infraCli.Runner
+	router      chi.Router
+	registrars  []HandlerRegistrar `group:"http.handlerRegistrars"`
+	routes      []Route
+	middlewares []Middleware
+	logger      *slog.Logger
+	config      ServeConfig
 }
 
 type ServeParams struct {
@@ -37,18 +38,24 @@ type ServeParams struct {
 	Router     chi.Router
 	Registrars []HandlerRegistrar `group:"http.handlerRegistrars"`
 	Routes     []Route            `group:"http.routes"`
+	Pipeline   *Pipeline          `optional:"true"`
 	Logger     *slog.Logger
 	Config     ServeConfig
 }
 
 func NewServe(params ServeParams) *Serve {
+	middlewares := make([]Middleware, 0)
+	if params.Pipeline != nil {
+		middlewares = params.Pipeline.Middlewares
+	}
 	return &Serve{
-		runner:     params.Runner,
-		router:     params.Router,
-		registrars: params.Registrars,
-		routes:     params.Routes,
-		logger:     params.Logger,
-		config:     params.Config,
+		runner:      params.Runner,
+		router:      params.Router,
+		registrars:  params.Registrars,
+		routes:      params.Routes,
+		logger:      params.Logger,
+		config:      params.Config,
+		middlewares: middlewares,
 	}
 }
 
@@ -85,6 +92,14 @@ func (s *Serve) Invoke(cliCtx *cli.Context) error {
 	for _, route := range routes.List() {
 		logger.Info("registering route", slog.String("method", route.Method), slog.String("path", route.Path))
 		s.router.Method(route.Method, route.Path, errhttp.WrapHandler(logger, route.Handler))
+	}
+
+	if len(s.middlewares) > 0 {
+		for _, middleware := range s.middlewares {
+			s.router.Use(middleware)
+		}
+
+		logger.Info("registering global Middlewares", slog.Int("count", len(s.middlewares)))
 	}
 
 	return s.runner.Run(

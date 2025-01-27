@@ -15,6 +15,7 @@ require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/graph-gophers/dataloader/v7 v7.1.0
+	github.com/iancoleman/strcase v0.3.0
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/jonboulle/clockwork v0.4.0
 	github.com/laher/mergefs v0.1.1
@@ -39,11 +40,13 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/text v0.21.0
 	golang.org/x/tools v0.28.0
+	gopkg.in/guregu/null.v4 v4.0.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
 	github.com/agnivade/levenshtein v1.2.0 // indirect
+	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect
 	github.com/chigopher/pathlib v0.19.1 // indirect
 	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.5 // indirect
@@ -63,11 +66,9 @@ require (
 	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.24.0 // indirect
-	github.com/hairyhenderson/go-fsimpl v0.2.1 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
-	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
@@ -92,6 +93,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/samber/lo v1.47.0 // indirect
 	github.com/samber/slog-common v0.17.0 // indirect
+	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
 	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
@@ -109,6 +111,8 @@ require (
 	go.opentelemetry.io/contrib v1.29.0 // indirect
 	go.opentelemetry.io/otel v1.33.0 // indirect
 	go.opentelemetry.io/otel/metric v1.33.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.33.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.29.0 // indirect
 	go.opentelemetry.io/otel/trace v1.33.0 // indirect
 	go.temporal.io/api v1.43.0 // indirect
 	go.uber.org/dig v1.18.0 // indirect
