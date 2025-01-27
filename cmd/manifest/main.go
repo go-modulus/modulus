@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/fatih/color"
+	"github.com/go-modulus/modulus/auth"
 	"github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/db/migrator"
 	"github.com/go-modulus/modulus/db/pgx"
@@ -46,6 +47,7 @@ func main() {
 			"1.0.0",
 		),
 		graphql.NewManifestModule(),
+		auth.NewManifestModule(),
 	}
 
 	manifest, err := module.LoadLocalManifest("./")

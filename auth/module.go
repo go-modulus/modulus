@@ -30,7 +30,7 @@ func NewManifestModule() module.ManifestModule {
 	graphqlModule := module.NewManifestModule(
 		NewModule(),
 		"github.com/go-modulus/modulus/auth",
-		"Authentication module. Helps protect HTTP routes with tokens and sessions",
+		"Authentication module. Helps protect HTTP routes with tokens and sessions. If you want to use default storage for identities and tokens, please install pgx module first.",
 		"1.0.0",
 	)
 	graphqlModule.Install.AppendFiles(
