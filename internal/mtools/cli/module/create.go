@@ -93,6 +93,8 @@ func (c *Create) Invoke(
 	}
 	projPath := ctx.String("proj-path")
 
+	fmt.Println(color.BlueString("Creating a new module..."))
+
 	manifestItem, err := c.getManifestItem(ctx, projPath)
 	if err != nil {
 		return err
@@ -112,6 +114,7 @@ func (c *Create) Invoke(
 	selectedFeatures := c.getFeatures(ctx)
 
 	if selectedFeatures.storage {
+		fmt.Println(color.BlueString("Installing the storage feature..."))
 		err = c.installStorageFeature(ctx, manifestItem, projPath)
 		if err != nil {
 			return err
@@ -129,7 +132,7 @@ func (c *Create) Invoke(
 	}
 
 	fmt.Println(
-		"Congratulations! Your module is created.",
+		color.GreenString("Congratulations! Your module is created."),
 	)
 
 	return nil

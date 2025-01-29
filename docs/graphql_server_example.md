@@ -18,6 +18,8 @@ If you don't want to read this and follow all the steps from the article, please
 	mtools module create --silent --path=internal --package=blog
 ```
 
+All next calls to `mtools` will be executed in the `blog` directory.
+
 ### Requirements
 
 Every project starts with requirements. Let's define the requirements for our blog API:
@@ -34,3 +36,16 @@ Every project starts with requirements. Let's define the requirements for our bl
 11. The system should provide the `refresh` mutation to refresh the user's token.
 12. The `Admin` can see the list of all users in the system.
 13. The `Admin` can change the role of the user.
+
+### Create the blog module
+First of all, we need to create the blog module. Let's create the `blog` module with the following command:
+
+```bash
+    mtools module create --silent --path=internal --package=blog
+```
+
+After that, we need to define the database schema. Let's use the migrate module to create the first migration:
+
+```bash
+    mtools module create --silent --path=internal/blog --package=migration
+```

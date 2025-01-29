@@ -301,6 +301,15 @@
       },
       "version": "1.0.0",
       "localPath": "internal/graphql"
+    },
+    {
+      "name": "blog",
+      "package": "blog/internal/blog",
+      "description": "",
+      "install": {},
+      "version": "",
+      "localPath": "internal/blog",
+      "isLocalModule": true
     }
   ],
   "entries": [
