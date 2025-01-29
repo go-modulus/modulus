@@ -12,6 +12,10 @@ db: ## Run all db commands
 db-migrate: ## Run migrations from all modules
 	mtools db migrate
 
+.PHONY: db-migrate
+db-add: ## Create new migration in the selected module
+	mtools db add
+
 .PHONY: db-rollback
 db-rollback: ## Rollback the last database migration over the current DB
 	mtools db rollback

@@ -21,7 +21,7 @@ sqlc-tmpl:
         - <<: *codegen-golang
           options:
             <<: *codegen-golang-options
-            default_schema: "public"
+            default_schema: "blog"
             overrides:
               ## Place your module overrides here
               ##- db_type: "test"

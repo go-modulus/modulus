@@ -17,7 +17,7 @@ func main() {
 	path, _ := os.Getwd()
 	cliModule := cli.NewModule().InitConfig(
 		cli.ModuleConfig{
-			Version: "0.1.4",
+			Version: "0.2.0",
 			Usage:   "This is a CLI tool for the Modulus framework. It helps you to create a new project, add modules, and run the project.",
 			GlobalFlags: []cli2.Flag{
 				&cli2.StringFlag{

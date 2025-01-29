@@ -9,6 +9,10 @@ db: ## Run all db commands
 	$(MAKE) db-migrate
 
 .PHONY: db-migrate
+db-add: ## Create new migration in the selected module
+	mtools db add
+
+.PHONY: db-migrate
 db-migrate: ## Run migrations from all modules
 	mtools db migrate
 

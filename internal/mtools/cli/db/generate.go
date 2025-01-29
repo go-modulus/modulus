@@ -46,15 +46,22 @@ func (c *Generate) Invoke(ctx *cli.Context) error {
 		if !utils.FileExists(sqlcFile) {
 			continue
 		}
-		err = exec.CommandContext(ctx.Context, "sqlc", "-f", sqlcFile, "generate").Run()
+		fmt.Println("Generate DTO and DAO files for", color.BlueString(md.Name))
+		fmt.Println(fmt.Sprintf("Running %s ...", color.BlueString("sqlc -f "+sqlcFile+" generate")))
+		cmd := exec.CommandContext(ctx.Context, "sqlc", "-f", sqlcFile, "generate")
+		//stdout, _ := cmd.StdoutPipe()
+		stderr, _ := cmd.StderrPipe()
+		err = cmd.Start()
 		if err != nil {
+			fmt.Println(color.RedString("Cannot start the sqlc command: %s", err.Error()))
+			var buf = make([]byte, 1024)
+			_, _ = stderr.Read(buf)
+			fmt.Println(color.RedString("Execution error:", string(buf)))
 			return err
 		}
 
 		fmt.Println(
-			color.GreenString("The"),
-			color.BlueString(sqlcFile),
-			color.GreenString("file is used to generate code"),
+			color.GreenString("Generated successfully"),
 		)
 	}
 	return nil
