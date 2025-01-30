@@ -95,7 +95,8 @@ Create the `post.sql` file in the `internal/blog/storage/query` directory with t
 ```sql
 -- name: CreatePost :one
 INSERT INTO blog.post (id, title, preview, content)
-VALUES (@id::uuid, @title::text, @preview::text, @content::text);
+VALUES (@id::uuid, @title::text, @preview::text, @content::text)
+RETURNING *;
 
 -- name: FindPost :one
 SELECT *
@@ -113,7 +114,8 @@ UPDATE blog.post
 SET status       = 'published',
     published_at = now()
 WHERE status = 'draft'
-  AND id = @id::uuid;
+  AND id = @id::uuid
+RETURNING *;
 ```
 
 Remove the default query. We don't need it anymore:
@@ -133,5 +135,5 @@ Let's configure `internal/blog/storage/sqlc.tmpl.yaml` to use the `blog` schema:
 Now we have to run generation to make the queries available in the code:
 
 ```bash
-    make db-sqlc-update
+    make db-sqlc-generate
 ```

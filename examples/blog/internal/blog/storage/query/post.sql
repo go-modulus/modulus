@@ -1,6 +1,7 @@
 -- name: CreatePost :one
 INSERT INTO blog.post (id, title, preview, content)
-VALUES (@id::uuid, @title::text, @preview::text, @content::text);
+VALUES (@id::uuid, @title::text, @preview::text, @content::text)
+RETURNING *;
 
 -- name: FindPost :one
 SELECT *
@@ -18,4 +19,5 @@ UPDATE blog.post
 SET status       = 'published',
     published_at = now()
 WHERE status = 'draft'
-  AND id = @id::uuid;
+  AND id = @id::uuid
+RETURNING *;

@@ -33,6 +33,12 @@ Example: mtools db generate
 func (c *Generate) Invoke(ctx *cli.Context) error {
 	projPath := ctx.String("proj-path")
 	manifest, err := module.LoadLocalManifest(projPath)
+	fmt.Println(
+		"Generating DTO and DAO files for the project",
+		color.BlueString(manifest.Name),
+		"at",
+		color.BlueString(projPath),
+	)
 	if err != nil {
 		fmt.Println(color.RedString("Cannot load the project manifest %s/modules.json: %s", projPath, err.Error()))
 		return err
@@ -44,19 +50,19 @@ func (c *Generate) Invoke(ctx *cli.Context) error {
 		storagePath := md.StoragePath(projPath)
 		sqlcFile := storagePath + "/sqlc.yaml"
 		if !utils.FileExists(sqlcFile) {
+			fmt.Println(color.YellowString("Cannot find the sqlc.yaml file in the %s directory", storagePath))
 			continue
 		}
-		fmt.Println("Generate DTO and DAO files for", color.BlueString(md.Name))
+		fmt.Println("Generate DTO and DAO files for the", color.BlueString(md.Name), "module")
 		fmt.Println(fmt.Sprintf("Running %s ...", color.BlueString("sqlc -f "+sqlcFile+" generate")))
 		cmd := exec.CommandContext(ctx.Context, "sqlc", "-f", sqlcFile, "generate")
-		//stdout, _ := cmd.StdoutPipe()
-		stderr, _ := cmd.StderrPipe()
-		err = cmd.Start()
+		_, err := cmd.Output()
 		if err != nil {
-			fmt.Println(color.RedString("Cannot start the sqlc command: %s", err.Error()))
-			var buf = make([]byte, 1024)
-			_, _ = stderr.Read(buf)
-			fmt.Println(color.RedString("Execution error:", string(buf)))
+			if ee, ok := err.(*exec.ExitError); ok {
+				fmt.Println(color.RedString("Execution error:", string(ee.Stderr)))
+			} else {
+				fmt.Println(color.RedString("Cannot start the sqlc command: %s", err.Error()))
+			}
 			return err
 		}
 

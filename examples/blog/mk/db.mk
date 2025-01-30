@@ -26,13 +26,17 @@ db-check-migration: ## Run migrations on test environment, then rollback and mig
 	$(MAKE) db-rollback
 	$(MAKE) db-migrate
 
+.PHONY: db-sqlc-install
+db-sqlc-install: ## Install sqlc
+	go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest@latest
+
 .PHONY: db-sqlc-update
-db-sqlc-update: ## Update sqlc.yaml configs in all modules and geberates Golang code from SQL queries
+db-sqlc-update-config: ## Update sqlc.yaml configs in all modules and geberates Golang code from SQL queries
 	mtools db update-sqlc-config
-	$(MAKE) db-sqlc-generate
 
 .PHONY: db-sqlc-generate
 db-sqlc-generate: ## Generate sqlc files in all modules
+	mtools db update-sqlc-config
 	mtools db generate
 
 

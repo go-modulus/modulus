@@ -4,6 +4,74 @@
 
 package storage
 
-type Ping struct {
-	Pong string `db:"pong" json:"pong"`
+import (
+	"database/sql/driver"
+	"fmt"
+	"time"
+
+	uuid "github.com/gofrs/uuid"
+	null "gopkg.in/guregu/null.v4"
+)
+
+type PostStatus string
+
+const (
+	PostStatusDraft     PostStatus = "draft"
+	PostStatusPublished PostStatus = "published"
+	PostStatusDeleted   PostStatus = "deleted"
+)
+
+func (e *PostStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PostStatus(s)
+	case string:
+		*e = PostStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PostStatus: %T", src)
+	}
+	return nil
+}
+
+type NullPostStatus struct {
+	PostStatus PostStatus `json:"postStatus"`
+	Valid      bool       `json:"valid"` // Valid is true if PostStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPostStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.PostStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PostStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPostStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PostStatus), nil
+}
+
+func AllPostStatusValues() []PostStatus {
+	return []PostStatus{
+		PostStatusDraft,
+		PostStatusPublished,
+		PostStatusDeleted,
+	}
+}
+
+type Post struct {
+	ID          uuid.UUID  `db:"id" json:"id"`
+	Title       string     `db:"title" json:"title"`
+	Preview     string     `db:"preview" json:"preview"`
+	Content     string     `db:"content" json:"content"`
+	Status      PostStatus `db:"status" json:"status"`
+	CreatedAt   time.Time  `db:"created_at" json:"createdAt"`
+	UpdatedAt   time.Time  `db:"updated_at" json:"updatedAt"`
+	PublishedAt null.Time  `db:"published_at" json:"publishedAt"`
+	DeletedAt   null.Time  `db:"deleted_at" json:"deletedAt"`
 }
