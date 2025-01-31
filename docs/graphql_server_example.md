@@ -137,3 +137,319 @@ Now we have to run generation to make the queries available in the code:
 ```bash
     make db-sqlc-generate
 ```
+
+It will generate the `internal/blog/storage/post.sql.go` file with the `CreatePost`, `FindPost`, `FindPosts`, and `PublishPost` functions.
+Also, it will generate the `internal/blog/storage/models.go` file with the `Post` struct and the `PostStatus` enum.
+
+Now we need to configure the database connection. Open .env file and change the following line to your local database connection:
+
+```env
+PGX_DSN=postgres://postgres:foobar@localhost:5432/test?sslmode=disable
+```
+
+If you don't want to use DSN as a configuration feel free to use the separate environment variables for the database connection. But don't forget to comment the `PG_DSN` variable.
+
+```env
+DB_NAME=test
+HOST=localhost
+PASSWORD=foobar
+# Use this variable to set the DSN for the PGX connection. It overwrites the other PG_* variables.
+#PGX_DSN=postgres://postgres:foobar@localhost:5432/test?sslmode=disable
+PORT=5432
+SSL_MODE=disable
+USER=postgres
+```
+
+After doing this, run migrations to create the necessary db with all tables:
+
+```bash
+    make db-migrate
+```
+
+### Create the graphql resolvers
+
+Now we need to create the resolvers for the blog module. Let's create the `internal/blog/graphql` directory and the `resolvers.go` file in it.
+The resolvers will be used to handle the GraphQL queries and mutations.
+
+```shell
+    mkdir internal/blog/graphql
+    touch internal/blog/graphql/resolvers.go
+```
+
+Let's define the resolvers structure:
+
+```go
+package graphql
+
+type Resolver struct {
+	
+}
+```
+
+Now we need to inject it to the `internal/graphql/resolver/resolver.go` file:
+
+```go
+type Resolver struct {
+	// Place all dependencies here
++	blogResolver *blogGraphql.Resolver
+}
+func NewResolver(
++   blogResolver *blogGraphql.Resolver,
+) *Resolver {
+    return &Resolver{
++       blogResolver: blogResolver,
+    }
+}
+```
+
+We can create a schema in `schema.graphql` file in the `internal/blog/graphql` directory defining the Post type and queries and mutations for the Post.
+But it is so boring. Let's use SQLc plugin to generate the schema for us.
+
+Add an anchor for the `codegen-graphql` and `codegen-graphql-options` to the `internal/blog/storage/sqlc.tmpl.yaml` file:
+```yaml
+sqlc-tmpl:
+  options:
+    ...
++    graphql:
++      overrides:
++        *default-overrides
+  sql:
+    ...
+      codegen:
++       - <<: *codegen-graphql
++          options:
++            <<: *codegen-graphql-options
++            package: "blog/internal/blog/storage"  
++            default_schema: "blog"
+        - <<: *codegen-golang
+```
+
+Now we need to run the generation to create the schema:
+
+```bash
+    make db-sqlc-generate
+```
+
+It will generate the `internal/blog/graphql/schema.graphql` file with the `Post` type:
+
+```graphql
+enum PostStatus  @goModel(model: "blog/internal/blog/storage.PostStatus") {
+    draft
+    published
+    deleted
+}
+
+
+type Post @goModel(model: "blog/internal/blog/storage.Post") {
+    id: Uuid!
+    title: String!
+    preview: String!
+    content: String!
+    status: PostStatus!
+    createdAt: Time!
+    updatedAt: Time!
+    publishedAt: Time
+    deletedAt: Time
+}
+```
+
+Also, we need queries and mutation for the `Post` type. Let's add the following code to the `internal/blog/graphql/blog.graphql` file:
+
+```graphql
+extend type Query {
+    post(id: ID!): Post
+    posts: [Post!]!
+}
+
+extend type Mutation {
+    createPost(input: CreatePostInput!): Post!
+    publishPost(id: Uuid!): Post!
+    deletePost(id: Uuid!): Boolean!
+}
+
+input CreatePostInput {
+    title: String!
+    content: String!
+}
+```
+
+Run the generation to create the resolvers:
+
+```bash
+    make graphql-generate
+```
+
+It will generate the `internal/graphql/resolver/blog.resolvers.go` file with blog resolvers.
+
+```go
+// CreatePost is the resolver for the createPost field.
+func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePostInput) (storage.Post, error) {
+	panic(fmt.Errorf("not implemented: CreatePost - createPost"))
+}
+
+// PublishPost is the resolver for the publishPost field.
+func (r *mutationResolver) PublishPost(ctx context.Context, id uuid.UUID) (storage.Post, error) {
+	panic(fmt.Errorf("not implemented: PublishPost - publishPost"))
+}
+
+// DeletePost is the resolver for the deletePost field.
+func (r *mutationResolver) DeletePost(ctx context.Context, id uuid.UUID) (bool, error) {
+	panic(fmt.Errorf("not implemented: DeletePost - deletePost"))
+}
+
+// Post is the resolver for the post field.
+func (r *queryResolver) Post(ctx context.Context, id string) (*storage.Post, error) {
+	panic(fmt.Errorf("not implemented: Post - post"))
+}
+
+// Posts is the resolver for the posts field.
+func (r *queryResolver) Posts(ctx context.Context) ([]storage.Post, error) {
+	panic(fmt.Errorf("not implemented: Posts - posts"))
+}
+```
+
+Copy the resolvers to the `internal/blog/graphql/resolvers.go` file:
+
+```go
+package graphql
+
+import (
+	"blog/internal/blog/storage"
+	"blog/internal/graphql/model"
+	"context"
+	"fmt"
+	"github.com/gofrs/uuid"
+)
+
+type Resolver struct {
+}
+
+// CreatePost is the resolver for the createPost field.
+func (r *Resolver) CreatePost(ctx context.Context, input model.CreatePostInput) (storage.Post, error) {
+	panic(fmt.Errorf("not implemented: CreatePost - createPost"))
+}
+
+// PublishPost is the resolver for the publishPost field.
+func (r *Resolver) PublishPost(ctx context.Context, id uuid.UUID) (storage.Post, error) {
+	panic(fmt.Errorf("not implemented: PublishPost - publishPost"))
+}
+
+// DeletePost is the resolver for the deletePost field.
+func (r *Resolver) DeletePost(ctx context.Context, id uuid.UUID) (bool, error) {
+	panic(fmt.Errorf("not implemented: DeletePost - deletePost"))
+}
+
+// Post is the resolver for the post field.
+func (r *Resolver) Post(ctx context.Context, id string) (*storage.Post, error) {
+	panic(fmt.Errorf("not implemented: Post - post"))
+}
+
+// Posts is the resolver for the posts field.
+func (r *Resolver) Posts(ctx context.Context) ([]storage.Post, error) {
+	panic(fmt.Errorf("not implemented: Posts - posts"))
+}
+```
+
+And call these resolvers from the `internal/graphql/resolver/blog.resolvers.go` file:
+
+```go
+
+// CreatePost is the resolver for the createPost field.
+func (r *mutationResolver) CreatePost(ctx context.Context, input model.CreatePostInput) (storage.Post, error) {
+	return r.blogResolver.CreatePost(ctx, input)
+}
+
+// PublishPost is the resolver for the publishPost field.
+func (r *mutationResolver) PublishPost(ctx context.Context, id uuid.UUID) (storage.Post, error) {
+	return r.blogResolver.PublishPost(ctx, id)
+}
+
+// DeletePost is the resolver for the deletePost field.
+func (r *mutationResolver) DeletePost(ctx context.Context, id uuid.UUID) (bool, error) {
+	return r.blogResolver.DeletePost(ctx, id)
+}
+
+// Post is the resolver for the post field.
+func (r *queryResolver) Post(ctx context.Context, id string) (*storage.Post, error) {
+	return r.blogResolver.Post(ctx, id)
+}
+
+// Posts is the resolver for the posts field.
+func (r *queryResolver) Posts(ctx context.Context) ([]storage.Post, error) {
+	return r.blogResolver.Posts(ctx)
+}
+```
+
+After that run the server:
+
+```bash
+    make install
+    ./bin/console serve
+```
+
+Open the `http://localhost:8080/playground` in the browser and try to run the following query:
+
+```graphql
+{
+    posts {
+        id
+        title
+        preview
+        content
+        status
+        createdAt
+        updatedAt
+        publishedAt
+        deletedAt
+    }
+}
+```
+
+You will have an error message like this: `Something went wrong on our side`. It is because we didn't implement the resolvers yet.
+
+
+### Implement the resolvers
+
+Go to the `internal/blog/graphql/resolvers.go` file and add dependency to the DB to the `Resolver` struct:
+
+```go
+type Resolver struct {
+	blogDb *storage.Queries
+}
+
+func NewResolver(blogDb *storage.Queries) *Resolver {
+	return &Resolver{blogDb: blogDb}
+}
+```
+
+Add the `NewResolver` constructor to the module providers in the `internal/blog/module.go` file:
+
+```go
+func NewModule() *module.Module {
+    return module.NewModule("blog").
+		...
+		AddProviders(
++			graphql.NewResolver,
+```
+
+Now we can implement the resolvers. Let's start with the `posts` query resolver located in the `internal/blog/graphql/resolvers.go` file:
+
+```go
+func (r *Resolver) Posts(ctx context.Context) ([]storage.Post, error) {
+	return r.blogDb.FindPosts(ctx)
+}
+```
+
+The `FindPosts` function returns the list of posts with the status `published` and sorts them by the `published_at` field.
+
+Build server program again and rerun it. Try to get posts again. You will see the empty list of posts in the response without any errors.
+
+The result will be like this:
+
+```json
+{
+  "data": {
+    "posts": []
+  }
+}
+```

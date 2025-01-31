@@ -1,0 +1,15 @@
+extend type Query {
+    post(id: ID!): Post
+    posts: [Post!]!
+}
+
+extend type Mutation {
+    createPost(input: CreatePostInput!): Post!
+    publishPost(id: Uuid!): Post!
+    deletePost(id: Uuid!): Boolean!
+}
+
+input CreatePostInput {
+    title: String!
+    content: String!
+}

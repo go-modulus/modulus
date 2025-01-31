@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	blogGraphql "blog/internal/blog/graphql"
 	"blog/internal/graphql/generated"
 )
 
@@ -10,10 +11,15 @@ import (
 
 type Resolver struct {
 	// Place all dependencies here
+	blogResolver *blogGraphql.Resolver
 }
 
-func NewResolver() *Resolver {
-	return &Resolver{}
+func NewResolver(
+	blogResolver *blogGraphql.Resolver,
+) *Resolver {
+	return &Resolver{
+		blogResolver: blogResolver,
+	}
 }
 
 func (r Resolver) GetDirectives() generated.DirectiveRoot {

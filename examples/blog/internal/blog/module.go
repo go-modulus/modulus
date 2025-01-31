@@ -1,10 +1,11 @@
 package blog
 
 import (
+	"blog/internal/blog/graphql"
 	"blog/internal/blog/storage"
 	"embed"
 	"github.com/go-modulus/modulus/db/pgx"
-	"github.com/go-modulus/modulus/mo
+	"github.com/go-modulus/modulus/module"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/fx"
 	"io/fs"
@@ -26,6 +27,7 @@ func NewModule() *module.Module {
 		).
 		// Add all your services here. DO NOT DELETE AddProviders call. It is used for code generation
 		AddProviders(
+			graphql.NewResolver,
 			func(db *pgxpool.Pool) storage.DBTX {
 				return db
 			},

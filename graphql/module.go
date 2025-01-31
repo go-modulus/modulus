@@ -50,8 +50,16 @@ func NewManifestModule() module.ManifestModule {
 			DestFile:  "internal/graphql/types/uuid.go",
 		},
 		module.InstalledFile{
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/uuid.graphql",
+			DestFile:  "internal/graphql/types/uuid.graphql",
+		},
+		module.InstalledFile{
 			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/void.go",
 			DestFile:  "internal/graphql/types/void.go",
+		},
+		module.InstalledFile{
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/void.graphql",
+			DestFile:  "internal/graphql/types/void.graphql",
 		},
 		module.InstalledFile{
 			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/gqlgen.mk",

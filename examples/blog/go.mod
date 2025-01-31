@@ -3,14 +3,16 @@ module blog
 go 1.23.1
 
 require (
-	github.com/99designs/gqlgen v0.17.63
-	github.com/go-modulus/modulus v0.1.11
+	github.com/99designs/gqlgen v0.17.64
+	github.com/go-modulus/modulus v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gofrs/uuid v4.4.0+incompatible
+	github.com/jackc/pgx/v5 v5.7.2
 	github.com/rakyll/gotest v0.0.6
-	github.com/vektah/gqlparser/v2 v2.5.21
+	github.com/vektah/gqlparser/v2 v2.5.22
 	github.com/vektra/mockery/v2 v2.51.1
 	go.uber.org/fx v1.23.0
+	gopkg.in/guregu/null.v4 v4.0.0
 )
 
 require (
@@ -40,7 +42,6 @@ require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/pgx/v5 v5.7.2 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
 	github.com/laher/mergefs v0.1.1 // indirect
@@ -91,3 +92,5 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/go-modulus/modulus v0.2.1 => ../../
