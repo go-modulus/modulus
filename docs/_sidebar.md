@@ -1,0 +1,12 @@
+- Getting Started
+  - [Installation](getting_started.md#installation)
+  - [Adding Modules](getting_started.md#adding-modules)
+  - [Create the New Module](getting_started.md#create-the-new-module)
+  - [Migrate the Database](getting_started.md#migrate-the-database)
+  - [Install GraphQL](getting_started.md#install-graphql-module)
+- GraphQL Server Example
+  - [GraphQL Server Example](graphql_server_example.md#real-graphql-server-example)
+  - [Requirements](graphql_server_example.md#requirements)
+  - [Blog Module SQL](graphql_server_example.md#blog-module-sql)
+  - [Blog Module GraphQL](graphql_server_example.md#blog-module-graphql)
+  - [Resolvers Implementation](graphql_server_example.md#resolvers-implementation)

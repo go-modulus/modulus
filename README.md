@@ -8,6 +8,8 @@ This project tends to answer the common developer questions:
 - How to build a server application that can be easily tested?
 - How to build a server application that can be easily deployed?
 
+Read more docs [here](https://go-modulus.github.io/modulus).
+
 The first version of the project allows developers to create only two types of applications: cli app, and GraphQL web server. 
 
 In both cases, the application is composed of modules. 

@@ -1,4 +1,4 @@
-## Real GraphQL Server Example
+# Real GraphQL Server Example
 
 Let's create a real-world example that provides a simple GraphQL API for the non-existent Front-end.
 The requirements for the project will be described later. Now, let's say that we want to create an API for the blog.
@@ -20,7 +20,7 @@ If you don't want to read this and follow all the steps from the article, please
 
 All next calls to `mtools` will be executed in the `blog` directory.
 
-### Requirements
+## Requirements
 
 Every project starts with requirements. Let's define the requirements for our blog API:
 1. There are 2 roles in the system: `Admin` and `User`.
@@ -37,7 +37,7 @@ Every project starts with requirements. Let's define the requirements for our bl
 12. The `Admin` can see the list of all users in the system.
 13. The `Admin` can change the role of the user.
 
-### Prepare SQL of the blog  module
+## Blog Module SQL
 First of all, we need to create the blog module. Let's create the `blog` module with the following command:
 
 ```bash
@@ -166,7 +166,7 @@ After doing this, run migrations to create the necessary db with all tables:
     make db-migrate
 ```
 
-### Create the graphql resolvers
+## Blog Module GraphQL
 
 Now we need to create the resolvers for the blog module. Let's create the `internal/blog/graphql` directory and the `resolvers.go` file in it.
 The resolvers will be used to handle the GraphQL queries and mutations.
@@ -408,7 +408,7 @@ Open the `http://localhost:8080/playground` in the browser and try to run the fo
 You will have an error message like this: `Something went wrong on our side`. It is because we didn't implement the resolvers yet.
 
 
-### Implement the resolvers
+## Resolvers Implementation
 
 Go to the `internal/blog/graphql/resolvers.go` file and add dependency to the DB to the `Resolver` struct:
 

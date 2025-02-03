@@ -1,8 +1,8 @@
-## Getting Started
+# Getting Started
 
 This is a guide to help you get started with the project. It will walk you through the steps to get the project up and running on your local machine.
 
-### Installation
+## Installation
 First, you need to install the Modulus CLI tool. You can do this by running the following command:
 
 ```bash
@@ -17,7 +17,7 @@ mtools init --path=./testproj --name=testproj
 
 If the `init` command runs without parameters it will prompt you to enter a name for your project. You can enter any name you like, but for this guide, we will use `testproj`.
 
-### Adding Modules
+## Adding Modules
 Once you have initialized your project, you can add modules to it. Modules are reusable components that provide functionality to your project. To add a module, run the following command:
 
 ```bash
@@ -65,7 +65,7 @@ All initializations of the module will be done automatically:
 * The module file with DI dependencies will be created in the `internal/example` directory.
 * Also, the `internal/example/storage/migraion` and `internal/example/storage/query` directories are initialized with default files. Fill free to remove them and create the own ones.
 
-### Migrate the database
+## Migrate the database
 First of all, run the local PostgreSQL on your machine or in docker.
 Configure the database connection according the PG_* variables in the `.env` file of the project. 
 Or fill these variables with your own values.
@@ -200,7 +200,7 @@ If everything is ok, you will see such an output in the console:
 Now you can open the browser and go to the `http://localhost:8001/hello-world` to see the result of the handler.
 
 
-### Install GraphQL module
+## Install GraphQL module
 We use the `gqlgen` module to add GraphQL support to our project. It is based on the https://gqlgen.com library which is a powerful tool that helps you to create a GraphQL server in your application from graphql schemas.
 
 To install the `gqlgen` module, run the following command:
