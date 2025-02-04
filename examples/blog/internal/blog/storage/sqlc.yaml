@@ -167,6 +167,10 @@ sql:
         - options:
             default_schema: blog
             emit_all_enum_values: true
+            exclude:
+                - Post.deletedAt
+                - Post.updatedAt
+                - Post.createdAt
             gen_common_parts: false
             package: blog/internal/blog/storage
           out: ../graphql

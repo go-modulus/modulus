@@ -16,9 +16,6 @@ type Post @goModel(model: "blog/internal/blog/storage.Post") {
     preview: String!
     content: String!
     status: PostStatus!
-    createdAt: Time!
-    updatedAt: Time!
     publishedAt: Time
-    deletedAt: Time
 }
 

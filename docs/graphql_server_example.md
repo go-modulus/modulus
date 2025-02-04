@@ -453,3 +453,182 @@ The result will be like this:
   }
 }
 ```
+
+There are no data in the database yet. Let's create a new post. We need to implement the `createPost` mutation resolver.
+
+Add the following code to the `internal/blog/graphql/resolvers.go` file:
+
+```go   
+import(
+    "github.com/go-modulus/modulus/validator"
+    validation "github.com/go-ozzo/ozzo-validation/v4"
+    "github.com/gofrs/uuid"
+)
+
+func (r *Resolver) CreatePost(ctx context.Context, input model.CreatePostInput) (storage.Post, error) {
+    // validate input using Ozzo validation
+    err := validation.ValidateStructWithContext(
+        ctx,
+        &input,
+        validation.Field(
+            &input.Title,
+            validation.Required.Error("Title is required"),
+        ),
+        validation.Field(
+            &input.Content,
+            validation.Required.Error("Content is required"),
+        ),
+    )
+    if err != nil {
+        return storage.Post{}, validator.NewErrInvalidInputFromOzzo(ctx, err)
+    }
+    
+    preview := input.Content
+    if len(input.Content) > 100 {
+        preview = input.Content[0:100]
+    }
+    
+    return r.blogDb.CreatePost(
+        ctx, storage.CreatePostParams{
+            ID:      uuid.Must(uuid.NewV6()),
+            Title:   input.Title,
+            Preview: preview,
+            Content: input.Content,
+        },
+    )
+}
+
+```
+
+The `CreatePost` function validates the input using the `Ozzo` validation library. If the input is invalid, the function returns an error.
+The function creates a new post with the `draft` status and the `preview` field that contains the first 100 characters of the `content` field.
+Try it in playground:
+
+```graphql
+
+mutation {
+  createPost(input:{title:"aaa", content:"bbb"}){id, title, content}
+}
+
+```
+
+It will return the new post with the `id`, `title`, and `content` fields.
+
+```json
+{
+  "data": {
+    "createPost": {
+      "id": "f3b3b3b3-3b3b-3b3b-3b3b-3b3b3b3b3b3b",
+      "title": "aaa",
+      "content": "bbb"
+    }
+  }
+}
+```
+
+But the post is still in the `draft` status. Let's implement the `publishPost` mutation resolver.
+
+Add the following code to the `internal/blog/graphql/resolvers.go` file:
+
+```go
+func (r *Resolver) PublishPost(ctx context.Context, id uuid.UUID) (storage.Post, error) {
+    return r.blogDb.PublishPost(ctx, id)
+}
+```
+
+The `PublishPost` function publishes the post with the provided `id`. Try it in playground:
+
+```graphql
+mutation {
+  publishPost(id:"f3b3b3b3-3b3b-3b3b-3b3b-3b3b3b3b3b3b"){id, title, content, status}
+}
+```
+
+Run the `posts` query. You will see errors like these: 
+```
+{
+  "errors": [
+    {
+      "message": "Something went wrong on our side (RID: )",
+      "path": [
+        "posts",
+        0,
+        "publishedAt"
+      ],
+      "extensions": {
+        "code": "panic: not implemented: PublishedAt - publishedAt"
+      }
+    },
+    {
+      "message": "Something went wrong on our side (RID: )",
+      "path": [
+        "posts",
+        0,
+        "deletedAt"
+      ],
+      "extensions": {
+        "code": "panic: not implemented: DeletedAt - deletedAt"
+      }
+    }
+```
+
+It is because the Go types of fields in the DB models and in Graphql models differs.
+For each field with different type the resolver is added by the `gqlgen` generator.
+Let's fill this resolver with the type conversion.
+
+Open the `internal/graphql/resolver/schema.resolvers.go` file and change the following code:
+
+```go
+func (r *postResolver) PublishedAt(ctx context.Context, obj *storage.Post) (*time.Time, error) {
+	panic(fmt.Errorf("not implemented: PublishedAt - publishedAt"))
+}
+```
+
+to
+
+```go
+func (r *postResolver) PublishedAt(ctx context.Context, obj *storage.Post) (*time.Time, error) {
+    if obj.PublishedAt.Valid {
+        return &obj.PublishedAt.Time, nil
+    }
+    return nil, nil
+}
+```
+
+Also, you can see the `deletedAt` field in the result, but it is a little bit system field. Let's hide it from the result with `createdAt` and `updatedAt`.
+Open the `internal/blog/blog/storage/sqlc.tmpl.yaml` file and add fields:
+
+```yaml
+      codegen:
+        - <<: *codegen-graphql
+          options:
+            ...
++            exclude:
++              - "Post.deletedAt"
++              - "Post.updatedAt"
++              - "Post.createdAt"
+```
+
+Run the SQLc and GraphQL generations again:
+
+```bash
+    make db-sqlc-generate
+    make graphql-generate
+```
+
+Call the query
+
+```graphql
+{
+    posts {
+        id
+        title
+        preview
+        content
+        status
+        publishedAt
+    }
+}
+```
+
+and you will see the list of posts without errors.

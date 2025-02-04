@@ -5,6 +5,8 @@ import (
 	"blog/internal/graphql/model"
 	"context"
 	"fmt"
+	"github.com/go-modulus/modulus/validator"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/gofrs/uuid"
 )
 
@@ -18,12 +20,41 @@ func NewResolver(blogDb *storage.Queries) *Resolver {
 
 // CreatePost is the resolver for the createPost field.
 func (r *Resolver) CreatePost(ctx context.Context, input model.CreatePostInput) (storage.Post, error) {
-	panic(fmt.Errorf("not implemented: CreatePost - createPost"))
+	// validate input using Ozzo validation
+	err := validation.ValidateStructWithContext(
+		ctx,
+		&input,
+		validation.Field(
+			&input.Title,
+			validation.Required.Error("Title is required"),
+		),
+		validation.Field(
+			&input.Content,
+			validation.Required.Error("Content is required"),
+		),
+	)
+	if err != nil {
+		return storage.Post{}, validator.NewErrInvalidInputFromOzzo(ctx, err)
+	}
+
+	preview := input.Content
+	if len(input.Content) > 100 {
+		preview = input.Content[0:100]
+	}
+
+	return r.blogDb.CreatePost(
+		ctx, storage.CreatePostParams{
+			ID:      uuid.Must(uuid.NewV6()),
+			Title:   input.Title,
+			Preview: preview,
+			Content: input.Content,
+		},
+	)
 }
 
 // PublishPost is the resolver for the publishPost field.
 func (r *Resolver) PublishPost(ctx context.Context, id uuid.UUID) (storage.Post, error) {
-	panic(fmt.Errorf("not implemented: PublishPost - publishPost"))
+	return r.blogDb.PublishPost(ctx, id)
 }
 
 // DeletePost is the resolver for the deletePost field.
