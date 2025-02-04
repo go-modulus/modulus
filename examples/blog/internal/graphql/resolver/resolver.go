@@ -3,6 +3,7 @@ package resolver
 import (
 	blogGraphql "blog/internal/blog/graphql"
 	"blog/internal/graphql/generated"
+	userGraphql "blog/internal/user/graphql"
 )
 
 // This file will not be regenerated automatically.
@@ -12,13 +13,16 @@ import (
 type Resolver struct {
 	// Place all dependencies here
 	blogResolver *blogGraphql.Resolver
+	userResolver *userGraphql.Resolver
 }
 
 func NewResolver(
 	blogResolver *blogGraphql.Resolver,
+	userResolver *userGraphql.Resolver,
 ) *Resolver {
 	return &Resolver{
 		blogResolver: blogResolver,
+		userResolver: userResolver,
 	}
 }
 

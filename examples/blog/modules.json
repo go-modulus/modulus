@@ -310,6 +310,15 @@
       "version": "",
       "localPath": "internal/blog",
       "isLocalModule": true
+    },
+    {
+      "name": "user",
+      "package": "blog/internal/user",
+      "description": "",
+      "install": {},
+      "version": "",
+      "localPath": "internal/user",
+      "isLocalModule": true
     }
   ],
   "entries": [

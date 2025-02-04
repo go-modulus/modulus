@@ -3,6 +3,7 @@ package main
 import (
 	"blog/internal/blog"
 	graphql2 "blog/internal/graphql"
+	"blog/internal/user"
 	"fmt"
 	"github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/config"
@@ -35,6 +36,7 @@ func main() {
 		graphql2.NewModule(),
 		logger.NewModule(),
 		blog.NewModule(),
+		user.NewModule(),
 	}
 
 	invokes := []fx.Option{

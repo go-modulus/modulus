@@ -632,3 +632,309 @@ Call the query
 ```
 
 and you will see the list of posts without errors.
+
+
+## Adding users
+According to the requirements, we need to add users and create posts for them. Let's create the `user` table and queries for it.
+
+```shell 
+     make module-create
+```
+
+Enter the `user` module name and the `user` schema name. Also, chose all the default values.
+The result view of all selected options are there: 
+![create user module](./img/create_user_module.png)
+
+Create the new migration in the `internal/user/storage/migration` directory:
+
+```shell
+    make db-add
+    unlink internal/user/storage/migration/default_schema.sql
+    unlink internal/user/storage/query/default_query.sql
+``` 
+
+The selected options are there:
+![create user table](./img/create_user_table.png)
+
+Add the following code to the created file of the migration:
+
+```sql
+-- migrate:up
+
+CREATE SCHEMA IF NOT EXISTS "user";
+
+CREATE TABLE "user"."user" (
+    id uuid PRIMARY KEY,
+    email text NOT NULL unique CHECK (email ~* '^.+@.+\..+$'),
+    name text NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT now(),
+    updated_at TIMESTAMP NOT NULL DEFAULT now()
+);
+
+-- migrate:down
+DROP TABLE "user"."user";
+DROP SCHEMA "user";
+```
+
+Add users queries to the `internal/user/storage/query/user.sql` file:
+
+```sql
+-- name: RegisterUser :one
+INSERT INTO "user"."user" (id, email, name)
+VALUES (@id::uuid, @email::text, @name::text)
+RETURNING *;
+
+-- name: FindUserByEmail :one
+SELECT * FROM "user"."user"
+WHERE email = @email::text;
+```
+
+Run the checking the new SQL migration. It will appy the migration, rollback it and apply again.
+It is a good practice to check a new migration for rollback and apply it again.
+
+```shell
+    make db-check-migration
+``` 
+Run the SQLc generation to make the queries available in the code:
+
+```shell
+    make db-sqlc-generate
+```
+
+Change the `internal/user/storage/sqlc.tmpl.yaml` file to generate GraphQL types by SQLc:
+
+```yaml
+sqlc-tmpl:
+  version: "2"
+  options:
+    graphql:
+      overrides:
+        *default-overrides
+    ...
+  sql:  
+    codegen:
+    - <<: *codegen-graphql
+      options:
+        <<: *codegen-graphql-options
+        default_schema: "user"
+        package: "blog/internal/user/storage"
+```
+
+Run the generation to create the schema:
+
+```shell
+    make db-sqlc-generate
+```
+
+Add the `user` resolvers to the `internal/user/graphql/resolvers.go` file:
+
+```go
+package graphql
+
+type Resolver struct {
+	
+}
+
+func NewResolver() *Resolver {
+	return &Resolver{}
+}
+```
+
+Add the `userResolver` resolver to the `internal/graphql/resolver/resolver.go` file:
+
+```go
+type Resolver struct {
+    // Place all dependencies here
++   userResolver *userGraphql.Resolver
+}
+
+func NewResolver(
+	...
+    userResolver *userGraphql.Resolver,
+) *Resolver {
+    return &Resolver{
+		...
+        userResolver: userResolver,
+    }
+}
+```
+
+Add the `user.graphql` schema to the `internal/user/graphql` directory:
+
+```graphql
+extend type Mutation {
+    registerUser(input: RegisterUserInput!): User!
+} 
+
+input RegisterUserInput @goModel(model: "blog/internal/user/action.RegisterUserInput") {
+    email: String!
+    password: String!
+    name: String!
+}
+```
+
+As you can see we linked the `RegisterUserInput` to the `RegisterUserInput` struct in the `blog/internal/user/action` package.
+Let's create an action for the user module. Create the `internal/user/action` directory and the `register_user.go` file in it.
+
+```shell
+    mkdir internal/user/action
+    touch internal/user/action/register_user.go
+```
+
+Action is a struct with one public method `Execute` that returns the result of the action.
+
+```go
+package action
+
+import (
+	"blog/internal/user/storage"
+	"braces.dev/errtrace"
+	"context"
+	"errors"
+	"github.com/go-modulus/modulus/errors/erruser"
+	"github.com/go-modulus/modulus/validator"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/gofrs/uuid"
+	"github.com/jackc/pgx/v5"
+)
+
+var ErrUserAlreadyExists = erruser.New("user already exists", "User already exists. Please login or use another email.")
+
+type RegisterUserInput struct {
+	Email    string
+	Password string
+	Name     string
+}
+
+func (i *RegisterUserInput) Validate(ctx context.Context) error {
+	err := validation.ValidateStruct(
+		i,
+		validation.Field(
+			&i.Email,
+			validation.Required.Error("Email is required"),
+			is.Email.Error("Email is not valid"),
+		),
+		validation.Field(
+			&i.Password,
+			validation.Required.Error("Password is required"),
+			validation.Length(6, 20).Error("Password must be between 6 and 20 characters"),
+		),
+		validation.Field(
+			&i.Name,
+			validation.Required.Error("Name is required"),
+			is.Alpha.Error("Name must contain only letters"),
+		),
+	)
+
+	if err != nil {
+		return validator.NewErrInvalidInputFromOzzo(ctx, err)
+	}
+
+	return nil
+}
+
+type RegisterUser struct {
+	userDb *storage.Queries
+}
+
+func NewRegisterUser(userDb *storage.Queries) *RegisterUser {
+	return &RegisterUser{userDb: userDb}
+}
+
+func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (storage.User, error) {
+	err := input.Validate(context.Background())
+	if err != nil {
+		return storage.User{}, err
+	}
+
+	_, err = r.userDb.FindUserByEmail(ctx, input.Email)
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return storage.User{}, errtrace.Wrap(err)
+		}
+	} else {
+		return storage.User{}, ErrUserAlreadyExists
+	}
+	user, err := r.userDb.RegisterUser(
+		ctx, storage.RegisterUserParams{
+			ID: uuid.Must(uuid.NewV6()),
+			Email: input.Email,
+			Name:  input.Name,
+		},
+	)
+	if err != nil {
+		return storage.User{}, errtrace.Wrap(err)
+	}
+	return user, nil
+}
+```
+
+Add the `RegisterUser` action to the module providers in the `internal/user/module.go` file:
+
+```go
+import (
+    "blog/internal/user/action"
+    "blog/internal/user/graphql"
+)
+func NewModule() *module.Module {
+    return module.NewModule("user").
+        ...
+        AddProviders(
+        ...
+        action.NewRegisterUser,
+		graphql.NewResolver,
+    )
+}
+```
+
+Add a link to the `RegisterUser` action in the `internal/user/graphql/resolvers.go` file:
+
+```go
+package graphql
+
+import (
+	"blog/internal/user/action"
+	"blog/internal/user/storage"
+	"context"
+)
+
+type Resolver struct {
+	register *action.RegisterUser
+}
+
+func NewResolver(
+	register *action.RegisterUser,
+) *Resolver {
+	return &Resolver{
+		register: register,
+	}
+}
+
+func (r *Resolver) RegisterUser(ctx context.Context, input action.RegisterUserInput) (storage.User, error) {
+	return r.register.Execute(ctx, input)
+}
+```
+
+Generate the GraphQL resolvers:
+
+```shell
+    make graphql-generate
+```
+
+In the generated `internal/graphql/resolver/user.resolvers.go` file, add the following code:
+
+```go
+func (r *mutationResolver) RegisterUser(ctx context.Context, input action.RegisterUserInput) (storage.User, error) {
+	return r.userResolver.RegisterUser(ctx, input)
+}
+```
+
+
+Now we can register a new user. Try it in playground:
+
+```graphql
+mutation {
+  registerUser(input:{email:"test@test.com", password:"123456", name:"Test"}){id, email, name}
+}
+```

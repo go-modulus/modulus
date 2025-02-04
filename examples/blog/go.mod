@@ -3,6 +3,7 @@ module blog
 go 1.23.1
 
 require (
+	braces.dev/errtrace v0.3.0
 	github.com/99designs/gqlgen v0.17.64
 	github.com/go-modulus/modulus v0.2.1
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
@@ -16,7 +17,6 @@ require (
 )
 
 require (
-	braces.dev/errtrace v0.3.0 // indirect
 	github.com/agnivade/levenshtein v1.2.0 // indirect
 	github.com/amacneil/dbmate/v2 v2.24.2 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496 // indirect

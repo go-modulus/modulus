@@ -1,0 +1,9 @@
+extend type Mutation {
+    registerUser(input: RegisterUserInput!): User!
+}
+
+input RegisterUserInput @goModel(model: "blog/internal/user/action.RegisterUserInput") {
+    email: String!
+    password: String!
+    name: String!
+}

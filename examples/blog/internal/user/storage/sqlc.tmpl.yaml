@@ -1,5 +1,3 @@
-{{ define "sqlc.yaml.tmpl" }}
-{{- /*gotype:github.com/go-modulus/modulus/internal/mtools/action.InstallStorageTmplVars*/ -}}
 ## This file is a template for the sqlc configuration file.
 ## It is used to generate the final sqlc.yaml file.
 ## All anchors will be used from the <ROOT_OF_PROJECT>/sqlc.definition.yaml file.
@@ -10,53 +8,32 @@ sqlc-tmpl:
     golang:
       overrides:
         *default-overrides
-    {{- if .Config.GenerateGraphql }}
     graphql:
       overrides:
         *default-overrides
-    {{- end -}}
-    {{- if .Config.GenerateDataloader }}
-    dataloader:
-      overrides:
-        *default-overrides
-    {{- end -}}
-    {{- if .Config.GenerateFixture }}
-    fixture:
-      overrides:
-        *default-overrides
-    {{- end -}}
   plugins:
-    {{- if .Config.GenerateGraphql }}
     - <<: *plugin-graphql
-    {{- end -}}
-    {{- if .Config.GenerateDataloader }}
     - <<: *plugin-dataloader
-    {{- end -}}
-    {{- if .Config.GenerateFixture }}
     - <<: *plugin-fixture
-    {{ end -}}
     - <<: *plugin-golang
   sql:
     - schema: "migration"
       queries: "query"
       engine: "postgresql"
       codegen:
+        - <<: *codegen-graphql
+          options:
+            <<: *codegen-graphql-options
+            default_schema: "user"
+            package: "blog/internal/user/storage"
         - <<: *codegen-golang
           options:
             <<: *codegen-golang-options
-            default_schema: "{{ .Config.Schema }}"
+            default_schema: "user"
             overrides:
               ## Place your module overrides here
               ##- db_type: "test"
               ##  go_type: "github.com/shopspring/test"
               ##  nullable: true
-        {{- if .Config.GenerateGraphql }}
-        - <<: *codegen-graphql
-          options:
-            <<: *codegen-graphql-options
-            default_schema: "{{ .Config.Schema }}"
-            package: "{{ .StoragePath }}"
-        {{ end -}}
 
 
-{{ end }}
