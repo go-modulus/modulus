@@ -6,10 +6,18 @@ import (
 	"encoding/json"
 	"errors"
 	errors2 "github.com/go-modulus/modulus/auth/errors"
+	errors3 "github.com/go-modulus/modulus/errors"
 	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"golang.org/x/crypto/bcrypt"
+	"gopkg.in/guregu/null.v4"
 )
+
+type CredentialType string
+
+const CredentialTypePassword CredentialType = "password"
+const CredentialTypeOTP CredentialType = "otp"
 
 type DefaultRepository struct {
 	queries *Queries
@@ -25,6 +33,7 @@ func (r *DefaultRepository) MakeIdentity(
 	ctx context.Context,
 	identity string,
 	UserID uuid.UUID,
+	password string,
 	AdditionalData map[string]interface{},
 ) error {
 	_, err := r.GetIdentity(ctx, identity)
@@ -50,7 +59,31 @@ func (r *DefaultRepository) MakeIdentity(
 		},
 	)
 
-	return errtrace.Wrap(err)
+	if err != nil {
+		return errtrace.Wrap(errors3.WrapCause(errors2.ErrCannotCreateIdentity, err))
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+
+	if err != nil {
+		return errtrace.Wrap(errors3.WrapCause(errors2.ErrCannotHashPassword, err))
+	}
+
+	_, err = r.queries.CreateCredential(
+		ctx, CreateCredentialParams{
+			ID:             uuid.Must(uuid.NewV6()),
+			IdentityID:     id,
+			Type:           string(CredentialTypePassword),
+			CredentialHash: string(hash),
+			ExpiredAt:      null.Time{},
+		},
+	)
+
+	if err != nil {
+		return errtrace.Wrap(errors3.WrapCause(errors2.ErrCannotCreateCredential, err))
+	}
+
+	return nil
 }
 
 func (r *DefaultRepository) GetIdentity(

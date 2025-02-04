@@ -938,3 +938,13 @@ mutation {
   registerUser(input:{email:"test@test.com", password:"123456", name:"Test"}){id, email, name}
 }
 ```
+
+## Authenticate User
+We have the `registerUser` mutation to create a new user. Now we need to authenticate the user.
+To get the basement for our authentication we can use the `auth` module of the Modulus framework.
+Let's install the `auth` module with the following command:
+
+```shell
+    make module-install
+```
+And select `auth` module from the list of available modules.

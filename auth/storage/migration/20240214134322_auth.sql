@@ -48,11 +48,23 @@ CREATE INDEX access_token_session_id_idx ON auth.access_token (session_id);
 CREATE TABLE "auth".session
 (
     id         uuid PRIMARY KEY,
-    user_id    uuid                 NOT NULL,
+    user_id    uuid        NOT NULL,
     data       jsonb,
-    expires_at timestamptz          NOT NULL,
-    created_at timestamptz          NOT NULL
+    expires_at timestamptz NOT NULL,
+    created_at timestamptz NOT NULL
 );
+
+CREATE TABLE auth.credential
+(
+    id              uuid PRIMARY KEY,
+    identity_id     uuid        NOT NULL,
+    credential_hash text        NOT NULL,
+    type            text        NOT NULL,
+    expired_at      timestamptz          DEFAULT NOW(),
+    created_at      timestamptz NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX credential_identity_id_idx ON auth.credential (identity_id);
 
 -- migrate:down
 DROP TABLE auth.identity;

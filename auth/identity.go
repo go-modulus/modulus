@@ -14,7 +14,13 @@ type IdentityRepository interface {
 	// It is used for login and other operations.
 	// It may be an email, username, or other unique identifier.
 	// You are able to create multiple identities for a single user.
-	MakeIdentity(ctx context.Context, identity string, userId uuid.UUID, AdditionalData map[string]interface{}) error
+	MakeIdentity(
+		ctx context.Context,
+		identity string,
+		userId uuid.UUID,
+		password string,
+		AdditionalData map[string]interface{},
+	) error
 
 	GetIdentity(
 		ctx context.Context,
