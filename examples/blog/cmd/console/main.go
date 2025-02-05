@@ -1,10 +1,12 @@
 package main
 
 import (
+	auth2 "blog/internal/auth"
 	"blog/internal/blog"
 	graphql2 "blog/internal/graphql"
 	"blog/internal/user"
 	"fmt"
+	"github.com/go-modulus/modulus/auth"
 	"github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/config"
 	"github.com/go-modulus/modulus/db/migrator"
@@ -37,6 +39,8 @@ func main() {
 		logger.NewModule(),
 		blog.NewModule(),
 		user.NewModule(),
+		auth.NewModule(),
+		auth2.NewModule(),
 	}
 
 	invokes := []fx.Option{

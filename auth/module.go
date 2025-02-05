@@ -40,7 +40,7 @@ func NewManifestModule() module.ManifestModule {
 		},
 		module.InstalledFile{
 			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/install/module.go.tmpl",
-			DestFile:  "internal/auth/install/module.go.tmpl",
+			DestFile:  "internal/auth/module.go",
 		},
 	).AppendPostInstallCommands(
 		module.PostInstallCommand{

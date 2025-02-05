@@ -195,8 +195,16 @@
             "destFile": "internal/graphql/types/uuid.go"
           },
           {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/uuid.graphql",
+            "destFile": "internal/graphql/types/uuid.graphql"
+          },
+          {
             "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/void.go",
             "destFile": "internal/graphql/types/void.go"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/types/void.graphql",
+            "destFile": "internal/graphql/types/void.graphql"
           },
           {
             "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/gqlgen.mk",
@@ -249,7 +257,7 @@
           },
           {
             "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/install/module.go.tmpl",
-            "destFile": "internal/auth/install/module.go.tmpl"
+            "destFile": "internal/auth/module.go"
           }
         ],
         "postInstallCommands": [

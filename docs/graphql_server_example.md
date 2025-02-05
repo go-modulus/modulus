@@ -947,4 +947,4 @@ Let's install the `auth` module with the following command:
 ```shell
     make module-install
 ```
-And select `auth` module from the list of available modules.
+And select `modulus auth` module from the list of available modules.

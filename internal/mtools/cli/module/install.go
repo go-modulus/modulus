@@ -514,7 +514,7 @@ func (c *Install) askModulesFromManifest(
 			Label:     "Please choose a module from the list below:",
 			Items:     selectItems,
 			Templates: templates,
-			Size:      5,
+			Size:      15,
 			Searcher:  searcher,
 			// Start the cursor at the currently selected index
 			CursorPos:    selectedPos,

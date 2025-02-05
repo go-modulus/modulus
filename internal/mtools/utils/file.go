@@ -28,7 +28,7 @@ func CreateDirIfNotExists(dirName string) error {
 	if DirExists(dirName) {
 		return nil
 	}
-	return os.Mkdir(dirName, 0755)
+	return os.MkdirAll(dirName, 0755)
 }
 
 func CopyFromTemplates(src, dest string) error {
