@@ -1,11 +1,10 @@
 package graphql
 
 import (
+	"embed"
 	"github.com/go-modulus/modulus/module"
-	"{{.ProjectPackage}}/internal/graphql/generated"
-	"{{.ProjectPackage}}/internal/graphql/resolver"
-
-	"github.com/99designs/gqlgen/graphql"
+	"go.uber.org/fx"
+	"io/fs"
 )
 
 //go:embed storage/migration/*.sql

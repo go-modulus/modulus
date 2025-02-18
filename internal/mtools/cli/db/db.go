@@ -45,8 +45,12 @@ func newPgxConfig(projPath string) (pgx.ModuleConfig, error) {
 	return cfg, nil
 }
 
-func commonMigrationFs(projPath string) (fs.FS, error) {
-	manifest, err := module.LoadLocalManifest(projPath)
+func commonMigrationFs(projPath string, manifestFile string) (fs.FS, error) {
+	projFs := os.DirFS(projPath)
+	if manifestFile == "" {
+		manifestFile = "modules.json"
+	}
+	manifest, err := module.NewFromFs(projFs, manifestFile)
 	if err != nil {
 		fmt.Println(color.RedString("Cannot load the project manifest %s/modules.json: %s", projPath, err.Error()))
 		return nil, errtrace.Wrap(err)
@@ -55,11 +59,14 @@ func commonMigrationFs(projPath string) (fs.FS, error) {
 	modulesFs := make([]fs.FS, 0)
 
 	for _, md := range manifest.Modules {
-		if !md.IsLocalModule {
+		if md.LocalPath == "" {
 			continue
 		}
 
 		storagePath := md.StoragePath(projPath)
+		if _, err := os.Stat(storagePath); os.IsNotExist(err) {
+			continue
+		}
 		modulesFs = append(modulesFs, os.DirFS(storagePath))
 	}
 

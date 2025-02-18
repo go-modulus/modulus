@@ -1,29 +1,36 @@
 package auth
 
 import (
-	"github.com/go-modulus/modulus/auth/storage"
+	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/go-modulus/modulus/module"
 )
 
 // NewModule creates a new module for the auth package.
 // It works with the default storage implementation. It uses pgxpool for database connection.
 //
-// If you want to use a custom storage implementation, you should create all interfaces provided as overridden
-// and call authModule := auth.OverrideRepository(auth.NewModule(), NewStorageImplementation).
+// If you want to use a custom identity storage implementation, you should implement the IdentityRepository interface
+// and call authModule := auth.OverrideIdentityRepository(auth.NewModule(), NewYourIdentityRepositoryImplementation).
+// The same is for other storage implementations if you need it.
 func NewModule() *module.Module {
 	return module.NewModule("modulus auth").
+		AddDependencies(pgx.NewModule()).
 		AddProviders(
 			NewMiddlewareConfig,
 			NewMiddleware,
+			NewPasswordAuthenticator,
 		).
-		SetOverriddenProvider("DefaultRepository", storage.NewDefaultRepository).
-		SetOverriddenProvider("IdentityRepository", NewIdentityRepository)
+		SetOverriddenProvider("CredentialRepository", NewDefaultCredentialRepository).
+		SetOverriddenProvider("IdentityRepository", NewDefaultIdentityRepository)
 }
 
-// OverrideRepository overrides the default storage implementation with the custom one.
-func OverrideRepository(authModule *module.Module, repository interface{}) *module.Module {
-	return authModule.SetOverriddenProvider("IdentityRepository", repository).
-		RemoveOverriddenProvider("DefaultRepository")
+// OverrideIdentityRepository overrides the default identity storage implementation with the custom one.
+func OverrideIdentityRepository(authModule *module.Module, repository interface{}) *module.Module {
+	return authModule.SetOverriddenProvider("IdentityRepository", repository)
+}
+
+// OverrideCredentialRepository overrides the default credential storage implementation with the custom one.
+func OverrideCredentialRepository(authModule *module.Module, repository interface{}) *module.Module {
+	return authModule.SetOverriddenProvider("CredentialRepository", repository)
 }
 
 func NewManifestModule() module.ManifestModule {

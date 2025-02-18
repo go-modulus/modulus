@@ -102,9 +102,10 @@ type RefreshToken struct {
 }
 
 type Session struct {
-	ID        uuid.UUID `db:"id" json:"id"`
-	UserID    uuid.UUID `db:"user_id" json:"userId"`
-	Data      []byte    `db:"data" json:"data"`
-	ExpiresAt time.Time `db:"expires_at" json:"expiresAt"`
-	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	ID         uuid.UUID `db:"id" json:"id"`
+	UserID     uuid.UUID `db:"user_id" json:"userId"`
+	IdentityID uuid.UUID `db:"identity_id" json:"identityId"`
+	Data       []byte    `db:"data" json:"data"`
+	ExpiresAt  time.Time `db:"expires_at" json:"expiresAt"`
+	CreatedAt  time.Time `db:"created_at" json:"createdAt"`
 }

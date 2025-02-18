@@ -28,6 +28,13 @@ Example: mtools db rollback
 Example: mtools db rollback --proj-path=/path/to/project/root
 `,
 		Action: updateSqlc.Invoke,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "local-manifest",
+				Usage:   "Local manifest file related to the project root. Default is modules.json",
+				Aliases: []string{"lmf"},
+			},
+		},
 	}
 }
 
@@ -39,7 +46,8 @@ func (c *Rollback) Invoke(ctx *cli.Context) error {
 		return errtrace.Wrap(err)
 	}
 
-	projFs, err := commonMigrationFs(projPath)
+	manifest := ctx.String("local-manifest")
+	projFs, err := commonMigrationFs(projPath, manifest)
 	if err != nil {
 		return errtrace.Wrap(err)
 	}

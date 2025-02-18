@@ -28,6 +28,13 @@ Example: mtools db migrate
 Example: mtools db migrate --proj-path=/path/to/project/root
 `,
 		Action: updateSqlc.Invoke,
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "local-manifest",
+				Usage:   "Local manifest file related to the project root. Default is modules.json",
+				Aliases: []string{"lmf"},
+			},
+		},
 	}
 }
 
@@ -39,13 +46,15 @@ func (c *Migrate) Invoke(ctx *cli.Context) error {
 		return errtrace.Wrap(err)
 	}
 
-	projFs, err := commonMigrationFs(projPath)
+	manifest := ctx.String("local-manifest")
+
+	projFs, err := commonMigrationFs(projPath, manifest)
 	if err != nil {
 		return errtrace.Wrap(err)
 	}
 
 	dbMate := newDBMate(config, projFs, []string{"migration"})
-	err = dbMate.Migrate()
+	err = dbMate.CreateAndMigrate()
 	if err != nil {
 		return errtrace.Wrap(err)
 	}

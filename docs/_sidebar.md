@@ -10,3 +10,4 @@
   - [Blog Module SQL](graphql_server_example.md#blog-module-sql)
   - [Blog Module GraphQL](graphql_server_example.md#blog-module-graphql)
   - [Resolvers Implementation](graphql_server_example.md#resolvers-implementation)
+  - [Authenticate User](graphql_server_example.md#authenticate-user)

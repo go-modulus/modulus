@@ -939,6 +939,8 @@ mutation {
 }
 ```
 
+
+
 ## Authenticate User
 We have the `registerUser` mutation to create a new user. Now we need to authenticate the user.
 To get the basement for our authentication we can use the `auth` module of the Modulus framework.
@@ -948,3 +950,47 @@ Let's install the `auth` module with the following command:
     make module-install
 ```
 And select `modulus auth` module from the list of available modules.
+
+After installing the `auth` module, we need to update the schema of our DB with the new tables for the `auth` module.
+Migrations have been created in the `internal/auth/storage/migration`, so we need to run them:
+
+```shell
+    make db-migrate
+```
+
+Now let's make an identity for the further authentication at the `RegisterUser` action.
+
+Add to the `internal/user/action/register_user.go` file:
+
+```go
+type RegisterUser struct {
+	userDb *storage.Queries
+	authRepository auth.IdentityRepository
+}
+
+func NewRegisterUser(
+	userDb *storage.Queries,
+	authRepository auth.IdentityRepository,
+) *RegisterUser {
+	return &RegisterUser{
+		userDb: userDb,
+		authRepository: authRepository,
+	}
+}
+
+func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (storage.User, error) {
+	...
+	err = r.authRepository.MakeIdentity(
+        ctx,
+        input.Email,
+        user.ID,
+        input.Password,
+        nil,
+    )
+    if err != nil {
+        return storage.User{}, errtrace.Wrap(err)
+    }
+	return user, nil
+}
+
+```

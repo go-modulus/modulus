@@ -54,3 +54,8 @@ build-testproject: ## Build the example of a project
 .PHONY: db-sqlc-generate
 db-sqlc-generate: ## Generate sqlc files in all modules
 	sqlc -f auth/storage/sqlc.yaml generate
+
+.PHONY: db-migrate
+db-migrate: ## Run migrations in test database
+	$(MAKE) install
+	APP_ENV=test ./bin/mtools db migrate --local-manifest=modules-test.json

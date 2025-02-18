@@ -96,6 +96,20 @@ func NewFromFs(manifestFs fs.FS, filename string) (*Manifest, error) {
 	return m, nil
 }
 
+//func (m *Manifest) NewFromFullPath(fullFileName string) (*Manifest, error) {
+//	if utils.FileExists(fullFileName) {
+//		path := strings.Split(fullFileName, "/")
+//		projPath := strings.Join(path[:len(path)-1], "/")
+//		fileName := path[len(path)-1]
+//		projFs := os.DirFS(projPath)
+//		manifest, err := NewFromFs(projFs, fileName)
+//		if err != nil {
+//			return nil, err
+//		}
+//		return manifest, nil
+//	}
+//}
+
 func LoadLocalManifest(projPath string) (Manifest, error) {
 	entries, err := readEntries(projPath)
 	if err != nil {

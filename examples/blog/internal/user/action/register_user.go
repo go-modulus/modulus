@@ -5,6 +5,7 @@ import (
 	"braces.dev/errtrace"
 	"context"
 	"errors"
+	"github.com/go-modulus/modulus/auth"
 	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/go-modulus/modulus/validator"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -49,11 +50,18 @@ func (i *RegisterUserInput) Validate(ctx context.Context) error {
 }
 
 type RegisterUser struct {
-	userDb *storage.Queries
+	userDb         *storage.Queries
+	authRepository auth.IdentityRepository
 }
 
-func NewRegisterUser(userDb *storage.Queries) *RegisterUser {
-	return &RegisterUser{userDb: userDb}
+func NewRegisterUser(
+	userDb *storage.Queries,
+	authRepository auth.IdentityRepository,
+) *RegisterUser {
+	return &RegisterUser{
+		userDb:         userDb,
+		authRepository: authRepository,
+	}
 }
 
 func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (storage.User, error) {
@@ -76,6 +84,16 @@ func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (st
 			Email: input.Email,
 			Name:  input.Name,
 		},
+	)
+	if err != nil {
+		return storage.User{}, errtrace.Wrap(err)
+	}
+	err = r.authRepository.MakeIdentity(
+		ctx,
+		input.Email,
+		user.ID,
+		input.Password,
+		nil,
 	)
 	if err != nil {
 		return storage.User{}, errtrace.Wrap(err)
