@@ -20,11 +20,12 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 				"user",
 				"password",
 				userId,
+				[]string{},
 				nil,
 			)
 
-			savedIdentity := identityFixture.ID(identity.ID).PullUpdates(t).Cleanup(t).GetEntity()
-			credentialFixture.IdentityID(identity.ID).CleanupAllOfIdentity(t)
+			savedIdentity := fixtureFactory.Identity().ID(identity.ID).PullUpdates(t).Cleanup(t).GetEntity()
+			fixtureFactory.Credential().IdentityID(identity.ID).CleanupAllOfIdentity(t)
 
 			t.Log("When the identity is registered")
 			t.Log("	Then the identity is returned")
@@ -50,13 +51,14 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 				"user1",
 				"password",
 				userId,
+				[]string{},
 				map[string]interface{}{
 					"key": "value",
 				},
 			)
 
-			savedIdentity := identityFixture.ID(identity.ID).PullUpdates(t).Cleanup(t).GetEntity()
-			credentialFixture.IdentityID(identity.ID).CleanupAllOfIdentity(t)
+			savedIdentity := fixtureFactory.Identity().ID(identity.ID).PullUpdates(t).Cleanup(t).GetEntity()
+			fixtureFactory.Credential().IdentityID(identity.ID).CleanupAllOfIdentity(t)
 
 			t.Log("When the identity is registered")
 			t.Log("	Then the identity is returned")
@@ -77,7 +79,7 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 		"fail on the second registration of identity", func(t *testing.T) {
 			t.Parallel()
 			userId := uuid.Must(uuid.NewV6())
-			identity := identityFixture.
+			identity := fixtureFactory.Identity().
 				ID(uuid.Must(uuid.NewV6())).
 				UserID(userId).
 				Identity("user2").
@@ -88,6 +90,7 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 				identity.Identity,
 				"password",
 				userId,
+				[]string{},
 				nil,
 			)
 
@@ -102,7 +105,7 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 		"fail if identity is blocked", func(t *testing.T) {
 			t.Parallel()
 			userId := uuid.Must(uuid.NewV6())
-			identity := identityFixture.
+			identity := fixtureFactory.Identity().
 				ID(uuid.Must(uuid.NewV6())).
 				UserID(userId).
 				Identity("user3").
@@ -115,6 +118,7 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 				identity.Identity,
 				"password",
 				userId,
+				[]string{},
 				nil,
 			)
 
@@ -136,14 +140,15 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 				"user4",
 				"password",
 				userId,
+				[]string{},
 				map[string]interface{}{
 					"key": "value",
 				},
 			)
 			require.NoError(t, err)
 
-			identityFixture.ID(identity.ID).Cleanup(t)
-			credentialFixture.IdentityID(identity.ID).CleanupAllOfIdentity(t)
+			fixtureFactory.Identity().ID(identity.ID).Cleanup(t)
+			fixtureFactory.Credential().IdentityID(identity.ID).CleanupAllOfIdentity(t)
 
 			performer, err := passwordAuth.Authenticate(
 				context.Background(),
@@ -177,13 +182,13 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 			t.Parallel()
 
 			userId := uuid.Must(uuid.NewV6())
-			identity := identityFixture.
+			identity := fixtureFactory.Identity().
 				ID(uuid.Must(uuid.NewV6())).
 				Identity("user6").
 				UserID(userId).
 				Create(t).
 				GetEntity()
-			credentialFixture.
+			fixtureFactory.Credential().
 				ID(uuid.Must(uuid.NewV6())).
 				IdentityID(identity.ID).
 				Type(string(auth.CredentialTypeOTP)).
@@ -204,14 +209,14 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 			t.Parallel()
 
 			userId := uuid.Must(uuid.NewV6())
-			identity := identityFixture.
+			identity := fixtureFactory.Identity().
 				ID(uuid.Must(uuid.NewV6())).
 				Identity("user7").
 				UserID(userId).
 				Create(t).
 				GetEntity()
 
-			credentialFixture.
+			fixtureFactory.Credential().
 				ID(uuid.Must(uuid.NewV6())).
 				IdentityID(identity.ID).
 				CredentialHash("ssss").
@@ -231,7 +236,7 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 			t.Parallel()
 
 			userId := uuid.Must(uuid.NewV6())
-			identity := identityFixture.
+			identity := fixtureFactory.Identity().
 				ID(uuid.Must(uuid.NewV6())).
 				Identity("user8").
 				UserID(userId).

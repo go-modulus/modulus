@@ -19,6 +19,7 @@ type Identity struct {
 	ID       uuid.UUID              `db:"id" json:"id"`
 	Identity string                 `db:"identity" json:"identity"`
 	UserID   uuid.UUID              `db:"user_id" json:"userId"`
+	Roles    []string               `db:"roles" json:"roles"`
 	Status   IdentityStatus         `db:"status" json:"status"`
 	Data     map[string]interface{} `db:"data" json:"data"`
 }
@@ -56,6 +57,24 @@ type IdentityRepository interface {
 		ctx context.Context,
 		identity string,
 	) (Identity, error)
+	// GetById returns the identity with the given ID.
+	// If the identity does not exist, it returns github.com/go-modulus/modulus/auth.ErrIdentityNotFound.
+	GetById(
+		ctx context.Context,
+		id uuid.UUID,
+	) (Identity, error)
+
+	AddRoles(
+		ctx context.Context,
+		identityID uuid.UUID,
+		roles ...string,
+	) error
+
+	RemoveRoles(
+		ctx context.Context,
+		identityID uuid.UUID,
+		roles ...string,
+	) error
 }
 
 type DefaultIdentityRepository struct {
@@ -115,6 +134,7 @@ func (r *DefaultIdentityRepository) transform(
 		ID:       identity.ID,
 		Identity: identity.Identity,
 		UserID:   identity.UserID,
+		Roles:    identity.Roles,
 		Status:   IdentityStatus(identity.Status),
 		Data:     data,
 	}
@@ -132,4 +152,44 @@ func (r *DefaultIdentityRepository) Get(
 		return Identity{}, errtrace.Wrap(err)
 	}
 	return r.transform(res), nil
+}
+
+func (r *DefaultIdentityRepository) GetById(
+	ctx context.Context,
+	id uuid.UUID,
+) (Identity, error) {
+	res, err := r.queries.FindIdentityById(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return Identity{}, ErrIdentityNotFound
+		}
+		return Identity{}, errtrace.Wrap(err)
+	}
+	return r.transform(res), nil
+}
+
+func (r *DefaultIdentityRepository) AddRoles(
+	ctx context.Context,
+	identityID uuid.UUID,
+	roles ...string,
+) error {
+	return r.queries.AddRoles(
+		ctx, storage.AddRolesParams{
+			ID:    identityID,
+			Roles: roles,
+		},
+	)
+}
+
+func (r *DefaultIdentityRepository) RemoveRoles(
+	ctx context.Context,
+	identityID uuid.UUID,
+	roles ...string,
+) error {
+	return r.queries.RemoveRoles(
+		ctx, storage.RemoveRolesParams{
+			ID:    identityID,
+			Roles: roles,
+		},
+	)
 }

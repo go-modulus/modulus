@@ -1,9 +1,20 @@
 extend type Mutation {
     registerUser(input: RegisterUserInput!): User!
+    loginUser(input: LoginUserInput!): TokenPair!
 }
 
 input RegisterUserInput @goModel(model: "blog/internal/user/action.RegisterUserInput") {
     email: String!
     password: String!
     name: String!
+}
+
+input LoginUserInput @goModel(model: "blog/internal/user/action.LoginUserInput") {
+    email: String!
+    password: String!
+}
+
+type TokenPair @goModel(model: "blog/internal/user/action.TokenPair") {
+    accessToken: String!
+    refreshToken: String!
 }

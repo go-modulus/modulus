@@ -50,17 +50,17 @@ func (i *RegisterUserInput) Validate(ctx context.Context) error {
 }
 
 type RegisterUser struct {
-	userDb         *storage.Queries
-	authRepository auth.IdentityRepository
+	userDb       *storage.Queries
+	passwordAuth *auth.PasswordAuthenticator
 }
 
 func NewRegisterUser(
 	userDb *storage.Queries,
-	authRepository auth.IdentityRepository,
+	passwordAuth *auth.PasswordAuthenticator,
 ) *RegisterUser {
 	return &RegisterUser{
-		userDb:         userDb,
-		authRepository: authRepository,
+		userDb:       userDb,
+		passwordAuth: passwordAuth,
 	}
 }
 
@@ -88,11 +88,11 @@ func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (st
 	if err != nil {
 		return storage.User{}, errtrace.Wrap(err)
 	}
-	err = r.authRepository.MakeIdentity(
+	_, err = r.passwordAuth.Register(
 		ctx,
 		input.Email,
-		user.ID,
 		input.Password,
+		user.ID,
 		nil,
 	)
 	if err != nil {

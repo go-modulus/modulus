@@ -965,26 +965,26 @@ Add to the `internal/user/action/register_user.go` file:
 ```go
 type RegisterUser struct {
 	userDb *storage.Queries
-	authRepository auth.IdentityRepository
+	passwordAuth *auth.PasswordAuthenticator
 }
 
 func NewRegisterUser(
 	userDb *storage.Queries,
-	authRepository auth.IdentityRepository,
+    passwordAuth *auth.PasswordAuthenticator,
 ) *RegisterUser {
 	return &RegisterUser{
 		userDb: userDb,
-		authRepository: authRepository,
+		passwordAuth: passwordAuth,
 	}
 }
 
 func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (storage.User, error) {
 	...
-	err = r.authRepository.MakeIdentity(
+	_, err = r.passwordAuth.Register(
         ctx,
         input.Email,
-        user.ID,
         input.Password,
+        user.ID,
         nil,
     )
     if err != nil {
@@ -994,3 +994,37 @@ func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (st
 }
 
 ```
+
+Make a login mutation in the `internal/user/graphql/user.graphql` file:
+
+```graphql
+
+extend type Mutation {
+    ...
+    loginUser(input: LoginUserInput!): TokenPair!
+}
+
+
+input LoginUserInput @goModel(model: "blog/internal/user/action.LoginUserInput") {
+    email: String!
+    password: String!
+}
+
+type TokenPair @goModel(model: "blog/internal/user/action.TokenPair") {
+    accessToken: String!
+    refreshToken: String!
+}
+
+```
+
+Generate resolvers and add the `loginUser` resolver to the `internal/user/graphql/resolvers.go` file. Link added resolver with generated resolver in the `internal/graphql/resolver/user.resolvers.go` file.
+This steps the same as we did for the `registerUser` mutation.
+
+Also, don't forget to make the `LoginUser` action in the `internal/user/action/login_user.go` file.
+Call its constructor in the `internal/user/module.go` file.
+And call Execute method in the `internal/user/graphql/resolvers.go` file.
+
+
+
+
+

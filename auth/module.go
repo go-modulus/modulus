@@ -3,7 +3,14 @@ package auth
 import (
 	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/go-modulus/modulus/module"
+	"time"
 )
+
+type ModuleConfig struct {
+	AccessTokenTTL  time.Duration `env:"AUTH_ACCESS_TOKEN_TTL, default:1h"`
+	RefreshTokenTTL time.Duration `env:"AUTH_REFRESH_TOKEN_TTL, default:720h"`
+	HashTokens      bool          `env:"AUTH_HASH_TOKENS, default:true"`
+}
 
 // NewModule creates a new module for the auth package.
 // It works with the default storage implementation. It uses pgxpool for database connection.
@@ -18,19 +25,30 @@ func NewModule() *module.Module {
 			NewMiddlewareConfig,
 			NewMiddleware,
 			NewPasswordAuthenticator,
+			NewPlainTokenAuthenticator,
 		).
 		SetOverriddenProvider("CredentialRepository", NewDefaultCredentialRepository).
-		SetOverriddenProvider("IdentityRepository", NewDefaultIdentityRepository)
+		SetOverriddenProvider("IdentityRepository", NewDefaultIdentityRepository).
+		SetOverriddenProvider("TokenRepository", NewDefaultTokenRepository).
+		InitConfig(&ModuleConfig{})
 }
 
 // OverrideIdentityRepository overrides the default identity storage implementation with the custom one.
+// repository should be a constructor returning the implementation of the IdentityRepository interface.
 func OverrideIdentityRepository(authModule *module.Module, repository interface{}) *module.Module {
 	return authModule.SetOverriddenProvider("IdentityRepository", repository)
 }
 
 // OverrideCredentialRepository overrides the default credential storage implementation with the custom one.
+// repository should be a constructor returning the implementation of the CredentialRepository interface.
 func OverrideCredentialRepository(authModule *module.Module, repository interface{}) *module.Module {
 	return authModule.SetOverriddenProvider("CredentialRepository", repository)
+}
+
+// OverrideTokenRepository overrides the default token storage implementation with the custom one.
+// repository should be a constructor returning the implementation of the TokenRepository interface.
+func OverrideTokenRepository(authModule *module.Module, repository interface{}) *module.Module {
+	return authModule.SetOverriddenProvider("TokenRepository", repository)
 }
 
 func NewManifestModule() module.ManifestModule {

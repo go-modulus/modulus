@@ -15,7 +15,7 @@ import (
 const createRefreshToken = `-- name: CreateRefreshToken :one
 INSERT INTO auth.refresh_token (hash, session_id, data, expires_at)
 VALUES ($1::text, $2::uuid, $3::jsonb, $4)
-RETURNING hash, session_id, data, revoked_at, used_at, expires_at, created_at`
+RETURNING hash, session_id, revoked_at, expires_at, created_at`
 
 type CreateRefreshTokenParams struct {
 	Hash      string    `db:"hash" json:"hash"`
@@ -35,9 +35,7 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 	err := row.Scan(
 		&i.Hash,
 		&i.SessionID,
-		&i.Data,
 		&i.RevokedAt,
-		&i.UsedAt,
 		&i.ExpiresAt,
 		&i.CreatedAt,
 	)
@@ -45,7 +43,7 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 }
 
 const getRefreshTokenByHash = `-- name: GetRefreshTokenByHash :one
-SELECT hash, session_id, data, revoked_at, used_at, expires_at, created_at
+SELECT hash, session_id, revoked_at, expires_at, created_at
 FROM auth.refresh_token
 WHERE hash = $1`
 
@@ -55,41 +53,39 @@ func (q *Queries) GetRefreshTokenByHash(ctx context.Context, hash string) (Refre
 	err := row.Scan(
 		&i.Hash,
 		&i.SessionID,
-		&i.Data,
 		&i.RevokedAt,
-		&i.UsedAt,
 		&i.ExpiresAt,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
-const revokeRefreshTokens = `-- name: RevokeRefreshTokens :exec
+const revokeRefreshToken = `-- name: RevokeRefreshToken :exec
 UPDATE auth.refresh_token
-SET revoked_at = $2::timestamptz
-WHERE session_id = $1 AND used_at IS NULL`
+SET revoked_at = now()
+WHERE hash = $1 AND revoked_at IS NULL`
 
-type RevokeRefreshTokensParams struct {
-	SessionID uuid.UUID `db:"session_id" json:"sessionId"`
-	RevokedAt time.Time `db:"revoked_at" json:"revokedAt"`
-}
-
-func (q *Queries) RevokeRefreshTokens(ctx context.Context, arg RevokeRefreshTokensParams) error {
-	_, err := q.db.Exec(ctx, revokeRefreshTokens, arg.SessionID, arg.RevokedAt)
+func (q *Queries) RevokeRefreshToken(ctx context.Context, hash string) error {
+	_, err := q.db.Exec(ctx, revokeRefreshToken, hash)
 	return err
 }
 
-const useRefreshToken = `-- name: UseRefreshToken :exec
+const revokeSessionRefreshTokens = `-- name: RevokeSessionRefreshTokens :exec
 UPDATE auth.refresh_token
-SET used_at = $2::timestamptz
-WHERE hash = $1`
+SET revoked_at = now()
+WHERE session_id = $1 AND revoked_at IS NULL`
 
-type UseRefreshTokenParams struct {
-	Hash   string    `db:"hash" json:"hash"`
-	UsedAt time.Time `db:"used_at" json:"usedAt"`
+func (q *Queries) RevokeSessionRefreshTokens(ctx context.Context, sessionID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, revokeSessionRefreshTokens, sessionID)
+	return err
 }
 
-func (q *Queries) UseRefreshToken(ctx context.Context, arg UseRefreshTokenParams) error {
-	_, err := q.db.Exec(ctx, useRefreshToken, arg.Hash, arg.UsedAt)
+const revokeSessionsRefreshTokens = `-- name: RevokeSessionsRefreshTokens :exec
+UPDATE auth.refresh_token
+SET revoked_at = now()
+WHERE session_id = $1::uuid[] AND revoked_at IS NULL`
+
+func (q *Queries) RevokeSessionsRefreshTokens(ctx context.Context, sessionIds []uuid.UUID) error {
+	_, err := q.db.Exec(ctx, revokeSessionsRefreshTokens, sessionIds)
 	return err
 }

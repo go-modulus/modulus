@@ -71,6 +71,7 @@ func (a *PasswordAuthenticator) Register(
 	identity,
 	password string,
 	userID uuid.UUID,
+	roles []string,
 	additionalData map[string]interface{},
 ) (Identity, error) {
 	identityObj, err := a.identityRepository.Get(ctx, identity)
@@ -96,6 +97,13 @@ func (a *PasswordAuthenticator) Register(
 	_, err = a.credentialRepository.Create(ctx, identityObj.ID, string(hash), string(CredentialTypePassword), nil)
 	if err != nil {
 		return Identity{}, errtrace.Wrap(err)
+	}
+
+	if len(roles) > 0 {
+		err = a.identityRepository.AddRoles(ctx, identityObj.ID, roles...)
+		if err != nil {
+			return Identity{}, errtrace.Wrap(err)
+		}
 	}
 
 	return identityObj, nil

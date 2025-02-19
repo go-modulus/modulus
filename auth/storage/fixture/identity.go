@@ -52,6 +52,12 @@ func (f *IdentityFixture) Data(data []byte) *IdentityFixture {
 	return c
 }
 
+func (f *IdentityFixture) Roles(roles string) *IdentityFixture {
+	c := f.clone()
+	c.entity.Roles = roles
+	return c
+}
+
 func (f *IdentityFixture) UpdatedAt(updatedAt time.Time) *IdentityFixture {
 	c := f.clone()
 	c.entity.UpdatedAt = updatedAt
@@ -73,9 +79,9 @@ func (f *IdentityFixture) clone() *IdentityFixture {
 
 func (f *IdentityFixture) save(ctx context.Context) error {
 	query := `INSERT INTO auth.identity
-            (id, identity, user_id, status, data, updated_at, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING id, identity, user_id, status, data, updated_at, created_at
+            (id, identity, user_id, status, data, roles, updated_at, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id, identity, user_id, status, data, roles, updated_at, created_at
         `
 	row := f.db.QueryRow(ctx, query,
 		f.entity.ID,
@@ -83,6 +89,7 @@ func (f *IdentityFixture) save(ctx context.Context) error {
 		f.entity.UserID,
 		f.entity.Status,
 		f.entity.Data,
+		f.entity.Roles,
 		f.entity.UpdatedAt,
 		f.entity.CreatedAt,
 	)
@@ -92,6 +99,7 @@ func (f *IdentityFixture) save(ctx context.Context) error {
 		&f.entity.UserID,
 		&f.entity.Status,
 		&f.entity.Data,
+		&f.entity.Roles,
 		&f.entity.UpdatedAt,
 		&f.entity.CreatedAt,
 	)
@@ -142,6 +150,7 @@ func (f *IdentityFixture) PullUpdates(tb testing.TB) *IdentityFixture {
 		&c.entity.UserID,
 		&c.entity.Status,
 		&c.entity.Data,
+		&c.entity.Roles,
 		&c.entity.UpdatedAt,
 		&c.entity.CreatedAt,
 	)
@@ -159,8 +168,9 @@ func (f *IdentityFixture) PushUpdates(tb testing.TB) *IdentityFixture {
             user_id = $3,
             status = $4,
             data = $5,
-            updated_at = $6,
-            created_at = $7
+            roles = $6,
+            updated_at = $7,
+            created_at = $8
         WHERE id = $1
         `
 	_, err := f.db.Exec(
@@ -171,6 +181,7 @@ func (f *IdentityFixture) PushUpdates(tb testing.TB) *IdentityFixture {
 		f.entity.UserID,
 		f.entity.Status,
 		f.entity.Data,
+		f.entity.Roles,
 		f.entity.UpdatedAt,
 		f.entity.CreatedAt,
 	)

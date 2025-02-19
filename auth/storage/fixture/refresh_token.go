@@ -35,21 +35,9 @@ func (f *RefreshTokenFixture) SessionID(sessionID uuid.UUID) *RefreshTokenFixtur
 	return c
 }
 
-func (f *RefreshTokenFixture) Data(data []byte) *RefreshTokenFixture {
-	c := f.clone()
-	c.entity.Data = data
-	return c
-}
-
 func (f *RefreshTokenFixture) RevokedAt(revokedAt null.Time) *RefreshTokenFixture {
 	c := f.clone()
 	c.entity.RevokedAt = revokedAt
-	return c
-}
-
-func (f *RefreshTokenFixture) UsedAt(usedAt null.Time) *RefreshTokenFixture {
-	c := f.clone()
-	c.entity.UsedAt = usedAt
 	return c
 }
 
@@ -74,25 +62,21 @@ func (f *RefreshTokenFixture) clone() *RefreshTokenFixture {
 
 func (f *RefreshTokenFixture) save(ctx context.Context) error {
 	query := `INSERT INTO auth.refresh_token
-            (hash, session_id, data, revoked_at, used_at, expires_at, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING hash, session_id, data, revoked_at, used_at, expires_at, created_at
+            (hash, session_id, revoked_at, expires_at, created_at)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING hash, session_id, revoked_at, expires_at, created_at
         `
 	row := f.db.QueryRow(ctx, query,
 		f.entity.Hash,
 		f.entity.SessionID,
-		f.entity.Data,
 		f.entity.RevokedAt,
-		f.entity.UsedAt,
 		f.entity.ExpiresAt,
 		f.entity.CreatedAt,
 	)
 	err := row.Scan(
 		&f.entity.Hash,
 		&f.entity.SessionID,
-		&f.entity.Data,
 		&f.entity.RevokedAt,
-		&f.entity.UsedAt,
 		&f.entity.ExpiresAt,
 		&f.entity.CreatedAt,
 	)
@@ -140,9 +124,7 @@ func (f *RefreshTokenFixture) PullUpdates(tb testing.TB) *RefreshTokenFixture {
 	err := row.Scan(
 		&c.entity.Hash,
 		&c.entity.SessionID,
-		&c.entity.Data,
 		&c.entity.RevokedAt,
-		&c.entity.UsedAt,
 		&c.entity.ExpiresAt,
 		&c.entity.CreatedAt,
 	)
@@ -157,11 +139,9 @@ func (f *RefreshTokenFixture) PushUpdates(tb testing.TB) *RefreshTokenFixture {
 	query := `
         UPDATE auth.refresh_token SET 
             session_id = $2,
-            data = $3,
-            revoked_at = $4,
-            used_at = $5,
-            expires_at = $6,
-            created_at = $7
+            revoked_at = $3,
+            expires_at = $4,
+            created_at = $5
         WHERE hash = $1
         `
 	_, err := f.db.Exec(
@@ -169,9 +149,7 @@ func (f *RefreshTokenFixture) PushUpdates(tb testing.TB) *RefreshTokenFixture {
 		query,
 		f.entity.Hash,
 		f.entity.SessionID,
-		f.entity.Data,
 		f.entity.RevokedAt,
-		f.entity.UsedAt,
 		f.entity.ExpiresAt,
 		f.entity.CreatedAt,
 	)

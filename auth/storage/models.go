@@ -66,6 +66,8 @@ type AccessToken struct {
 	Hash       string    `db:"hash" json:"hash"`
 	IdentityID uuid.UUID `db:"identity_id" json:"identityId"`
 	SessionID  uuid.UUID `db:"session_id" json:"sessionId"`
+	UserID     uuid.UUID `db:"user_id" json:"userId"`
+	Roles      []string  `db:"roles" json:"roles"`
 	Data       []byte    `db:"data" json:"data"`
 	RevokedAt  null.Time `db:"revoked_at" json:"revokedAt"`
 	ExpiresAt  time.Time `db:"expires_at" json:"expiresAt"`
@@ -87,6 +89,7 @@ type Identity struct {
 	UserID    uuid.UUID      `db:"user_id" json:"userId"`
 	Status    IdentityStatus `db:"status" json:"status"`
 	Data      []byte         `db:"data" json:"data"`
+	Roles     []string       `db:"roles" json:"roles"`
 	UpdatedAt time.Time      `db:"updated_at" json:"updatedAt"`
 	CreatedAt time.Time      `db:"created_at" json:"createdAt"`
 }
@@ -94,9 +97,7 @@ type Identity struct {
 type RefreshToken struct {
 	Hash      string    `db:"hash" json:"hash"`
 	SessionID uuid.UUID `db:"session_id" json:"sessionId"`
-	Data      []byte    `db:"data" json:"data"`
 	RevokedAt null.Time `db:"revoked_at" json:"revokedAt"`
-	UsedAt    null.Time `db:"used_at" json:"usedAt"`
 	ExpiresAt time.Time `db:"expires_at" json:"expiresAt"`
 	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 }

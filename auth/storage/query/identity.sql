@@ -17,3 +17,18 @@ where identity = @identity::text;
 select *
 from "auth"."identity"
 where user_id = @user_id::uuid;
+
+-- name: FindIdentityById :one
+select *
+from "auth"."identity"
+where id = @id::uuid;
+
+-- name: AddRoles :exec
+update "auth"."identity"
+set roles = array(select distinct unnest(roles || @roles::text[]))
+where id = @id::uuid;
+
+-- name: RemoveRoles :exec
+update "auth"."identity"
+set roles = array(select distinct unnest(roles) except select distinct unnest(@roles::text[]))
+where id = @id::uuid;

@@ -12,19 +12,19 @@ import (
 )
 
 var (
-	passwordAuth      *auth.PasswordAuthenticator
-	credentialFixture *fixture.CredentialFixture
-	identityFixture   *fixture.IdentityFixture
+	passwordAuth   *auth.PasswordAuthenticator
+	plainTokenAuth *auth.PlainTokenAuthenticator
+	fixtureFactory *fixture.FixturesFactory
 )
 
 func TestMain(m *testing.M) {
 	test.LoadEnv("..")
 	mod := auth.NewModule().
-		AddFxOptions(fixture.FxProvide()).
 		AddProviders(
 			func(db *pgxpool.Pool) storage.DBTX {
 				return db
 			},
+			fixture.NewFixturesFactory,
 		)
 
 	test.TestMain(
@@ -32,8 +32,8 @@ func TestMain(m *testing.M) {
 		module.BuildFx(mod),
 		fx.Populate(
 			&passwordAuth,
-			&credentialFixture,
-			&identityFixture,
+			&plainTokenAuth,
+			&fixtureFactory,
 		),
 	)
 }

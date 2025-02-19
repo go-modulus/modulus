@@ -12,6 +12,7 @@ CREATE TABLE auth.identity
     user_id    uuid                 NOT NULL,
     status     auth.identity_status NOT NULL DEFAULT 'active'::auth.identity_status,
     data       jsonb,
+    roles      text[]               NOT NULL DEFAULT '{}',
     updated_at timestamptz          NOT NULL DEFAULT NOW(),
     created_at timestamptz          NOT NULL DEFAULT NOW()
 );
@@ -22,24 +23,25 @@ CREATE TABLE auth.refresh_token
 (
     hash       text PRIMARY KEY,
     session_id uuid        NOT NULL,
-    data       jsonb,
     revoked_at timestamptz,
-    used_at    timestamptz,
     expires_at timestamptz NOT NULL,
     created_at timestamptz NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX refresh_token_session_id_idx ON auth.refresh_token (session_id);
 
+-- Let's denormalize the data to get extra fast access in one query for all necessary data
 CREATE TABLE auth.access_token
 (
     hash        text PRIMARY KEY,
     identity_id uuid        NOT NULL,
     session_id  uuid        NOT NULL,
+    user_id     uuid        NOT NULL,
+    roles       text[]      NOT NULL,
     data        jsonb,
     revoked_at  timestamptz,
     expires_at  timestamptz NOT NULL,
-    created_at  timestamptz NOT NULL
+    created_at  timestamptz NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX access_token_identity_id_idx ON auth.access_token (identity_id);
@@ -52,7 +54,7 @@ CREATE TABLE "auth".session
     identity_id uuid        NOT NULL,
     data        jsonb,
     expires_at  timestamptz NOT NULL,
-    created_at  timestamptz NOT NULL
+    created_at  timestamptz NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE auth.credential

@@ -11,11 +11,26 @@ import (
 	uuid "github.com/gofrs/uuid"
 )
 
+const addRoles = `-- name: AddRoles :exec
+update "auth"."identity"
+set roles = array(select distinct unnest(roles || $1::text[]))
+where id = $2::uuid`
+
+type AddRolesParams struct {
+	Roles []string  `db:"roles" json:"roles"`
+	ID    uuid.UUID `db:"id" json:"id"`
+}
+
+func (q *Queries) AddRoles(ctx context.Context, arg AddRolesParams) error {
+	_, err := q.db.Exec(ctx, addRoles, arg.Roles, arg.ID)
+	return err
+}
+
 const createIdentity = `-- name: CreateIdentity :one
 insert into "auth"."identity"
     (id, identity, user_id, "data")
 values ($1::uuid, $2::text, $3::uuid, $4::jsonb)
-RETURNING id, identity, user_id, status, data, updated_at, created_at`
+RETURNING id, identity, user_id, status, data, roles, updated_at, created_at`
 
 type CreateIdentityParams struct {
 	ID       uuid.UUID `db:"id" json:"id"`
@@ -38,6 +53,7 @@ func (q *Queries) CreateIdentity(ctx context.Context, arg CreateIdentityParams) 
 		&i.UserID,
 		&i.Status,
 		&i.Data,
+		&i.Roles,
 		&i.UpdatedAt,
 		&i.CreatedAt,
 	)
@@ -54,7 +70,7 @@ func (q *Queries) DeleteIdentity(ctx context.Context, id uuid.UUID) error {
 }
 
 const findIdentity = `-- name: FindIdentity :one
-select id, identity, user_id, status, data, updated_at, created_at
+select id, identity, user_id, status, data, roles, updated_at, created_at
 from "auth"."identity"
 where identity = $1::text`
 
@@ -67,6 +83,28 @@ func (q *Queries) FindIdentity(ctx context.Context, identity string) (Identity, 
 		&i.UserID,
 		&i.Status,
 		&i.Data,
+		&i.Roles,
+		&i.UpdatedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const findIdentityById = `-- name: FindIdentityById :one
+select id, identity, user_id, status, data, roles, updated_at, created_at
+from "auth"."identity"
+where id = $1::uuid`
+
+func (q *Queries) FindIdentityById(ctx context.Context, id uuid.UUID) (Identity, error) {
+	row := q.db.QueryRow(ctx, findIdentityById, id)
+	var i Identity
+	err := row.Scan(
+		&i.ID,
+		&i.Identity,
+		&i.UserID,
+		&i.Status,
+		&i.Data,
+		&i.Roles,
 		&i.UpdatedAt,
 		&i.CreatedAt,
 	)
@@ -74,7 +112,7 @@ func (q *Queries) FindIdentity(ctx context.Context, identity string) (Identity, 
 }
 
 const findUserIdentities = `-- name: FindUserIdentities :many
-select id, identity, user_id, status, data, updated_at, created_at
+select id, identity, user_id, status, data, roles, updated_at, created_at
 from "auth"."identity"
 where user_id = $1::uuid`
 
@@ -93,6 +131,7 @@ func (q *Queries) FindUserIdentities(ctx context.Context, userID uuid.UUID) ([]I
 			&i.UserID,
 			&i.Status,
 			&i.Data,
+			&i.Roles,
 			&i.UpdatedAt,
 			&i.CreatedAt,
 		); err != nil {
@@ -104,4 +143,19 @@ func (q *Queries) FindUserIdentities(ctx context.Context, userID uuid.UUID) ([]I
 		return nil, err
 	}
 	return items, nil
+}
+
+const removeRoles = `-- name: RemoveRoles :exec
+update "auth"."identity"
+set roles = array(select distinct unnest(roles) except select distinct unnest($1::text[]))
+where id = $2::uuid`
+
+type RemoveRolesParams struct {
+	Roles []string  `db:"roles" json:"roles"`
+	ID    uuid.UUID `db:"id" json:"id"`
+}
+
+func (q *Queries) RemoveRoles(ctx context.Context, arg RemoveRolesParams) error {
+	_, err := q.db.Exec(ctx, removeRoles, arg.Roles, arg.ID)
+	return err
 }
