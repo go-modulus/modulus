@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/gofrs/uuid"
+	"gopkg.in/guregu/null.v4"
 	"time"
 )
 
@@ -15,18 +16,26 @@ var ErrTokenIsExpired = errors.New("token is expired")
 var ErrCannotCreateAccessToken = errors.New("cannot create access token")
 var ErrCannotCreateRefreshToken = errors.New("cannot create refresh token")
 
+type TokenPair struct {
+	AccessToken  AccessToken
+	RefreshToken RefreshToken
+}
+
 type PlainTokenAuthenticator struct {
 	tokenRepository    TokenRepository
 	identityRepository IdentityRepository
+	config             ModuleConfig
 }
 
 func NewPlainTokenAuthenticator(
 	tokenRepository TokenRepository,
 	identityRepository IdentityRepository,
+	config ModuleConfig,
 ) *PlainTokenAuthenticator {
 	return &PlainTokenAuthenticator{
 		tokenRepository:    tokenRepository,
 		identityRepository: identityRepository,
+		config:             config,
 	}
 }
 
@@ -53,31 +62,36 @@ func (a *PlainTokenAuthenticator) Authenticate(ctx context.Context, token string
 	return Performer{
 		ID:        accessToken.UserID,
 		SessionID: accessToken.SessionID,
+		Roles:     accessToken.Roles,
 	}, nil
 }
 
-// StartSession starts a new session for the given performer. It means creation the new pair of access and refresh tokens without revoking any existing tokens.
+// IssueTokens starts a new session for the given performer. It means creation the new pair of access and refresh tokens without revoking any existing tokens.
 // It returns an access token and a refresh token.
+//
+// The additionalData parameter is used to store additional data in the access token. For example, you can store the IP address of the user.
+//
 // Errors:
 // * github.com/go-modulus/modulus/auth.ErrCannotCreateAccessToken - if the access token cannot be created.
 // * github.com/go-modulus/modulus/auth.ErrCannotCreateRefreshToken - if the refresh token cannot be created.
-func (a *PlainTokenAuthenticator) StartSession(
+func (a *PlainTokenAuthenticator) IssueTokens(
 	ctx context.Context,
 	identityID uuid.UUID,
-) (AccessToken, RefreshToken, error) {
+	additionalData map[string]interface{},
+) (TokenPair, error) {
 	accessTokenStr, err := a.randomString(32)
 	if err != nil {
-		return AccessToken{}, RefreshToken{}, errtrace.Wrap(errors.WrapCause(ErrCannotCreateAccessToken, err))
+		return TokenPair{}, errtrace.Wrap(errors.WrapCause(ErrCannotCreateAccessToken, err))
 	}
 
 	refreshTokenStr, err := a.randomString(32)
 	if err != nil {
-		return AccessToken{}, RefreshToken{}, errtrace.Wrap(errors.WrapCause(ErrCannotCreateRefreshToken, err))
+		return TokenPair{}, errtrace.Wrap(errors.WrapCause(ErrCannotCreateRefreshToken, err))
 	}
 
 	identity, err := a.identityRepository.GetById(ctx, identityID)
 	if err != nil {
-		return AccessToken{}, RefreshToken{}, errtrace.Wrap(err)
+		return TokenPair{}, errtrace.Wrap(err)
 	}
 
 	sessionID := uuid.Must(uuid.NewV6())
@@ -88,24 +102,30 @@ func (a *PlainTokenAuthenticator) StartSession(
 		identity.UserID,
 		identity.Roles,
 		sessionID,
-		map[string]interface{}{},
-		time.Now().Add(time.Hour),
+		additionalData,
+		time.Now().Add(a.config.AccessTokenTTL),
 	)
 	if err != nil {
-		return AccessToken{}, RefreshToken{}, err
+		return TokenPair{}, errtrace.Wrap(err)
 	}
 
 	refreshToken, err := a.tokenRepository.CreateRefreshToken(
 		ctx,
 		refreshTokenStr,
 		sessionID,
-		time.Now().Add(24*time.Hour),
+		time.Now().Add(a.config.RefreshTokenTTL),
 	)
 	if err != nil {
-		return AccessToken{}, RefreshToken{}, err
+		return TokenPair{}, err
 	}
 
-	return accessToken, refreshToken, nil
+	accessToken.Token = null.StringFrom(accessTokenStr)
+	refreshToken.Token = null.StringFrom(refreshTokenStr)
+
+	return TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
 }
 
 func (a *PlainTokenAuthenticator) randomString(length int) (string, error) {

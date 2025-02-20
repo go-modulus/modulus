@@ -1,15 +1,15 @@
 package auth
 
 import (
+	"github.com/go-modulus/modulus/auth/hash"
 	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/go-modulus/modulus/module"
 	"time"
 )
 
 type ModuleConfig struct {
-	AccessTokenTTL  time.Duration `env:"AUTH_ACCESS_TOKEN_TTL, default:1h"`
-	RefreshTokenTTL time.Duration `env:"AUTH_REFRESH_TOKEN_TTL, default:720h"`
-	HashTokens      bool          `env:"AUTH_HASH_TOKENS, default:true"`
+	AccessTokenTTL  time.Duration `env:"AUTH_ACCESS_TOKEN_TTL, default=1h"`
+	RefreshTokenTTL time.Duration `env:"AUTH_REFRESH_TOKEN_TTL, default=720h"`
 }
 
 // NewModule creates a new module for the auth package.
@@ -30,6 +30,7 @@ func NewModule() *module.Module {
 		SetOverriddenProvider("CredentialRepository", NewDefaultCredentialRepository).
 		SetOverriddenProvider("IdentityRepository", NewDefaultIdentityRepository).
 		SetOverriddenProvider("TokenRepository", NewDefaultTokenRepository).
+		SetOverriddenProvider("TokenHashStrategy", hash.NewSha1).
 		InitConfig(&ModuleConfig{})
 }
 
@@ -49,6 +50,14 @@ func OverrideCredentialRepository(authModule *module.Module, repository interfac
 // repository should be a constructor returning the implementation of the TokenRepository interface.
 func OverrideTokenRepository(authModule *module.Module, repository interface{}) *module.Module {
 	return authModule.SetOverriddenProvider("TokenRepository", repository)
+}
+
+// OverrideTokenHashStrategy overrides the default token hash strategy with the custom one.
+// strategy should be a constructor returning the implementation of the hash.TokenHashStrategy interface.
+// by default, the sha1 hash strategy is used.
+// if you don't want to hash tokens, you can set the strategy to none, like this auth.OverrideTokenHashStrategy(authModule, hash.NewNone)
+func OverrideTokenHashStrategy(authModule *module.Module, strategy interface{}) *module.Module {
+	return authModule.SetOverriddenProvider("TokenHashStrategy", strategy)
 }
 
 func NewManifestModule() module.ManifestModule {

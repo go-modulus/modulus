@@ -52,7 +52,7 @@ func (f *IdentityFixture) Data(data []byte) *IdentityFixture {
 	return c
 }
 
-func (f *IdentityFixture) Roles(roles string) *IdentityFixture {
+func (f *IdentityFixture) Roles(roles []string) *IdentityFixture {
 	c := f.clone()
 	c.entity.Roles = roles
 	return c

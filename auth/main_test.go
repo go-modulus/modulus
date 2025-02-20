@@ -2,6 +2,7 @@ package auth_test
 
 import (
 	"github.com/go-modulus/modulus/auth"
+	"github.com/go-modulus/modulus/auth/hash"
 	"github.com/go-modulus/modulus/auth/storage"
 	"github.com/go-modulus/modulus/auth/storage/fixture"
 	"github.com/go-modulus/modulus/module"
@@ -15,6 +16,7 @@ var (
 	passwordAuth   *auth.PasswordAuthenticator
 	plainTokenAuth *auth.PlainTokenAuthenticator
 	fixtureFactory *fixture.FixturesFactory
+	hashStrategy   hash.TokenHashStrategy
 )
 
 func TestMain(m *testing.M) {
@@ -34,6 +36,7 @@ func TestMain(m *testing.M) {
 			&passwordAuth,
 			&plainTokenAuth,
 			&fixtureFactory,
+			&hashStrategy,
 		),
 	)
 }

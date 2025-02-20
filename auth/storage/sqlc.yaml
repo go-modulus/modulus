@@ -148,8 +148,8 @@ options:
 plugins:
   - name: fixture
     wasm:
-      sha256: b8de106b2907690e4580493008c8e0f39c2f71d4a9ae0262db2a6cf637d89448
-      url: https://github.com/debugger84/sqlc-fixture/releases/download/v0.1.5/sqlc-fixture.wasm
+      sha256: 9da21d1d4933ff6ef45a7859f686c2690287304985fbb30775d54977d9ed572c
+      url: https://github.com/debugger84/sqlc-fixture/releases/download/v0.1.6/sqlc-fixture.wasm
   - name: golang
     wasm:
       sha256: 420c334803aef2d0656384789a9486fa3158cb37b71f7ff245c51f8a860bb460
@@ -183,6 +183,7 @@ sql:
           ## If the primary key is not named as "id" you need to specify it here.
           primary_keys_columns:
             - "refresh_token.hash"
+            - "access_token.hash"
           ## All the next options should be the same as in the "golang" plugin.
           sql_package: "pgx/v5"
         out: ./

@@ -86,8 +86,8 @@ definition:
     - &plugin-fixture
       name: fixture
       wasm:
-        url: "https://github.com/debugger84/sqlc-fixture/releases/download/v0.1.5/sqlc-fixture.wasm"
-        sha256: "b8de106b2907690e4580493008c8e0f39c2f71d4a9ae0262db2a6cf637d89448"
+        url: "https://github.com/debugger84/sqlc-fixture/releases/download/v0.1.6/sqlc-fixture.wasm"
+        sha256: "9da21d1d4933ff6ef45a7859f686c2690287304985fbb30775d54977d9ed572c"
 
     - &plugin-graphql
       name: graphql

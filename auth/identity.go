@@ -90,8 +90,8 @@ func NewDefaultIdentityRepository(db *pgxpool.Pool) IdentityRepository {
 func (r *DefaultIdentityRepository) Create(
 	ctx context.Context,
 	identity string,
-	UserID uuid.UUID,
-	AdditionalData map[string]interface{},
+	userID uuid.UUID,
+	additionalData map[string]interface{},
 ) (Identity, error) {
 	_, err := r.Get(ctx, identity)
 	if err == nil {
@@ -100,10 +100,10 @@ func (r *DefaultIdentityRepository) Create(
 		return Identity{}, errtrace.Wrap(err)
 	}
 	id := uuid.Must(uuid.NewV6())
-	if AdditionalData == nil {
-		AdditionalData = make(map[string]interface{})
+	if additionalData == nil {
+		additionalData = make(map[string]interface{})
 	}
-	dataVal, err := json.Marshal(AdditionalData)
+	dataVal, err := json.Marshal(additionalData)
 	if err != nil {
 		return Identity{}, errtrace.Wrap(err)
 	}
@@ -111,7 +111,7 @@ func (r *DefaultIdentityRepository) Create(
 		ctx, storage.CreateIdentityParams{
 			ID:       id,
 			Identity: identity,
-			UserID:   UserID,
+			UserID:   userID,
 			Data:     dataVal,
 		},
 	)

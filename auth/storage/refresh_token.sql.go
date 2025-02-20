@@ -13,24 +13,18 @@ import (
 )
 
 const createRefreshToken = `-- name: CreateRefreshToken :one
-INSERT INTO auth.refresh_token (hash, session_id, data, expires_at)
-VALUES ($1::text, $2::uuid, $3::jsonb, $4)
+INSERT INTO auth.refresh_token (hash, session_id, expires_at)
+VALUES ($1::text, $2::uuid, $3)
 RETURNING hash, session_id, revoked_at, expires_at, created_at`
 
 type CreateRefreshTokenParams struct {
 	Hash      string    `db:"hash" json:"hash"`
 	SessionID uuid.UUID `db:"session_id" json:"sessionId"`
-	Data      []byte    `db:"data" json:"data"`
 	ExpiresAt time.Time `db:"expires_at" json:"expiresAt"`
 }
 
 func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (RefreshToken, error) {
-	row := q.db.QueryRow(ctx, createRefreshToken,
-		arg.Hash,
-		arg.SessionID,
-		arg.Data,
-		arg.ExpiresAt,
-	)
+	row := q.db.QueryRow(ctx, createRefreshToken, arg.Hash, arg.SessionID, arg.ExpiresAt)
 	var i RefreshToken
 	err := row.Scan(
 		&i.Hash,
