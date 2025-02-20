@@ -34,8 +34,8 @@ func NewPasswordAuthenticator(
 // Errors:
 // * github.com/go-modulus/modulus/auth.ErrIdentityIsBlocked - if the identity is blocked.
 // * github.com/go-modulus/modulus/auth.ErrInvalidPassword - if the password is invalid.
-// * Any error from the IdentityRepository.Get method (e.g. github.com/go-modulus/modulus/auth.ErrIdentityNotFound).
-// * Any error from the CredentialRepository.GetLast method (e.g. github.com/go-modulus/modulus/auth.ErrCredentialNotFound).
+// * Any error from the IdentityRepository.Get method (e.g. github.com/go-modulus/modulus/auth/repository.ErrIdentityNotFound).
+// * Any error from the CredentialRepository.GetLast method (e.g. github.com/go-modulus/modulus/auth/repository.ErrCredentialNotFound).
 func (a *PasswordAuthenticator) Authenticate(ctx context.Context, identity, password string) (Performer, error) {
 	identityObj, err := a.identityRepository.Get(ctx, identity)
 	if err != nil {
@@ -55,7 +55,7 @@ func (a *PasswordAuthenticator) Authenticate(ctx context.Context, identity, pass
 	if err != nil {
 		return Performer{}, errtrace.Wrap(ErrInvalidPassword)
 	}
-	return Performer{ID: identityObj.UserID, SessionID: uuid.Must(uuid.NewV6())}, nil
+	return Performer{ID: identityObj.UserID, SessionID: uuid.Must(uuid.NewV6()), IdentityID: identityObj.ID}, nil
 }
 
 // Register registers a new user account with the given identity and password.

@@ -29,9 +29,10 @@ var ErrUnauthorized = errbuilder.New("unauthorized").
 	Build()
 
 type Performer struct {
-	ID        uuid.UUID
-	SessionID uuid.UUID
-	Roles     []string
+	ID         uuid.UUID
+	SessionID  uuid.UUID
+	Roles      []string
+	IdentityID uuid.UUID
 }
 
 type Authenticator interface {

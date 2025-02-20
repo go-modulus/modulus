@@ -985,7 +985,8 @@ func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (st
         input.Email,
         input.Password,
         user.ID,
-        nil,
+        []string{},
+        nil, 
     )
     if err != nil {
         return storage.User{}, errtrace.Wrap(err)

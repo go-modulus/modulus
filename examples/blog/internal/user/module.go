@@ -29,6 +29,7 @@ func NewModule() *module.Module {
 		// Add all your services here. DO NOT DELETE AddProviders call. It is used for code generation
 		AddProviders(
 			action.NewRegisterUser,
+			action.NewLoginUser,
 			graphql.NewResolver,
 			func(db *pgxpool.Pool) storage.DBTX {
 				return db

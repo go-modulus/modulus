@@ -93,6 +93,7 @@ func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (st
 		input.Email,
 		input.Password,
 		user.ID,
+		[]string{},
 		nil,
 	)
 	if err != nil {
