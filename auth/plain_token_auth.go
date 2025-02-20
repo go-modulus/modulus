@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"github.com/go-modulus/modulus/auth/repository"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/gofrs/uuid"
 	"gopkg.in/guregu/null.v4"
@@ -17,19 +18,19 @@ var ErrCannotCreateAccessToken = errors.New("cannot create access token")
 var ErrCannotCreateRefreshToken = errors.New("cannot create refresh token")
 
 type TokenPair struct {
-	AccessToken  AccessToken
-	RefreshToken RefreshToken
+	AccessToken  repository.AccessToken
+	RefreshToken repository.RefreshToken
 }
 
 type PlainTokenAuthenticator struct {
-	tokenRepository    TokenRepository
-	identityRepository IdentityRepository
+	tokenRepository    repository.TokenRepository
+	identityRepository repository.IdentityRepository
 	config             ModuleConfig
 }
 
 func NewPlainTokenAuthenticator(
-	tokenRepository TokenRepository,
-	identityRepository IdentityRepository,
+	tokenRepository repository.TokenRepository,
+	identityRepository repository.IdentityRepository,
 	config ModuleConfig,
 ) *PlainTokenAuthenticator {
 	return &PlainTokenAuthenticator{
@@ -72,8 +73,11 @@ func (a *PlainTokenAuthenticator) Authenticate(ctx context.Context, token string
 // The additionalData parameter is used to store additional data in the access token. For example, you can store the IP address of the user.
 //
 // Errors:
-// * github.com/go-modulus/modulus/auth.ErrCannotCreateAccessToken - if the access token cannot be created.
-// * github.com/go-modulus/modulus/auth.ErrCannotCreateRefreshToken - if the refresh token cannot be created.
+// * ErrCannotCreateAccessToken - if the access token cannot be created.
+// * ErrCannotCreateRefreshToken - if the refresh token cannot be created.
+// * repository.ErrIdentityNotFound - if the identity does not exist.
+// * repository.ErrCannotCreateAccessToken - if there are some issues with DB to create a token
+// * repository.ErrCannotCreateRefreshToken - if there are some issues with DB to create a token
 func (a *PlainTokenAuthenticator) IssueTokens(
 	ctx context.Context,
 	identityID uuid.UUID,
@@ -116,7 +120,7 @@ func (a *PlainTokenAuthenticator) IssueTokens(
 		time.Now().Add(a.config.RefreshTokenTTL),
 	)
 	if err != nil {
-		return TokenPair{}, err
+		return TokenPair{}, errtrace.Wrap(err)
 	}
 
 	accessToken.Token = null.StringFrom(accessTokenStr)

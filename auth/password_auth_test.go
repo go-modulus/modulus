@@ -3,6 +3,7 @@ package auth_test
 import (
 	"context"
 	"github.com/go-modulus/modulus/auth"
+	"github.com/go-modulus/modulus/auth/repository"
 	"github.com/go-modulus/modulus/auth/storage"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/require"
@@ -32,7 +33,7 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, userId, identity.UserID)
 			require.Equal(t, "user", identity.Identity)
-			require.Equal(t, auth.IdentityStatusActive, identity.Status)
+			require.Equal(t, repository.IdentityStatusActive, identity.Status)
 			require.Empty(t, identity.Data)
 
 			t.Log("	And the identity is saved")
@@ -65,7 +66,7 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, userId, identity.UserID)
 			require.Equal(t, "user1", identity.Identity)
-			require.Equal(t, auth.IdentityStatusActive, identity.Status)
+			require.Equal(t, repository.IdentityStatusActive, identity.Status)
 			require.Equal(t, "value", identity.Data["key"])
 
 			t.Log("	And the identity is saved")
@@ -97,7 +98,7 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 			t.Log("Given the identity is registered")
 			t.Log("When the identity is registering again")
 			t.Log("	Then the error ErrIdentityExists is returned")
-			require.ErrorIs(t, err, auth.ErrIdentityExists)
+			require.ErrorIs(t, err, repository.ErrIdentityExists)
 		},
 	)
 
@@ -173,7 +174,7 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 			t.Log("Given the identity is not registered")
 			t.Log("When try to authenticate")
 			t.Log("	Then the error ErrIdentityNotFound is returned")
-			require.ErrorIs(t, err, auth.ErrIdentityNotFound)
+			require.ErrorIs(t, err, repository.ErrIdentityNotFound)
 		},
 	)
 
@@ -191,7 +192,7 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 			fixtureFactory.Credential().
 				ID(uuid.Must(uuid.NewV6())).
 				IdentityID(identity.ID).
-				Type(string(auth.CredentialTypeOTP)).
+				Type(string(repository.CredentialTypeOTP)).
 				CredentialHash("ssss").
 				Create(t)
 			_, err := passwordAuth.Authenticate(context.Background(), identity.Identity, "password")
@@ -200,7 +201,7 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 			t.Log("Given credentials with the password type are not found")
 			t.Log("When try to authenticate")
 			t.Log("	Then the error ErrCredentialNotFound is returned")
-			require.ErrorIs(t, err, auth.ErrCredentialNotFound)
+			require.ErrorIs(t, err, repository.ErrCredentialNotFound)
 		},
 	)
 

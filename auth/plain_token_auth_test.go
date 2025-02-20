@@ -3,6 +3,7 @@ package auth_test
 import (
 	"context"
 	"github.com/go-modulus/modulus/auth"
+	"github.com/go-modulus/modulus/auth/repository"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/guregu/null.v4"
 	"testing"
@@ -133,7 +134,7 @@ func TestPlainTokenAuthenticator_Authenticate(t *testing.T) {
 			t.Log("Given the expired access token")
 			t.Log("When authenticate the user")
 			t.Log(" Then an error should be returned")
-			require.ErrorIs(t, err, auth.ErrTokenNotExist)
+			require.ErrorIs(t, err, repository.ErrTokenNotExist)
 		},
 	)
 }

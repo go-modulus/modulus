@@ -3,7 +3,7 @@ package fixture
 import (
 	"crypto/rand"
 	"encoding/base64"
-	"github.com/go-modulus/modulus/auth"
+	"github.com/go-modulus/modulus/auth/repository"
 	"github.com/go-modulus/modulus/auth/storage"
 	"github.com/gofrs/uuid"
 	"gopkg.in/guregu/null.v4"
@@ -28,7 +28,7 @@ func (f *FixturesFactory) Credential() *CredentialFixture {
 			ID:             id,
 			IdentityID:     uuid.Must(uuid.NewV6()),
 			CredentialHash: hash,
-			Type:           string(auth.CredentialTypePassword),
+			Type:           string(repository.CredentialTypePassword),
 			ExpiredAt:      null.Time{},
 			CreatedAt:      time.Now(),
 		},

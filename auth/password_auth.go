@@ -3,6 +3,7 @@ package auth
 import (
 	"braces.dev/errtrace"
 	"context"
+	"github.com/go-modulus/modulus/auth/repository"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/gofrs/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -13,13 +14,13 @@ var ErrInvalidPassword = errors.New("invalid password")
 var ErrCannotHashPassword = errors.New("cannot hash password")
 
 type PasswordAuthenticator struct {
-	identityRepository   IdentityRepository
-	credentialRepository CredentialRepository
+	identityRepository   repository.IdentityRepository
+	credentialRepository repository.CredentialRepository
 }
 
 func NewPasswordAuthenticator(
-	identityRepository IdentityRepository,
-	credentialRepository CredentialRepository,
+	identityRepository repository.IdentityRepository,
+	credentialRepository repository.CredentialRepository,
 ) *PasswordAuthenticator {
 	return &PasswordAuthenticator{
 		identityRepository:   identityRepository,
@@ -45,7 +46,7 @@ func (a *PasswordAuthenticator) Authenticate(ctx context.Context, identity, pass
 		return Performer{}, errtrace.Wrap(ErrIdentityIsBlocked)
 	}
 
-	cred, err := a.credentialRepository.GetLast(ctx, identityObj.ID, string(CredentialTypePassword))
+	cred, err := a.credentialRepository.GetLast(ctx, identityObj.ID, string(repository.CredentialTypePassword))
 	if err != nil {
 		return Performer{}, errtrace.Wrap(err)
 	}
@@ -73,36 +74,42 @@ func (a *PasswordAuthenticator) Register(
 	userID uuid.UUID,
 	roles []string,
 	additionalData map[string]interface{},
-) (Identity, error) {
+) (repository.Identity, error) {
 	identityObj, err := a.identityRepository.Get(ctx, identity)
 	if err == nil {
 		if identityObj.IsBlocked() {
-			return Identity{}, errtrace.Wrap(ErrIdentityIsBlocked)
+			return repository.Identity{}, errtrace.Wrap(ErrIdentityIsBlocked)
 		}
-		return Identity{}, errtrace.Wrap(ErrIdentityExists)
-	} else if !errors.Is(err, ErrIdentityNotFound) {
-		return Identity{}, errtrace.Wrap(err)
+		return repository.Identity{}, errtrace.Wrap(repository.ErrIdentityExists)
+	} else if !errors.Is(err, repository.ErrIdentityNotFound) {
+		return repository.Identity{}, errtrace.Wrap(err)
 	}
 
 	identityObj, err = a.identityRepository.Create(ctx, identity, userID, additionalData)
 	if err != nil {
-		return Identity{}, errtrace.Wrap(err)
+		return repository.Identity{}, errtrace.Wrap(err)
 	}
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return Identity{}, errtrace.Wrap(errors.WrapCause(ErrCannotHashPassword, err))
+		return repository.Identity{}, errtrace.Wrap(errors.WrapCause(ErrCannotHashPassword, err))
 	}
 
-	_, err = a.credentialRepository.Create(ctx, identityObj.ID, string(hash), string(CredentialTypePassword), nil)
+	_, err = a.credentialRepository.Create(
+		ctx,
+		identityObj.ID,
+		string(hash),
+		string(repository.CredentialTypePassword),
+		nil,
+	)
 	if err != nil {
-		return Identity{}, errtrace.Wrap(err)
+		return repository.Identity{}, errtrace.Wrap(err)
 	}
 
 	if len(roles) > 0 {
 		err = a.identityRepository.AddRoles(ctx, identityObj.ID, roles...)
 		if err != nil {
-			return Identity{}, errtrace.Wrap(err)
+			return repository.Identity{}, errtrace.Wrap(err)
 		}
 	}
 

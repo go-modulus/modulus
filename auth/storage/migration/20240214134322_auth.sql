@@ -59,9 +59,8 @@ CREATE TABLE "auth".session
 
 CREATE TABLE auth.credential
 (
-    id              uuid PRIMARY KEY,
+    credential_hash  text PRIMARY KEY,
     identity_id     uuid        NOT NULL,
-    credential_hash text        NOT NULL,
     type            text        NOT NULL,
     expired_at      timestamptz          DEFAULT NOW(),
     created_at      timestamptz NOT NULL DEFAULT NOW()
@@ -73,6 +72,8 @@ CREATE INDEX credential_identity_id_idx ON auth.credential (identity_id);
 DROP TABLE auth.identity;
 DROP TABLE auth.refresh_token;
 DROP TABLE auth.access_token;
+DROP TABLE auth.credential;
+DROP TABLE auth.session;
 
 DROP TYPE auth.identity_status;
 DROP SCHEMA auth CASCADE;

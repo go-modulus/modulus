@@ -2,6 +2,7 @@ package auth
 
 import (
 	"github.com/go-modulus/modulus/auth/hash"
+	"github.com/go-modulus/modulus/auth/storage"
 	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/go-modulus/modulus/module"
 	"time"
@@ -27,9 +28,9 @@ func NewModule() *module.Module {
 			NewPasswordAuthenticator,
 			NewPlainTokenAuthenticator,
 		).
-		SetOverriddenProvider("CredentialRepository", NewDefaultCredentialRepository).
-		SetOverriddenProvider("IdentityRepository", NewDefaultIdentityRepository).
-		SetOverriddenProvider("TokenRepository", NewDefaultTokenRepository).
+		SetOverriddenProvider("CredentialRepository", storage.NewDefaultCredentialRepository).
+		SetOverriddenProvider("IdentityRepository", storage.NewDefaultIdentityRepository).
+		SetOverriddenProvider("TokenRepository", storage.NewDefaultTokenRepository).
 		SetOverriddenProvider("TokenHashStrategy", hash.NewSha1).
 		InitConfig(&ModuleConfig{})
 }
