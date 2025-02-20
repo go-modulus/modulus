@@ -24,6 +24,7 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 				[]string{},
 				nil,
 			)
+			require.NoError(t, err)
 
 			savedIdentity := fixtureFactory.Identity().ID(identity.ID).PullUpdates(t).Cleanup(t).GetEntity()
 			fixtureFactory.Credential().IdentityID(identity.ID).CleanupAllOfIdentity(t)
@@ -190,10 +191,9 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 				Create(t).
 				GetEntity()
 			fixtureFactory.Credential().
-				ID(uuid.Must(uuid.NewV6())).
 				IdentityID(identity.ID).
 				Type(string(repository.CredentialTypeOTP)).
-				CredentialHash("ssss").
+				Hash("ssss").
 				Create(t)
 			_, err := passwordAuth.Authenticate(context.Background(), identity.Identity, "password")
 
@@ -218,9 +218,8 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 				GetEntity()
 
 			fixtureFactory.Credential().
-				ID(uuid.Must(uuid.NewV6())).
 				IdentityID(identity.ID).
-				CredentialHash("ssss").
+				Hash("ssss2").
 				Create(t)
 			_, err := passwordAuth.Authenticate(context.Background(), identity.Identity, "password")
 

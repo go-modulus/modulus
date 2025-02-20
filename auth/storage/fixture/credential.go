@@ -23,21 +23,15 @@ func NewCredentialFixture(db storage.DBTX, defaultEntity storage.Credential) *Cr
 	}
 }
 
-func (f *CredentialFixture) ID(iD uuid.UUID) *CredentialFixture {
+func (f *CredentialFixture) Hash(hash string) *CredentialFixture {
 	c := f.clone()
-	c.entity.ID = iD
+	c.entity.Hash = hash
 	return c
 }
 
 func (f *CredentialFixture) IdentityID(identityID uuid.UUID) *CredentialFixture {
 	c := f.clone()
 	c.entity.IdentityID = identityID
-	return c
-}
-
-func (f *CredentialFixture) CredentialHash(credentialHash string) *CredentialFixture {
-	c := f.clone()
-	c.entity.CredentialHash = credentialHash
 	return c
 }
 
@@ -68,22 +62,20 @@ func (f *CredentialFixture) clone() *CredentialFixture {
 
 func (f *CredentialFixture) save(ctx context.Context) error {
 	query := `INSERT INTO auth.credential
-            (id, identity_id, credential_hash, type, expired_at, created_at)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, identity_id, credential_hash, type, expired_at, created_at
+            (hash, identity_id, type, expired_at, created_at)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING hash, identity_id, type, expired_at, created_at
         `
 	row := f.db.QueryRow(ctx, query,
-		f.entity.ID,
+		f.entity.Hash,
 		f.entity.IdentityID,
-		f.entity.CredentialHash,
 		f.entity.Type,
 		f.entity.ExpiredAt,
 		f.entity.CreatedAt,
 	)
 	err := row.Scan(
-		&f.entity.ID,
+		&f.entity.Hash,
 		&f.entity.IdentityID,
-		&f.entity.CredentialHash,
 		&f.entity.Type,
 		&f.entity.ExpiredAt,
 		&f.entity.CreatedAt,
@@ -110,8 +102,8 @@ func (f *CredentialFixture) Create(tb testing.TB) *CredentialFixture {
 func (f *CredentialFixture) Cleanup(tb testing.TB) *CredentialFixture {
 	tb.Cleanup(
 		func() {
-			query := `DELETE FROM auth.credential WHERE id = $1`
-			_, err := f.db.Exec(context.Background(), query, f.entity.ID)
+			query := `DELETE FROM auth.credential WHERE hash = $1`
+			_, err := f.db.Exec(context.Background(), query, f.entity.Hash)
 
 			if err != nil {
 				tb.Fatalf("failed to cleanup Credential: %v", err)
@@ -124,15 +116,14 @@ func (f *CredentialFixture) Cleanup(tb testing.TB) *CredentialFixture {
 func (f *CredentialFixture) PullUpdates(tb testing.TB) *CredentialFixture {
 	c := f.clone()
 	ctx := context.Background()
-	query := `SELECT * FROM auth.credential WHERE id = $1`
+	query := `SELECT * FROM auth.credential WHERE hash = $1`
 	row := f.db.QueryRow(ctx, query,
-		c.entity.ID,
+		c.entity.Hash,
 	)
 
 	err := row.Scan(
-		&c.entity.ID,
+		&c.entity.Hash,
 		&c.entity.IdentityID,
-		&c.entity.CredentialHash,
 		&c.entity.Type,
 		&c.entity.ExpiredAt,
 		&c.entity.CreatedAt,
@@ -148,18 +139,16 @@ func (f *CredentialFixture) PushUpdates(tb testing.TB) *CredentialFixture {
 	query := `
         UPDATE auth.credential SET 
             identity_id = $2,
-            credential_hash = $3,
-            type = $4,
-            expired_at = $5,
-            created_at = $6
-        WHERE id = $1
+            type = $3,
+            expired_at = $4,
+            created_at = $5
+        WHERE hash = $1
         `
 	_, err := f.db.Exec(
 		context.Background(),
 		query,
-		f.entity.ID,
+		f.entity.Hash,
 		f.entity.IdentityID,
-		f.entity.CredentialHash,
 		f.entity.Type,
 		f.entity.ExpiredAt,
 		f.entity.CreatedAt,

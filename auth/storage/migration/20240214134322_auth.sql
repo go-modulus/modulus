@@ -59,7 +59,7 @@ CREATE TABLE "auth".session
 
 CREATE TABLE auth.credential
 (
-    credential_hash  text PRIMARY KEY,
+    hash  text PRIMARY KEY,
     identity_id     uuid        NOT NULL,
     type            text        NOT NULL,
     expired_at      timestamptz          DEFAULT NOW(),

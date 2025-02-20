@@ -1,7 +1,7 @@
 -- name: CreateCredential :one
 INSERT INTO "auth"."credential"
-    (id, identity_id, type, credential_hash, expired_at)
-VALUES (@id::uuid, @identity_id::uuid, @type::text, @credential_hash::text, @expired_at)
+    (identity_id, type, hash, expired_at)
+VALUES (@identity_id::uuid, @type::text, @hash::text, @expired_at)
 RETURNING *;
 
 -- name: FindLastCredential :one

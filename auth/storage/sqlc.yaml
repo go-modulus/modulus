@@ -184,6 +184,7 @@ sql:
           primary_keys_columns:
             - "refresh_token.hash"
             - "access_token.hash"
+            - "credential.hash"
           ## All the next options should be the same as in the "golang" plugin.
           sql_package: "pgx/v5"
         out: ./

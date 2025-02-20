@@ -12,10 +12,10 @@ var ErrCannotCreateCredential = errors.New("cannot create credential")
 var ErrCredentialNotFound = errors.New("credential not found")
 
 type Credential struct {
-	IdentityID     uuid.UUID `json:"identityId"`
-	CredentialHash string    `json:"credentialHash"`
-	Type           string    `json:"type"`
-	ExpiredAt      null.Time `json:"expiredAt"`
+	Hash       string    `json:"hash"`
+	IdentityID uuid.UUID `json:"identityId"`
+	Type       string    `json:"type"`
+	ExpiredAt  null.Time `json:"expiredAt"`
 }
 
 type CredentialRepository interface {

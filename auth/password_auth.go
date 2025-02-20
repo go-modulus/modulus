@@ -51,7 +51,7 @@ func (a *PasswordAuthenticator) Authenticate(ctx context.Context, identity, pass
 		return Performer{}, errtrace.Wrap(err)
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(cred.CredentialHash), []byte(password))
+	err = bcrypt.CompareHashAndPassword([]byte(cred.Hash), []byte(password))
 	if err != nil {
 		return Performer{}, errtrace.Wrap(ErrInvalidPassword)
 	}

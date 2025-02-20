@@ -75,11 +75,11 @@ type AccessToken struct {
 }
 
 type Credential struct {
-	CredentialHash string    `db:"credential_hash" json:"credentialHash"`
-	IdentityID     uuid.UUID `db:"identity_id" json:"identityId"`
-	Type           string    `db:"type" json:"type"`
-	ExpiredAt      null.Time `db:"expired_at" json:"expiredAt"`
-	CreatedAt      time.Time `db:"created_at" json:"createdAt"`
+	Hash       string    `db:"hash" json:"hash"`
+	IdentityID uuid.UUID `db:"identity_id" json:"identityId"`
+	Type       string    `db:"type" json:"type"`
+	ExpiredAt  null.Time `db:"expired_at" json:"expiredAt"`
+	CreatedAt  time.Time `db:"created_at" json:"createdAt"`
 }
 
 type Identity struct {

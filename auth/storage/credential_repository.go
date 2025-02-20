@@ -32,10 +32,10 @@ func (r *DefaultCredentialRepository) Create(
 	expAt := null.TimeFromPtr(expiredAt)
 	cred, err := r.queries.CreateCredential(
 		ctx, CreateCredentialParams{
-			IdentityID:     identityID,
-			Type:           credType,
-			CredentialHash: credHash,
-			ExpiredAt:      expAt,
+			IdentityID: identityID,
+			Type:       credType,
+			Hash:       credHash,
+			ExpiredAt:  expAt,
 		},
 	)
 
@@ -48,10 +48,10 @@ func (r *DefaultCredentialRepository) Create(
 
 func (r *DefaultCredentialRepository) transform(res Credential) repository.Credential {
 	return repository.Credential{
-		IdentityID:     res.IdentityID,
-		CredentialHash: res.CredentialHash,
-		Type:           res.Type,
-		ExpiredAt:      res.ExpiredAt,
+		IdentityID: res.IdentityID,
+		Hash:       res.Hash,
+		Type:       res.Type,
+		ExpiredAt:  res.ExpiredAt,
 	}
 }
 

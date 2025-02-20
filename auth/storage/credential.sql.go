@@ -14,29 +14,27 @@ import (
 
 const createCredential = `-- name: CreateCredential :one
 INSERT INTO "auth"."credential"
-    (id, identity_id, type, credential_hash, expired_at)
-VALUES ($1::uuid, $2::uuid, $3::text, $4::text, $5)
-RETURNING credential_hash, identity_id, type, expired_at, created_at`
+    (identity_id, type, hash, expired_at)
+VALUES ($1::uuid, $2::text, $3::text, $4)
+RETURNING hash, identity_id, type, expired_at, created_at`
 
 type CreateCredentialParams struct {
-	ID             uuid.UUID `db:"id" json:"id"`
-	IdentityID     uuid.UUID `db:"identity_id" json:"identityId"`
-	Type           string    `db:"type" json:"type"`
-	CredentialHash string    `db:"credential_hash" json:"credentialHash"`
-	ExpiredAt      null.Time `db:"expired_at" json:"expiredAt"`
+	IdentityID uuid.UUID `db:"identity_id" json:"identityId"`
+	Type       string    `db:"type" json:"type"`
+	Hash       string    `db:"hash" json:"hash"`
+	ExpiredAt  null.Time `db:"expired_at" json:"expiredAt"`
 }
 
 func (q *Queries) CreateCredential(ctx context.Context, arg CreateCredentialParams) (Credential, error) {
 	row := q.db.QueryRow(ctx, createCredential,
-		arg.ID,
 		arg.IdentityID,
 		arg.Type,
-		arg.CredentialHash,
+		arg.Hash,
 		arg.ExpiredAt,
 	)
 	var i Credential
 	err := row.Scan(
-		&i.CredentialHash,
+		&i.Hash,
 		&i.IdentityID,
 		&i.Type,
 		&i.ExpiredAt,
@@ -46,7 +44,7 @@ func (q *Queries) CreateCredential(ctx context.Context, arg CreateCredentialPara
 }
 
 const findAllCredentialsOfType = `-- name: FindAllCredentialsOfType :many
-SELECT credential_hash, identity_id, type, expired_at, created_at
+SELECT hash, identity_id, type, expired_at, created_at
 FROM "auth"."credential"
 WHERE type = $1::text
 ORDER BY created_at DESC`
@@ -61,7 +59,7 @@ func (q *Queries) FindAllCredentialsOfType(ctx context.Context, type_ string) ([
 	for rows.Next() {
 		var i Credential
 		if err := rows.Scan(
-			&i.CredentialHash,
+			&i.Hash,
 			&i.IdentityID,
 			&i.Type,
 			&i.ExpiredAt,
@@ -78,7 +76,7 @@ func (q *Queries) FindAllCredentialsOfType(ctx context.Context, type_ string) ([
 }
 
 const findLastCredential = `-- name: FindLastCredential :one
-SELECT credential_hash, identity_id, type, expired_at, created_at
+SELECT hash, identity_id, type, expired_at, created_at
 FROM "auth"."credential"
 WHERE identity_id = $1::uuid
 ORDER BY created_at DESC`
@@ -87,7 +85,7 @@ func (q *Queries) FindLastCredential(ctx context.Context, identityID uuid.UUID) 
 	row := q.db.QueryRow(ctx, findLastCredential, identityID)
 	var i Credential
 	err := row.Scan(
-		&i.CredentialHash,
+		&i.Hash,
 		&i.IdentityID,
 		&i.Type,
 		&i.ExpiredAt,
@@ -97,7 +95,7 @@ func (q *Queries) FindLastCredential(ctx context.Context, identityID uuid.UUID) 
 }
 
 const findLastCredentialOfType = `-- name: FindLastCredentialOfType :one
-SELECT credential_hash, identity_id, type, expired_at, created_at
+SELECT hash, identity_id, type, expired_at, created_at
 FROM "auth"."credential"
 WHERE identity_id = $1::uuid
 AND type = $2::text
@@ -112,7 +110,7 @@ func (q *Queries) FindLastCredentialOfType(ctx context.Context, arg FindLastCred
 	row := q.db.QueryRow(ctx, findLastCredentialOfType, arg.IdentityID, arg.Type)
 	var i Credential
 	err := row.Scan(
-		&i.CredentialHash,
+		&i.Hash,
 		&i.IdentityID,
 		&i.Type,
 		&i.ExpiredAt,

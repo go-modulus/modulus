@@ -25,12 +25,11 @@ func (f *FixturesFactory) Credential() *CredentialFixture {
 	hash := base64.StdEncoding.EncodeToString(id.Bytes())[:16]
 	return NewCredentialFixture(
 		f.db, storage.Credential{
-			ID:             id,
-			IdentityID:     uuid.Must(uuid.NewV6()),
-			CredentialHash: hash,
-			Type:           string(repository.CredentialTypePassword),
-			ExpiredAt:      null.Time{},
-			CreatedAt:      time.Now(),
+			IdentityID: uuid.Must(uuid.NewV6()),
+			Hash:       hash,
+			Type:       string(repository.CredentialTypePassword),
+			ExpiredAt:  null.Time{},
+			CreatedAt:  time.Now(),
 		},
 	)
 }
