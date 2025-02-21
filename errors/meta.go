@@ -19,6 +19,14 @@ func (m withMeta) Unwrap() error {
 	return m.err
 }
 
+func (m withMeta) Is(target error) bool {
+	t, ok := target.(withMeta)
+	if !ok {
+		return false
+	}
+	return m.err.Error() == t.err.Error()
+}
+
 func Meta(err error) map[string]string {
 	type withMeta interface {
 		Meta() map[string]string

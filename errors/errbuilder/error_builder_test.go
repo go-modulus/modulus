@@ -30,6 +30,28 @@ func TestBuilder_Build(t *testing.T) {
 	)
 
 	t.Run(
+		"checking error for is clause", func(t *testing.T) {
+			b := errbuilder.New("test error").
+				WithHint("hint").
+				WithMeta("key", "value").
+				WithCause(syserrors.New("cause")).
+				WithTags("tag1", "tag2")
+
+			err := b.Build()
+
+			errFunc := func() error {
+				return err
+			}
+
+			err2 := errFunc()
+
+			t.Log("When return a named error")
+			t.Log("	Is should return true when comparing the error with the named error")
+			assert.ErrorIs(t, err, err2)
+		},
+	)
+
+	t.Run(
 		"simple error from system error", func(t *testing.T) {
 			cause := syserrors.New("test error")
 			b := errbuilder.NewE(cause)

@@ -4,9 +4,9 @@ extend type Query {
 }
 
 extend type Mutation {
-    createPost(input: CreatePostInput!): Post!
-    publishPost(id: Uuid!): Post!
-    deletePost(id: Uuid!): Boolean!
+    createPost(input: CreatePostInput!): Post! @authGuard(allowedRoles: ["user"])
+    publishPost(id: Uuid!): Post! @authGuard(allowedRoles: ["user"])
+    deletePost(id: Uuid!): Boolean! @authGuard(allowedRoles: ["user"])
 }
 
 input CreatePostInput {

@@ -1,6 +1,7 @@
 package resolver
 
 import (
+	"blog/internal/auth/graphql"
 	blogGraphql "blog/internal/blog/graphql"
 	"blog/internal/graphql/generated"
 	userGraphql "blog/internal/user/graphql"
@@ -27,5 +28,7 @@ func NewResolver(
 }
 
 func (r Resolver) GetDirectives() generated.DirectiveRoot {
-	return generated.DirectiveRoot{}
+	return generated.DirectiveRoot{
+		AuthGuard: graphql.AuthGuard,
+	}
 }

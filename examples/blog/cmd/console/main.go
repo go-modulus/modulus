@@ -33,7 +33,15 @@ func main() {
 		),
 		pgx.NewModule(),
 		migrator.NewModule(),
-		http.NewModule(),
+		http.NewModule().AddProviders(
+			func(authMd *auth.Middleware) *http.Pipeline {
+				return &http.Pipeline{
+					Middlewares: []http.Middleware{
+						authMd.HttpMiddleware(),
+					},
+				}
+			},
+		),
 		graphql.NewModule(),
 		graphql2.NewModule(),
 		logger.NewModule(),

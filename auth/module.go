@@ -32,6 +32,11 @@ func NewModule() *module.Module {
 		SetOverriddenProvider("IdentityRepository", storage.NewDefaultIdentityRepository).
 		SetOverriddenProvider("TokenRepository", storage.NewDefaultTokenRepository).
 		SetOverriddenProvider("TokenHashStrategy", hash.NewSha1).
+		SetOverriddenProvider(
+			"MiddlewareAuthenticator", func(auth *PlainTokenAuthenticator) Authenticator {
+				return auth
+			},
+		).
 		InitConfig(&ModuleConfig{})
 }
 
@@ -61,6 +66,12 @@ func OverrideTokenHashStrategy(authModule *module.Module, strategy interface{}) 
 	return authModule.SetOverriddenProvider("TokenHashStrategy", strategy)
 }
 
+// OverrideMiddlewareAuthenticator overrides the default middleware authenticator with the custom one.
+// authenticator should be a constructor returning the implementation of the Authenticator interface.
+func OverrideMiddlewareAuthenticator(authModule *module.Module, authenticator interface{}) *module.Module {
+	return authModule.SetOverriddenProvider("MiddlewareAuthenticator", authenticator)
+}
+
 func NewManifestModule() module.ManifestModule {
 	graphqlModule := module.NewManifestModule(
 		NewModule(),
@@ -76,6 +87,14 @@ func NewManifestModule() module.ManifestModule {
 		module.InstalledFile{
 			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/install/module.go.tmpl",
 			DestFile:  "internal/auth/module.go",
+		},
+		module.InstalledFile{
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/install/graphql/auth.graphql",
+			DestFile:  "internal/auth/graphql/auth.graphql",
+		},
+		module.InstalledFile{
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/install/graphql/directive.go",
+			DestFile:  "internal/auth/graphql/directive.go",
 		},
 	).AppendPostInstallCommands(
 		module.PostInstallCommand{

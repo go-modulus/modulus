@@ -21,6 +21,14 @@ func (m withTags) Unwrap() error {
 	return m.err
 }
 
+func (m withTags) Is(target error) bool {
+	t, ok := target.(withTags)
+	if !ok {
+		return false
+	}
+	return m.err.Error() == t.err.Error()
+}
+
 func Tags(err error) []string {
 	if err == nil {
 		return nil

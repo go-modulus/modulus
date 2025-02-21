@@ -52,6 +52,7 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
+	AuthGuard   func(ctx context.Context, obj any, next graphql.Resolver, allowedRoles []string) (res any, err error)
 	PositiveInt func(ctx context.Context, obj any, next graphql.Resolver, max *int) (res any, err error)
 }
 
@@ -385,7 +386,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			if first {
 				first = false
 				ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
-				data = ec._Query(ctx, opCtx.Operation.SelectionSet)
+				data = ec._queryMiddleware(ctx, opCtx.Operation, func(ctx context.Context) (any, error) {
+					return ec._Query(ctx, opCtx.Operation.SelectionSet), nil
+				})
 			} else {
 				if atomic.LoadInt32(&ec.pendingDeferred) > 0 {
 					result := <-ec.deferredResults
@@ -415,7 +418,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			}
 			first = false
 			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
-			data := ec._Mutation(ctx, opCtx.Operation.SelectionSet)
+			data := ec._mutationMiddleware(ctx, opCtx.Operation, func(ctx context.Context) (any, error) {
+				return ec._Mutation(ctx, opCtx.Operation.SelectionSet), nil
+			})
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
 
@@ -424,7 +429,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			}
 		}
 	case ast.Subscription:
-		next := ec._Subscription(ctx, opCtx.Operation.SelectionSet)
+		next := ec._subscriptionMiddleware(ctx, opCtx.Operation, func(ctx context.Context) (any, error) {
+			return ec._Subscription(ctx, opCtx.Operation.SelectionSet), nil
+		})
 
 		var buf bytes.Buffer
 		return func(ctx context.Context) *graphql.Response {
@@ -488,15 +495,18 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
+	{Name: "../../auth/graphql/auth.graphql", Input: `
+directive @authGuard(allowedRoles: [String!]!) on FIELD_DEFINITION | MUTATION | QUERY | SUBSCRIPTION
+`, BuiltIn: false},
 	{Name: "../../blog/graphql/blog.graphql", Input: `extend type Query {
     post(id: ID!): Post
     posts: [Post!]!
 }
 
 extend type Mutation {
-    createPost(input: CreatePostInput!): Post!
-    publishPost(id: Uuid!): Post!
-    deletePost(id: Uuid!): Boolean!
+    createPost(input: CreatePostInput!): Post! @authGuard(allowedRoles: ["user"])
+    publishPost(id: Uuid!): Post! @authGuard(allowedRoles: ["user"])
+    deletePost(id: Uuid!): Boolean! @authGuard(allowedRoles: ["user"])
 }
 
 input CreatePostInput {
@@ -607,6 +617,34 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) dir_authGuard_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.dir_authGuard_argsAllowedRoles(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["allowedRoles"] = arg0
+	return args, nil
+}
+func (ec *executionContext) dir_authGuard_argsAllowedRoles(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]string, error) {
+	if _, ok := rawArgs["allowedRoles"]; !ok {
+		var zeroVal []string
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("allowedRoles"))
+	if tmp, ok := rawArgs["allowedRoles"]; ok {
+		return ec.unmarshalNString2ᚕstringᚄ(ctx, tmp)
+	}
+
+	var zeroVal []string
+	return zeroVal, nil
+}
 
 func (ec *executionContext) dir_positiveInt_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -948,6 +986,109 @@ func (ec *executionContext) field___Type_fields_argsIncludeDeprecated(
 
 // region    ************************** directives.gotpl **************************
 
+func (ec *executionContext) _queryMiddleware(ctx context.Context, obj *ast.OperationDefinition, next func(ctx context.Context) (any, error)) graphql.Marshaler {
+
+	for _, d := range obj.Directives {
+		switch d.Name {
+		case "authGuard":
+			rawArgs := d.ArgumentMap(ec.Variables)
+			args, err := ec.dir_authGuard_args(ctx, rawArgs)
+			if err != nil {
+				ec.Error(ctx, err)
+				return graphql.Null
+			}
+			n := next
+			next = func(ctx context.Context) (any, error) {
+				if ec.directives.AuthGuard == nil {
+					return nil, errors.New("directive authGuard is not implemented")
+				}
+				return ec.directives.AuthGuard(ctx, obj, n, args["allowedRoles"].([]string))
+			}
+		}
+	}
+	tmp, err := next(ctx)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if data, ok := tmp.(graphql.Marshaler); ok {
+		return data
+	}
+	ec.Errorf(ctx, `unexpected type %T from directive, should be graphql.Marshaler`, tmp)
+	return graphql.Null
+
+}
+
+func (ec *executionContext) _mutationMiddleware(ctx context.Context, obj *ast.OperationDefinition, next func(ctx context.Context) (any, error)) graphql.Marshaler {
+
+	for _, d := range obj.Directives {
+		switch d.Name {
+		case "authGuard":
+			rawArgs := d.ArgumentMap(ec.Variables)
+			args, err := ec.dir_authGuard_args(ctx, rawArgs)
+			if err != nil {
+				ec.Error(ctx, err)
+				return graphql.Null
+			}
+			n := next
+			next = func(ctx context.Context) (any, error) {
+				if ec.directives.AuthGuard == nil {
+					return nil, errors.New("directive authGuard is not implemented")
+				}
+				return ec.directives.AuthGuard(ctx, obj, n, args["allowedRoles"].([]string))
+			}
+		}
+	}
+	tmp, err := next(ctx)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if data, ok := tmp.(graphql.Marshaler); ok {
+		return data
+	}
+	ec.Errorf(ctx, `unexpected type %T from directive, should be graphql.Marshaler`, tmp)
+	return graphql.Null
+
+}
+
+func (ec *executionContext) _subscriptionMiddleware(ctx context.Context, obj *ast.OperationDefinition, next func(ctx context.Context) (any, error)) func(ctx context.Context) graphql.Marshaler {
+	for _, d := range obj.Directives {
+		switch d.Name {
+		case "authGuard":
+			rawArgs := d.ArgumentMap(ec.Variables)
+			args, err := ec.dir_authGuard_args(ctx, rawArgs)
+			if err != nil {
+				ec.Error(ctx, err)
+				return func(ctx context.Context) graphql.Marshaler {
+					return graphql.Null
+				}
+			}
+			n := next
+			next = func(ctx context.Context) (any, error) {
+				if ec.directives.AuthGuard == nil {
+					return nil, errors.New("directive authGuard is not implemented")
+				}
+				return ec.directives.AuthGuard(ctx, obj, n, args["allowedRoles"].([]string))
+			}
+		}
+	}
+	tmp, err := next(ctx)
+	if err != nil {
+		ec.Error(ctx, err)
+		return func(ctx context.Context) graphql.Marshaler {
+			return graphql.Null
+		}
+	}
+	if data, ok := tmp.(func(ctx context.Context) graphql.Marshaler); ok {
+		return data
+	}
+	ec.Errorf(ctx, `unexpected type %T from directive, should be graphql.Marshaler`, tmp)
+	return func(ctx context.Context) graphql.Marshaler {
+		return graphql.Null
+	}
+}
+
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
@@ -1009,8 +1150,35 @@ func (ec *executionContext) _Mutation_createPost(ctx context.Context, field grap
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreatePost(rctx, fc.Args["input"].(model.CreatePostInput))
+		directive0 := func(rctx context.Context) (any, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().CreatePost(rctx, fc.Args["input"].(model.CreatePostInput))
+		}
+
+		directive1 := func(ctx context.Context) (any, error) {
+			allowedRoles, err := ec.unmarshalNString2ᚕstringᚄ(ctx, []any{"user"})
+			if err != nil {
+				var zeroVal storage.Post
+				return zeroVal, err
+			}
+			if ec.directives.AuthGuard == nil {
+				var zeroVal storage.Post
+				return zeroVal, errors.New("directive authGuard is not implemented")
+			}
+			return ec.directives.AuthGuard(ctx, nil, directive0, allowedRoles)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(storage.Post); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be blog/internal/blog/storage.Post`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1078,8 +1246,35 @@ func (ec *executionContext) _Mutation_publishPost(ctx context.Context, field gra
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().PublishPost(rctx, fc.Args["id"].(uuid.UUID))
+		directive0 := func(rctx context.Context) (any, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().PublishPost(rctx, fc.Args["id"].(uuid.UUID))
+		}
+
+		directive1 := func(ctx context.Context) (any, error) {
+			allowedRoles, err := ec.unmarshalNString2ᚕstringᚄ(ctx, []any{"user"})
+			if err != nil {
+				var zeroVal storage.Post
+				return zeroVal, err
+			}
+			if ec.directives.AuthGuard == nil {
+				var zeroVal storage.Post
+				return zeroVal, errors.New("directive authGuard is not implemented")
+			}
+			return ec.directives.AuthGuard(ctx, nil, directive0, allowedRoles)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(storage.Post); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be blog/internal/blog/storage.Post`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1147,8 +1342,35 @@ func (ec *executionContext) _Mutation_deletePost(ctx context.Context, field grap
 		}
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeletePost(rctx, fc.Args["id"].(uuid.UUID))
+		directive0 := func(rctx context.Context) (any, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeletePost(rctx, fc.Args["id"].(uuid.UUID))
+		}
+
+		directive1 := func(ctx context.Context) (any, error) {
+			allowedRoles, err := ec.unmarshalNString2ᚕstringᚄ(ctx, []any{"user"})
+			if err != nil {
+				var zeroVal bool
+				return zeroVal, err
+			}
+			if ec.directives.AuthGuard == nil {
+				var zeroVal bool
+				return zeroVal, errors.New("directive authGuard is not implemented")
+			}
+			return ec.directives.AuthGuard(ctx, nil, directive0, allowedRoles)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(bool); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be bool`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5410,6 +5632,38 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v any) (time.Time, error) {

@@ -5,7 +5,7 @@ go 1.23.1
 require (
 	braces.dev/errtrace v0.3.0
 	github.com/99designs/gqlgen v0.17.66
-	github.com/go-modulus/modulus v0.2.3
+	github.com/go-modulus/modulus v0.2.4
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/jackc/pgx/v5 v5.7.2
@@ -95,4 +95,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/go-modulus/modulus v0.2.3 => ../../
+replace github.com/go-modulus/modulus v0.2.4 => ../../

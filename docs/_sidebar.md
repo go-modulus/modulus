@@ -11,3 +11,4 @@
   - [Blog Module GraphQL](graphql_server_example.md#blog-module-graphql)
   - [Resolvers Implementation](graphql_server_example.md#resolvers-implementation)
   - [Authenticate User](graphql_server_example.md#authenticate-user)
+  - [Protect Queries and Mutations](graphql_server_example.md#Protect-Queries-and-Mutations)

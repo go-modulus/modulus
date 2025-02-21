@@ -79,6 +79,14 @@ func (s *Serve) Invoke(cliCtx *cli.Context) error {
 		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
 	}
 
+	if len(s.middlewares) > 0 {
+		for _, middleware := range s.middlewares {
+			s.router.Use(middleware)
+		}
+
+		logger.Info("registering global Middlewares", slog.Int("count", len(s.middlewares)))
+	}
+
 	routes := NewRoutes()
 	for _, registrar := range s.registrars {
 		registrar.Register(routes)
@@ -92,14 +100,6 @@ func (s *Serve) Invoke(cliCtx *cli.Context) error {
 	for _, route := range routes.List() {
 		logger.Info("registering route", slog.String("method", route.Method), slog.String("path", route.Path))
 		s.router.Method(route.Method, route.Path, errhttp.WrapHandler(logger, route.Handler))
-	}
-
-	if len(s.middlewares) > 0 {
-		for _, middleware := range s.middlewares {
-			s.router.Use(middleware)
-		}
-
-		logger.Info("registering global Middlewares", slog.Int("count", len(s.middlewares)))
 	}
 
 	return s.runner.Run(

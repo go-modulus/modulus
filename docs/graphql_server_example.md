@@ -985,7 +985,8 @@ func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (st
         input.Email,
         input.Password,
         user.ID,
-        []string{},
+		// the authenticated user role that will be used in the future
+        []string{"user"},
         nil, 
     )
     if err != nil {
@@ -1025,7 +1026,260 @@ Also, don't forget to make the `LoginUser` action in the `internal/user/action/l
 Call its constructor in the `internal/user/module.go` file.
 And call Execute method in the `internal/user/graphql/resolvers.go` file.
 
+The `LoginUser` action should look like this:
+
+```go
+package action
+
+import (
+	"braces.dev/errtrace"
+	"context"
+	"github.com/go-modulus/modulus/auth"
+	"github.com/go-modulus/modulus/validator"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
+)
+
+type LoginUserInput struct {
+	Email    string
+	Password string
+}
+
+type TokenPair struct {
+	AccessToken  string
+	RefreshToken string
+}
+
+func (i *LoginUserInput) Validate(ctx context.Context) error {
+	err := validation.ValidateStruct(
+		i,
+		validation.Field(
+			&i.Email,
+			validation.Required.Error("Email is required"),
+			is.Email.Error("Email is not valid"),
+		),
+		validation.Field(
+			&i.Password,
+			validation.Required.Error("Password is required"),
+			validation.Length(6, 20).Error("Password must be between 6 and 20 characters"),
+		),
+	)
+
+	if err != nil {
+		return validator.NewErrInvalidInputFromOzzo(ctx, err)
+	}
+
+	return nil
+}
+
+type LoginUser struct {
+	passwordAuth   *auth.PasswordAuthenticator
+	plainTokenAuth *auth.PlainTokenAuthenticator
+}
+
+func NewLoginUser(
+	passwordAuth *auth.PasswordAuthenticator,
+	tokenAuth *auth.PlainTokenAuthenticator,
+) *LoginUser {
+	return &LoginUser{
+		passwordAuth:   passwordAuth,
+		plainTokenAuth: tokenAuth,
+	}
+}
+
+// Execute performs the login action by email and password.
+// Returns a token pair of the access and refresh tokens if the login is successful.
+// Errors:
+// * github.com/go-modulus/modulus/auth.ErrIdentityIsBlocked - if the identity is blocked.
+// * github.com/go-modulus/modulus/auth.ErrInvalidPassword - if the password is invalid.
+// * Any error from the IdentityRepository.Get method (e.g. github.com/go-modulus/modulus/auth/repository.ErrIdentityNotFound).
+// * Any error from the CredentialRepository.GetLast method (e.g. github.com/go-modulus/modulus/auth/repository.ErrCredentialNotFound).
+func (l *LoginUser) Execute(ctx context.Context, input LoginUserInput) (TokenPair, error) {
+	// Authenticate the user with the given email and password.
+	performer, err := l.passwordAuth.Authenticate(ctx, input.Email, input.Password)
+	if err != nil {
+		return TokenPair{}, errtrace.Wrap(err)
+	}
+
+	// Issue a new pair of access and refresh tokens.
+	pair, err := l.plainTokenAuth.IssueTokens(ctx, performer.IdentityID, nil)
+	if err != nil {
+		return TokenPair{}, errtrace.Wrap(err)
+	}
+
+	return TokenPair{
+		AccessToken:  pair.AccessToken.Token.String,
+		RefreshToken: pair.RefreshToken.Token.String,
+	}, nil
+}
+```
+
+Try it in playground:
+
+```graphql
+mutation {
+  registerUser(input:{email:"test3@test.com", password:"123456", name:"Test"}){id, email, name}
+}
+``` 
+to register a new user.
+
+And then try to login:
+
+```graphql
+mutation {
+  loginUser(input:{email:"test3@test.com", password:"123456"}){
+    accessToken, 
+    refreshToken
+  }
+}
+```
+
+You will get the `accessToken` and `refreshToken` in the response.
+
+```
+{
+  "data": {
+    "loginUser": {
+      "accessToken": "vDl1BirAEcQv917FjSs1dTfYa/y1gySu",
+      "refreshToken": "79GWIAkZOKNQeQAjrIOsQPDsm7jubwkW"
+    }
+  }
+}
+```
+
+In this example we will not use the `refreshToken` but it is a good practice to use it in the real project.
 
 
+## Protect Queries and Mutations
 
+First of all, let's protect the `createPost` mutation to allow only authenticated users to create posts.
 
+We need to use the Auth middleware for reading the tokens from headers and checking the access token. Also, this middleware will add the `Performer` to the context.
+
+Add the following code to the `/cmd/console/main.go`:
+
+```go
+    modules := []*module.Module{
+    ...
+        http.NewModule().AddProviders(
+			func(authMd *auth.Middleware) *http.Pipeline {
+				return &http.Pipeline{
+					Middlewares: []http.Middleware {
+						authMd.HttpMiddleware(),
+					},
+				}
+			},
+		),
+	...
+    }
+```
+
+It setups the pipeline of middlewares for the HTTP server. The `authMd.HttpMiddleware()` adds the `Auth` middleware to the pipeline.
+You can see the usage of the `HttpMiddleware()` method instead of `Middleware`. It is because the `Middleware` method has our own signature and is not compatible with the Chi router.
+The method `HttpMiddleware()` wraps our vision of the middleware to the standard middleware representation.
+
+Regenerate the graphql resolvers:
+
+```shell
+    make graphql-generate
+```
+
+Now we need a guard directive for securing the GraphQL queries.
+
+Add `AuthGuard` directive to the `internal/graphql/resolver/resolver.go` file:
+
+```go
+import (
+    "blog/internal/auth/graphql"
+)
+func (r Resolver) GetDirectives() generated.DirectiveRoot {
+	return generated.DirectiveRoot{
+		AuthGuard: graphql.AuthGuard,
+	}
+}
+```
+
+This directive has been created by the auth module when we installed it. It has a default logic of comparing roles in Performer with roles passed to the directive.
+Feel free to change the logic if you need it.
+In our example this simple logic is enough.
+
+Now protect a query `createPost()` with the `AuthGuard` directive in the `internal/blog/graphql/blog.graphql` file:
+
+```graphql
+extend type Mutation {
+    createPost(input: CreatePostInput!): Post! @authGuard(allowedRoles: ["user"])
+}
+```
+
+We have added the `@authGuard(allowedRoles: ["user"])` directive to the `createPost` mutation. It means that only authenticated users with the role `user` can create posts.
+In a case if admin should have the ability to create posts, you can add the `admin` role to the `allowedRoles` list.
+
+Regenerate the GraphQL resolvers:
+
+```shell
+    make graphql-generate
+```
+
+Now try to create a post without authentication:
+
+```graphql
+mutation {
+  createPost(input:{title:"aaa", content:"bbb"}){id, title, content}
+}
+```
+
+You will get an error message like this:
+
+```json
+{
+  "errors": [
+    {
+      "message": "Please authenticate to get access to this resource",
+      "path": [
+        "createPost"
+      ],
+      "extensions": {
+        "code": "unauthenticated"
+      }
+    }
+  ],
+  "data": null
+}
+```
+
+Now try to put the `accessToken` to the `Authorization` header and run the mutation again.
+
+In Playground, click on the `Headers` tab and add the following header:
+
+```json
+{"Authorization": "Bearer <your access token obtained from the 'loginUser()' mutation>"}
+```
+
+Now try to create a post again. You will get the new error message:
+
+```json
+{
+  "errors": [
+    {
+      "message": "You are not authorized to perform this action",
+      "path": [
+        "createPost"
+      ],
+      "extensions": {
+        "code": "unauthorized"
+      }
+    }
+  ],
+  "data": null
+}
+```
+
+It is because the `accessToken` doesn't contain the `user` role. In your application you obviously will create a user management sub-system, but in this example we just add necessary data to the database manually.
+
+Write `{user}` to the field `roles` in the `auth.identity` table for the user you want to authenticate.
+
+Login again to get the access token with updated roles and try to create a post again.
+
+Now everything should work fine.
+
+Protect also the `publishPost` and `deletePost` mutations. 

@@ -250,6 +250,21 @@
       "package": "github.com/go-modulus/modulus/auth",
       "description": "Authentication module. Helps protect HTTP routes with tokens and sessions. If you want to use default storage for identities and tokens, please install pgx module first.",
       "install": {
+        "envVars": [
+          {
+            "key": "AUTH_ACCESS_TOKEN_TTL",
+            "value": "1h0m0s",
+            "comment": ""
+          },
+          {
+            "key": "AUTH_REFRESH_TOKEN_TTL",
+            "value": "720h0m0s",
+            "comment": ""
+          }
+        ],
+        "dependencies": [
+          "pgx"
+        ],
         "files": [
           {
             "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/storage/migration/20240214134322_auth.sql",
@@ -258,6 +273,14 @@
           {
             "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/install/module.go.tmpl",
             "destFile": "internal/auth/module.go"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/install/graphql/auth.graphql",
+            "destFile": "internal/auth/graphql/auth.graphql"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/install/graphql/directive.go",
+            "destFile": "internal/auth/graphql/directive.go"
           }
         ],
         "postInstallCommands": [
