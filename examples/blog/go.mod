@@ -5,9 +5,11 @@ go 1.23.1
 require (
 	braces.dev/errtrace v0.3.0
 	github.com/99designs/gqlgen v0.17.66
+	github.com/debugger84/sqlc-dataloader v0.1.3
 	github.com/go-modulus/modulus v0.2.4
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gofrs/uuid v4.4.0+incompatible
+	github.com/graph-gophers/dataloader/v7 v7.1.0
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/rakyll/gotest v0.0.6
 	github.com/vektah/gqlparser/v2 v2.5.22
@@ -35,7 +37,6 @@ require (
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
-	github.com/graph-gophers/dataloader/v7 v7.1.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect

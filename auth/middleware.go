@@ -2,6 +2,7 @@ package auth
 
 import (
 	"braces.dev/errtrace"
+	"errors"
 	"github.com/go-modulus/modulus/errors/errhttp"
 	"github.com/go-modulus/modulus/logger"
 	"github.com/gofrs/uuid"
@@ -47,6 +48,9 @@ func (a *Middleware) Middleware(next http.Handler) errhttp.Handler {
 			}
 			performer, err := a.authenticator.Authenticate(r.Context(), token)
 			if err != nil {
+				if errors.Is(err, ErrTokenIsRevoked) || errors.Is(err, ErrTokenIsExpired) {
+					return ErrUnauthenticated
+				}
 				return errtrace.Wrap(err)
 			}
 			if performer.ID == uuid.Nil {

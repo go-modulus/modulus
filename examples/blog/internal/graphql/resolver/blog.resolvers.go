@@ -9,8 +9,6 @@ import (
 	"blog/internal/graphql/model"
 	storage1 "blog/internal/user/storage"
 	"context"
-	"fmt"
-
 	"github.com/gofrs/uuid"
 )
 
@@ -31,7 +29,7 @@ func (r *mutationResolver) DeletePost(ctx context.Context, id uuid.UUID) (bool, 
 
 // Author is the resolver for the author field.
 func (r *postResolver) Author(ctx context.Context, obj *storage.Post) (storage1.User, error) {
-	panic(fmt.Errorf("not implemented: Author - author"))
+	return r.userLoaderFactory.UserLoader().Load(ctx, obj.AuthorID)
 }
 
 // Post is the resolver for the post field.

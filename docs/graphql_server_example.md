@@ -1424,3 +1424,124 @@ Try to call a list of posts in the playground:
 with the `accessToken` in the `Authorization` header. You will see the list of errors instead of posts of the current user.
 
 It is because we have not implemented the `Author` resolver yet. We will do it in the next chapter.
+
+
+## Dataloaders
+
+Dataloaders are a powerful tool for reducing the number of queries to the database. They allow you to batch and cache the requests to the database.
+We use the https://github.com/graph-gophers/dataloader tool to make the dataloaders in our project.
+
+You are free to use any other dataloader library or implement your own dataloaders.
+But we recommend generate the dataloaders with the `sqlc` generator using the plugin https://github.com/debugger84/sqlc-dataloader.
+
+Let's add the dataloaders to the project.
+Edit your `/internal/user/storage/sqlc.tmpl.yaml` file adding the dataloader plugin:
+
+```yaml
+sqlc-tmpl:
+  version: "2"
+  options:
+    ...
+    dataloader:
+      overrides:
+        *default-overrides
+    ...
+  sql:
+    - schema: "migration"
+     ...
+      codegen:
+        - <<: *codegen-dataloader
+          options:
+            <<: *codegen-dataloader-options
+            default_schema: "user"  
+            model_import: "blog/internal/user/storage"
+            cache:
+              - table: "user.user"
+                type: "lru"
+                ttl: "1m"
+                size: 100
+```
+
+Read more about the dataloader plugin options in the Readme of the plugin [repository](https://github.com/debugger84/sqlc-dataloader).
+
+Run the SQLc generation:
+
+```shell
+    make db-sqlc-generate
+```
+
+It creates the dataloaders for the `user` module. Dataloaders are generated with unresolved dependencies so we need to call:
+
+```shell
+    go get github.com/debugger84/sqlc-dataloader
+```
+
+The generator creates the `internal/user/storage/dataloader` directory with the dataloaders. It also creates the `internal/user/storage/dataloader/loader_factory.go` that have to be used in your code as an entrypoint to the loaders.
+
+Add the dataloaders to the `internal/user/module.go` file:
+
+```go
+import (
+    "blog/internal/user/storage/dataloader"
+)
+
+func NewModule() *module.Module {
+    return module.NewModule("user").
+        ...
+        AddProviders(
+            ...
+            dataloader.NewLoaderFactory,
+        )
+}
+```
+
+Also add the dependency to the dataloader factory to the `internal/graphql/resolver/resolver.go` file:
+
+```go
+import (
+    userDataloader "blog/internal/user/storage/dataloader"
+)
+
+type Resolver struct {
+    ...
+	userLoaderFactory *userDataloader.LoaderFactory
+}
+
+func NewResolver(
+    ...
+    userLoaderFactory *userDataloader.LoaderFactory,
+) *Resolver {
+    return &Resolver{
+        ...
+        userLoaderFactory: userLoaderFactory,
+    }
+}
+```
+
+Load an author in the `internalgraphql/resolver/blog.resolvers.go` file:
+
+```go
+func (r *postResolver) Author(ctx context.Context, obj *storage.Post) (storage1.User, error) {
+	return r.userLoaderFactory.UserLoader().Load(ctx, obj.AuthorID)
+}
+```
+
+Rerun the server and try to get a list of posts again. You will see the list of posts with the author data.
+
+```graphql
+{
+    posts {
+        id
+        title
+        preview
+        content
+        status
+        publishedAt
+        author {
+            id
+            email
+            name
+        }
+    }
+}
+```

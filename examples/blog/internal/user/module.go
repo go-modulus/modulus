@@ -4,6 +4,7 @@ import (
 	"blog/internal/user/action"
 	"blog/internal/user/graphql"
 	"blog/internal/user/storage"
+	"blog/internal/user/storage/dataloader"
 	"embed"
 	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/go-modulus/modulus/module"
@@ -31,6 +32,7 @@ func NewModule() *module.Module {
 			action.NewRegisterUser,
 			action.NewLoginUser,
 			graphql.NewResolver,
+			dataloader.NewLoaderFactory,
 			func(db *pgxpool.Pool) storage.DBTX {
 				return db
 			},

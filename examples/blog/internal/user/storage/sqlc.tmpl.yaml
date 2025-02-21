@@ -8,6 +8,9 @@ sqlc-tmpl:
     golang:
       overrides:
         *default-overrides
+    dataloader:
+      overrides:
+        *default-overrides
     graphql:
       overrides:
         *default-overrides
@@ -21,6 +24,16 @@ sqlc-tmpl:
       queries: "query"
       engine: "postgresql"
       codegen:
+        - <<: *codegen-dataloader
+          options:
+            <<: *codegen-dataloader-options
+            default_schema: "user"
+            model_import: "blog/internal/user/storage"
+            cache:
+              - table: "user.user"
+                type: "lru"
+                ttl: "1m"
+                size: 100
         - <<: *codegen-graphql
           options:
             <<: *codegen-graphql-options
