@@ -171,6 +171,7 @@ sql:
                 - Post.deletedAt
                 - Post.updatedAt
                 - Post.createdAt
+                - Post.authorId
             gen_common_parts: false
             package: blog/internal/blog/storage
           out: ../graphql

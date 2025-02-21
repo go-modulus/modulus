@@ -1,6 +1,6 @@
 -- name: CreatePost :one
-INSERT INTO blog.post (id, title, preview, content)
-VALUES (@id::uuid, @title::text, @preview::text, @content::text)
+INSERT INTO blog.post (id, author_id, title, preview, content)
+VALUES (@id::uuid, @author_id::uuid, @title::text, @preview::text, @content::text)
 RETURNING *;
 
 -- name: FindPost :one
@@ -12,6 +12,7 @@ WHERE id = @id::uuid;
 SELECT *
 FROM blog.post
 WHERE status = 'published'
+or (status = 'draft' and author_id = @author_id::uuid)
 ORDER BY published_at DESC;
 
 -- name: PublishPost :one

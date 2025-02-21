@@ -5,6 +5,7 @@ import (
 	"blog/internal/graphql/model"
 	"context"
 	"fmt"
+	"github.com/go-modulus/modulus/auth"
 	"github.com/go-modulus/modulus/validator"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/gofrs/uuid"
@@ -42,12 +43,14 @@ func (r *Resolver) CreatePost(ctx context.Context, input model.CreatePostInput) 
 		preview = input.Content[0:100]
 	}
 
+	authorId := auth.GetPerformerID(ctx)
 	return r.blogDb.CreatePost(
 		ctx, storage.CreatePostParams{
-			ID:      uuid.Must(uuid.NewV6()),
-			Title:   input.Title,
-			Preview: preview,
-			Content: input.Content,
+			ID:       uuid.Must(uuid.NewV6()),
+			Title:    input.Title,
+			Preview:  preview,
+			Content:  input.Content,
+			AuthorID: authorId,
 		},
 	)
 }
@@ -69,5 +72,6 @@ func (r *Resolver) Post(ctx context.Context, id string) (*storage.Post, error) {
 
 // Posts is the resolver for the posts field.
 func (r *Resolver) Posts(ctx context.Context) ([]storage.Post, error) {
-	return r.blogDb.FindPosts(ctx)
+	authorID := auth.GetPerformerID(ctx)
+	return r.blogDb.FindPosts(ctx, authorID)
 }

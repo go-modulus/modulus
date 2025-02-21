@@ -31,6 +31,7 @@ sqlc-tmpl:
               - "Post.deletedAt"
               - "Post.updatedAt"
               - "Post.createdAt"
+              - "Post.authorId"
         - <<: *codegen-golang
           options:
             <<: *codegen-golang-options

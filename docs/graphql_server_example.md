@@ -1283,3 +1283,144 @@ Login again to get the access token with updated roles and try to create a post 
 Now everything should work fine.
 
 Protect also the `publishPost` and `deletePost` mutations. 
+
+
+## Add author to post
+
+We need to add the author to the post. Let's create a new migration to add the `author_id` field to the `post` table.
+
+```shell
+    make db-add
+```
+
+Enter the following code to the created file of the migration:
+
+```sql  
+-- migrate:up
+ALTER TABLE blog.post
+    ADD COLUMN author_id uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+
+-- migrate:down
+ALTER TABLE blog.post
+    DROP COLUMN author_id;
+```
+
+Check the new migration:
+
+```shell
+    make db-check-migration
+```
+
+Update the `post.sql` file in the `internal/blog/storage/query` directory with the following content:
+
+```sql
+-- name: CreatePost :one
+INSERT INTO blog.post (id, author_id, title, preview, content)
+VALUES (@id::uuid, @author_id::uuid, @title::text, @preview::text, @content::text)
+RETURNING *;
+```
+
+Here we added the `author_id` field to the `CreatePost` query.
+
+Run the SQLc generation to make the queries available in the code:
+
+```shell
+    make db-sqlc-generate
+```
+
+Edit the `internal/blog/graphql/resolvers.go` file and add the `AuthorID` field to the `CreatePostParams`:
+
+```go
+    authorId := auth.GetPerformerID(ctx)
+	return r.blogDb.CreatePost(
+		ctx, storage.CreatePostParams{
+			...
+			AuthorID: authorId,
+		},
+	)
+```
+
+Try to create a post and get convinced that the `author_id` field is filled with the `id` of the authenticated user.
+
+If you see on the generated GraphQL `Post` type you see that the `authorId: Uuid!` field is added. But we need to add the `author` field of type `User` to the `Post` type.
+
+Add the following code to the `internal/blog/graphql/blog.graphql` file:
+
+```graphql
+extend type Post {
+    author: User!
+}
+```
+
+And avoid generating the `authorId` field adding the line to the `internal/blog/storage/sqlc.tmpl.yaml`
+
+```yaml
+   exclude:
+   - "Post.deletedAt"
+   ...
+   - "Post.authorId"
+```
+
+Regenerate SQLc and GraphQL:
+
+```shell
+    make db-sqlc-generate
+    make graphql-generate
+```
+
+After that we get the new resolver for the `author` field in the `internal/graphql/resolver/blog.resolvers.go` file:
+
+```go
+// Author is the resolver for the author field.
+func (r *postResolver) Author(ctx context.Context, obj *storage.Post) (storage1.User, error) {
+	panic(fmt.Errorf("not implemented: Author - author"))
+}
+```
+
+We will implement it in the next chapter describing the dataloaders concept.
+
+Now we want to show both all published posts and drafts of the current user. Let's change the `posts` query to return the list of posts of the current user.
+
+Let's change the `FindPosts` query in the `internal/blog/storage/query/post.sql` file:
+
+```sql
+-- name: FindPosts :many
+SELECT *
+FROM blog.post
+WHERE status = 'published'
+   or (status = 'draft' and author_id = @author_id::uuid)
+ORDER BY published_at DESC;
+```
+
+Generate the SQLc and change the `Posts` resolver in the `internal/blog/graphql/resolvers.go` file:
+
+```go
+func (r *Resolver) Posts(ctx context.Context) ([]storage.Post, error) {
+    authorId := auth.GetPerformerID(ctx)
+    return r.blogDb.FindPosts(ctx, authorId)
+}
+```
+
+Try to call a list of posts in the playground:
+
+```graphql
+{
+    posts {
+        id
+        title
+        preview
+        content
+        status
+        publishedAt
+        author {
+            id
+            email
+            name
+        }
+    }
+}
+```
+
+with the `accessToken` in the `Authorization` header. You will see the list of errors instead of posts of the current user.
+
+It is because we have not implemented the `Author` resolver yet. We will do it in the next chapter.

@@ -12,20 +12,22 @@ import (
 )
 
 const createPost = `-- name: CreatePost :one
-INSERT INTO blog.post (id, title, preview, content)
-VALUES ($1::uuid, $2::text, $3::text, $4::text)
-RETURNING id, title, preview, content, status, created_at, updated_at, published_at, deleted_at`
+INSERT INTO blog.post (id, author_id, title, preview, content)
+VALUES ($1::uuid, $2::uuid, $3::text, $4::text, $5::text)
+RETURNING id, title, preview, content, status, created_at, updated_at, published_at, deleted_at, author_id`
 
 type CreatePostParams struct {
-	ID      uuid.UUID `db:"id" json:"id"`
-	Title   string    `db:"title" json:"title"`
-	Preview string    `db:"preview" json:"preview"`
-	Content string    `db:"content" json:"content"`
+	ID       uuid.UUID `db:"id" json:"id"`
+	AuthorID uuid.UUID `db:"author_id" json:"authorId"`
+	Title    string    `db:"title" json:"title"`
+	Preview  string    `db:"preview" json:"preview"`
+	Content  string    `db:"content" json:"content"`
 }
 
 func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, error) {
 	row := q.db.QueryRow(ctx, createPost,
 		arg.ID,
+		arg.AuthorID,
 		arg.Title,
 		arg.Preview,
 		arg.Content,
@@ -41,12 +43,13 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) (Post, e
 		&i.UpdatedAt,
 		&i.PublishedAt,
 		&i.DeletedAt,
+		&i.AuthorID,
 	)
 	return i, err
 }
 
 const findPost = `-- name: FindPost :one
-SELECT id, title, preview, content, status, created_at, updated_at, published_at, deleted_at
+SELECT id, title, preview, content, status, created_at, updated_at, published_at, deleted_at, author_id
 FROM blog.post
 WHERE id = $1::uuid`
 
@@ -63,18 +66,20 @@ func (q *Queries) FindPost(ctx context.Context, id uuid.UUID) (Post, error) {
 		&i.UpdatedAt,
 		&i.PublishedAt,
 		&i.DeletedAt,
+		&i.AuthorID,
 	)
 	return i, err
 }
 
 const findPosts = `-- name: FindPosts :many
-SELECT id, title, preview, content, status, created_at, updated_at, published_at, deleted_at
+SELECT id, title, preview, content, status, created_at, updated_at, published_at, deleted_at, author_id
 FROM blog.post
 WHERE status = 'published'
+or (status = 'draft' and author_id = $1::uuid)
 ORDER BY published_at DESC`
 
-func (q *Queries) FindPosts(ctx context.Context) ([]Post, error) {
-	rows, err := q.db.Query(ctx, findPosts)
+func (q *Queries) FindPosts(ctx context.Context, authorID uuid.UUID) ([]Post, error) {
+	rows, err := q.db.Query(ctx, findPosts, authorID)
 	if err != nil {
 		return nil, err
 	}
@@ -92,6 +97,7 @@ func (q *Queries) FindPosts(ctx context.Context) ([]Post, error) {
 			&i.UpdatedAt,
 			&i.PublishedAt,
 			&i.DeletedAt,
+			&i.AuthorID,
 		); err != nil {
 			return nil, err
 		}
@@ -109,7 +115,7 @@ SET status       = 'published',
     published_at = now()
 WHERE status = 'draft'
   AND id = $1::uuid
-RETURNING id, title, preview, content, status, created_at, updated_at, published_at, deleted_at`
+RETURNING id, title, preview, content, status, created_at, updated_at, published_at, deleted_at, author_id`
 
 func (q *Queries) PublishPost(ctx context.Context, id uuid.UUID) (Post, error) {
 	row := q.db.QueryRow(ctx, publishPost, id)
@@ -124,6 +130,7 @@ func (q *Queries) PublishPost(ctx context.Context, id uuid.UUID) (Post, error) {
 		&i.UpdatedAt,
 		&i.PublishedAt,
 		&i.DeletedAt,
+		&i.AuthorID,
 	)
 	return i, err
 }

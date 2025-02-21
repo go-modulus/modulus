@@ -74,4 +74,5 @@ type Post struct {
 	UpdatedAt   time.Time  `db:"updated_at" json:"updatedAt"`
 	PublishedAt null.Time  `db:"published_at" json:"publishedAt"`
 	DeletedAt   null.Time  `db:"deleted_at" json:"deletedAt"`
+	AuthorID    uuid.UUID  `db:"author_id" json:"authorId"`
 }

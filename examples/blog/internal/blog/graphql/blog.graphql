@@ -9,6 +9,10 @@ extend type Mutation {
     deletePost(id: Uuid!): Boolean! @authGuard(allowedRoles: ["user"])
 }
 
+extend type Post {
+    author: User!
+}
+
 input CreatePostInput {
     title: String!
     content: String!

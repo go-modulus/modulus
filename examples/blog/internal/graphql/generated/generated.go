@@ -74,6 +74,7 @@ type ComplexityRoot struct {
 	}
 
 	Post struct {
+		Author      func(childComplexity int) int
 		Content     func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Preview     func(childComplexity int) int
@@ -116,6 +117,7 @@ type MutationResolver interface {
 }
 type PostResolver interface {
 	PublishedAt(ctx context.Context, obj *storage.Post) (*time.Time, error)
+	Author(ctx context.Context, obj *storage.Post) (storage1.User, error)
 }
 type QueryResolver interface {
 	Ping(ctx context.Context) (string, error)
@@ -239,6 +241,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.PageInfo.StartCursor(childComplexity), true
+
+	case "Post.author":
+		if e.complexity.Post.Author == nil {
+			break
+		}
+
+		return e.complexity.Post.Author(childComplexity), true
 
 	case "Post.content":
 		if e.complexity.Post.Content == nil {
@@ -507,6 +516,10 @@ extend type Mutation {
     createPost(input: CreatePostInput!): Post! @authGuard(allowedRoles: ["user"])
     publishPost(id: Uuid!): Post! @authGuard(allowedRoles: ["user"])
     deletePost(id: Uuid!): Boolean! @authGuard(allowedRoles: ["user"])
+}
+
+extend type Post {
+    author: User!
 }
 
 input CreatePostInput {
@@ -1215,6 +1228,8 @@ func (ec *executionContext) fieldContext_Mutation_createPost(ctx context.Context
 				return ec.fieldContext_Post_status(ctx, field)
 			case "publishedAt":
 				return ec.fieldContext_Post_publishedAt(ctx, field)
+			case "author":
+				return ec.fieldContext_Post_author(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -1311,6 +1326,8 @@ func (ec *executionContext) fieldContext_Mutation_publishPost(ctx context.Contex
 				return ec.fieldContext_Post_status(ctx, field)
 			case "publishedAt":
 				return ec.fieldContext_Post_publishedAt(ctx, field)
+			case "author":
+				return ec.fieldContext_Post_author(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -1976,6 +1993,62 @@ func (ec *executionContext) fieldContext_Post_publishedAt(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Post_author(ctx context.Context, field graphql.CollectedField, obj *storage.Post) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Post_author(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Post().Author(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(storage1.User)
+	fc.Result = res
+	return ec.marshalNUser2blogᚋinternalᚋuserᚋstorageᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Post_author(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Post",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "email":
+				return ec.fieldContext_User_email(ctx, field)
+			case "name":
+				return ec.fieldContext_User_name(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_ping(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_ping(ctx, field)
 	if err != nil {
@@ -2068,6 +2141,8 @@ func (ec *executionContext) fieldContext_Query_post(ctx context.Context, field g
 				return ec.fieldContext_Post_status(ctx, field)
 			case "publishedAt":
 				return ec.fieldContext_Post_publishedAt(ctx, field)
+			case "author":
+				return ec.fieldContext_Post_author(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -2137,6 +2212,8 @@ func (ec *executionContext) fieldContext_Query_posts(_ context.Context, field gr
 				return ec.fieldContext_Post_status(ctx, field)
 			case "publishedAt":
 				return ec.fieldContext_Post_publishedAt(ctx, field)
+			case "author":
+				return ec.fieldContext_Post_author(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Post", field.Name)
 		},
@@ -4893,6 +4970,42 @@ func (ec *executionContext) _Post(ctx context.Context, sel ast.SelectionSet, obj
 					}
 				}()
 				res = ec._Post_publishedAt(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "author":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Post_author(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
