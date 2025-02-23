@@ -16,3 +16,4 @@ bin/*
 
 # MacOS specific files
 .DS_Store
+!.env.dev

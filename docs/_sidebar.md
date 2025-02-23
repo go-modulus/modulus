@@ -14,3 +14,6 @@
   - [Protect Queries and Mutations](graphql_server_example.md#Protect-Queries-and-Mutations)
   - [Add author to post](graphql_server_example.md#add-author-to-post)
   - [Dataloaders](graphql_server_example.md#dataloaders)
+- [Deployment](deployment.md)
+  - [Environment Variables](deployment.md#environment-variables)
+  - [Encrypt secrets](deployment.md#encrypt-secrets)
