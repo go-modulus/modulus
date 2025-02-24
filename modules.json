@@ -25,37 +25,37 @@
       "install": {
         "envVars": [
           {
-            "key": "DB_NAME",
+            "key": "PGX_DSN",
+            "value": "",
+            "comment": "Use this variable to set the DSN for the PGX connection. It overwrites the other PG_* variables. Example: PGX_DSN=postgres://postgres:foobar@localhost:5432/test?sslmode=disable"
+          },
+          {
+            "key": "PG_DB_NAME",
             "value": "test",
             "comment": ""
           },
           {
-            "key": "HOST",
+            "key": "PG_HOST",
             "value": "localhost",
             "comment": ""
           },
           {
-            "key": "PASSWORD",
+            "key": "PG_PASSWORD",
             "value": "foobar",
             "comment": ""
           },
           {
-            "key": "PGX_DSN",
-            "value": "postgres://postgres:foobar@localhost:5432/test?sslmode=disable",
-            "comment": "Use this variable to set the DSN for the PGX connection. It overwrites the other PG_* variables."
-          },
-          {
-            "key": "PORT",
+            "key": "PG_PORT",
             "value": "5432",
             "comment": ""
           },
           {
-            "key": "SSL_MODE",
+            "key": "PG_SSL_MODE",
             "value": "disable",
             "comment": ""
           },
           {
-            "key": "USER",
+            "key": "PG_USER",
             "value": "postgres",
             "comment": ""
           }

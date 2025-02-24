@@ -112,7 +112,11 @@ func getVariables[T any](config T, initDefaults bool) map[string]ConfigEnvVariab
 		if structs.IsStruct(fieldValue) {
 			subFields := getVariables(fieldValue, false)
 			for subFieldName, subFieldValue := range subFields {
-				envVariables[prefix+subFieldName] = subFieldValue
+				envVariables[prefix+subFieldName] = ConfigEnvVariable{
+					Key:     prefix + subFieldName,
+					Value:   subFieldValue.Value,
+					Comment: subFieldValue.Comment,
+				}
 			}
 		} else {
 			envVariables[fieldName] = ConfigEnvVariable{

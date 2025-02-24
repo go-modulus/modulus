@@ -22,12 +22,7 @@ func main() {
 			"Adds ability to create cli applications in the Modulus framework.",
 			"1.0.0",
 		),
-		module.NewManifestModule(
-			pgx.NewModule(),
-			"github.com/go-modulus/modulus/db/pgx",
-			"A wrapper for the pgx package to integrate it into the Modulus framework.",
-			"1.0.0",
-		),
+		pgx.NewManifestModule(),
 		module.NewManifestModule(
 			logger.NewModule(),
 			"github.com/go-modulus/modulus/logger",

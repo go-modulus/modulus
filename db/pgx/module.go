@@ -13,7 +13,7 @@ import (
 )
 
 type ModuleConfig struct {
-	DSN string `env:"PGX_DSN, default=postgres://postgres:foobar@localhost:5432/test?sslmode=disable" comment:"Use this variable to set the DSN for the PGX connection. It overwrites the other PG_* variables."`
+	DSN string `env:"PGX_DSN" comment:"Use this variable to set the DSN for the PGX connection. It overwrites the other PG_* variables. Example: PGX_DSN=postgres://postgres:foobar@localhost:5432/test?sslmode=disable"`
 
 	ConnectionConfig *ConnectionConfig `env:",prefix=PG_"`
 }
@@ -100,4 +100,13 @@ func NewModule() *module.Module {
 			logger.NewModule(),
 		).
 		InitConfig(ModuleConfig{})
+}
+
+func NewManifestModule() module.ManifestModule {
+	return module.NewManifestModule(
+		NewModule(),
+		"github.com/go-modulus/modulus/db/pgx",
+		"A wrapper for the pgx package to integrate it into the Modulus framework.",
+		"1.0.0",
+	)
 }
