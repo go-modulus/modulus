@@ -1,6 +1,7 @@
 package blog
 
 import (
+	"blog/internal/blog/api"
 	"blog/internal/blog/graphql"
 	"blog/internal/blog/storage"
 	"embed"
@@ -35,6 +36,8 @@ func NewModule() *module.Module {
 				return storage.New(db)
 			},
 			fx.Annotate(func() fs.FS { return migrationFS }, fx.ResultTags(`group:"migrator.migration-fs"`)),
+			api.NewMain,
+			api.NewMainRoute,
 		).
 		// Add all your CLI commands here
 		AddCliCommands().

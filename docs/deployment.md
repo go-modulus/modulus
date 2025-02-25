@@ -88,3 +88,14 @@ dotenvx run -f .env.dev -- ./bin/console serve
 ```
 
 You have to add the `-f .env.dev` parameter to make dotenvx read both the encrypted and decrypted secrets from the `.env.dev` file. And define the environment variables to run the application with them.
+
+
+## Deployment to the Digital Ocean App Platform
+
+The Digital Ocean App Platform is a platform as a service (PaaS) that allows you to deploy your applications in the cloud without managing the infrastructure.
+It is a good choice for the small and medium-sized projects. It is easy to use and has a low cost tier. For example, create a new application with 512MB of RAM and 1 CPU for $5 per month.
+
+After that, follow their guide to deploy the application using Github actions: https://docs.digitalocean.com/products/app-platform/how-to/deploy-from-github-actions.
+
+Create DO_API_KEY variable in the Github repository secrets with the Digital Ocean API key. It is used by the Github action to deploy the application.
+Create the DOTENV_PRIVATE_KEY_DEV environment variable in the App platform on the settings page of the application. It is used to decrypt the secrets in the `.env.dev` file.
