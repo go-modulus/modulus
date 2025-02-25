@@ -19,3 +19,5 @@ jobs:
        uses: digitalocean/app_action/deploy@v2
        with:
          token: ${{ secrets.DO_API_KEY }}
+#         app_spec_location: ./.do/app-dev.yaml
+         name: modulus-app
