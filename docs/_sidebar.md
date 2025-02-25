@@ -1,21 +1,6 @@
 - [Getting Started](getting_started.md)
-  - [Installation](getting_started.md#installation)
-  - [Adding Modules](getting_started.md#adding-modules)
-  - [Create the New Module](getting_started.md#create-the-new-module)
-  - [Migrate the Database](getting_started.md#migrate-the-database)
-  - [Install GraphQL](getting_started.md#install-graphql-module)
   
 - [GraphQL Server Example](graphql_server_example.md)
-  - [GraphQL Server Example](graphql_server_example.md#real-graphql-server-example)
-  - [Requirements](graphql_server_example.md#requirements)
-  - [Blog Module SQL](graphql_server_example.md#blog-module-sql)
-  - [Blog Module GraphQL](graphql_server_example.md#blog-module-graphql)
-  - [Resolvers Implementation](graphql_server_example.md#resolvers-implementation)
-  - [Authenticate User](graphql_server_example.md#authenticate-user)
-  - [Protect Queries and Mutations](graphql_server_example.md#Protect-Queries-and-Mutations)
-  - [Add author to post](graphql_server_example.md#add-author-to-post)
-  - [Dataloaders](graphql_server_example.md#dataloaders)
-
+  
 - [Deployment](deployment.md)
-  - [Environment Variables](deployment.md#environment-variables)
-  - [Encrypt secrets](deployment.md#encrypt-secrets)
+  
