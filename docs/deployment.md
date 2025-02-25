@@ -33,8 +33,7 @@ Add only the variables that are different from the default configuration to the 
 You have the next levels of the environment configuration priority:
 - `.env` - the default configuration
 - `.env.<environment name>` - overrides the default configuration and runs only if the program is run with env variable `APP_ENV=<environment name>`
-- `.env.local` - overrides the default configuration despite the environment
-- `.env.<environment name>.local` - overrides the default and env configurations. Works only if the program is run with env variable `APP_ENV=<environment name>`
+- `.env.local` - overrides the default configuration. It works only if the program is run without the `APP_ENV` variable.
 - real environment variables - overrides all configurations
 
 

@@ -33,8 +33,8 @@ func newDBMate(
 }
 
 func newPgxConfig(projPath string) (pgx.ModuleConfig, error) {
-	config.LoadEnv(projPath, "", false)
-	config.LoadEnv(projPath, os.Getenv("APP_ENV"), true)
+	os.Setenv("CONFIG_DIR", projPath)
+	config.LoadDefaultEnv()
 
 	cfg := pgx.ModuleConfig{}
 	err := envconfig.Process(context.Background(), &cfg)

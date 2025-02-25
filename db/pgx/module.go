@@ -27,20 +27,28 @@ type ConnectionConfig struct {
 	SslMode  string `env:"SSL_MODE, default=disable"`
 }
 
+func (c ConnectionConfig) Dsn() string {
+	return fmt.Sprintf(
+		"postgres://%s:%s@%s:%d/%s?sslmode=%s",
+		c.User,
+		c.Password,
+		c.Host,
+		c.Port,
+		c.Database,
+		c.SslMode,
+	)
+}
+
 func (c ModuleConfig) Dsn() string {
 	if c.DSN != "" {
 		return c.DSN
 	}
 
-	return fmt.Sprintf(
-		"postgres://%s:%s@%s:%d/%s?sslmode=%s",
-		c.ConnectionConfig.User,
-		c.ConnectionConfig.Password,
-		c.ConnectionConfig.Host,
-		c.ConnectionConfig.Port,
-		c.ConnectionConfig.Database,
-		c.ConnectionConfig.SslMode,
-	)
+	if c.ConnectionConfig == nil {
+		return ""
+	}
+
+	return c.ConnectionConfig.Dsn()
 }
 
 func NewPgxPool(

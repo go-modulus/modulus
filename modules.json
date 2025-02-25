@@ -295,6 +295,65 @@
       },
       "version": "1.0.0",
       "localPath": "internal/auth"
+    },
+    {
+      "name": "embedded pg",
+      "package": "github.com/go-modulus/modulus/db/embedded",
+      "description": "A wrapper for the github.com/fergusstrange/embedded-postgres package to integrate it into the Modulus framework. This package starts the embedded postgres database and creates the user and the database mentioned in PG_* vars. It works together with the github.com/go-modulus/modulus/db/pgx and migration packages.",
+      "install": {
+        "envVars": [
+          {
+            "key": "EMBEDDED_POSTGRES_DATA_PATH",
+            "value": "/tmp/embeddedpostgres/data",
+            "comment": "The path that will be used for the Postgres data directory. If you want to persist data between restarts, set this variable to a path that is not inside the EMBEDDED_POSTGRES_RUNTIME_PATH."
+          },
+          {
+            "key": "EMBEDDED_POSTGRES_RUN",
+            "value": "true",
+            "comment": "Set this variable to false if you want to disable the embedded postgres database."
+          },
+          {
+            "key": "EMBEDDED_POSTGRES_RUNTIME_PATH",
+            "value": "/tmp/embeddedpostgres",
+            "comment": ""
+          },
+          {
+            "key": "PG_DB_NAME",
+            "value": "test",
+            "comment": ""
+          },
+          {
+            "key": "PG_HOST",
+            "value": "localhost",
+            "comment": ""
+          },
+          {
+            "key": "PG_PASSWORD",
+            "value": "foobar",
+            "comment": ""
+          },
+          {
+            "key": "PG_PORT",
+            "value": "5432",
+            "comment": ""
+          },
+          {
+            "key": "PG_SSL_MODE",
+            "value": "disable",
+            "comment": ""
+          },
+          {
+            "key": "PG_USER",
+            "value": "postgres",
+            "comment": ""
+          }
+        ],
+        "dependencies": [
+          "pgx",
+          "dbmate migrator"
+        ]
+      },
+      "version": "1.0.0"
     }
   ]
 }

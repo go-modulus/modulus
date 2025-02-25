@@ -5,6 +5,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/go-modulus/modulus/auth"
 	"github.com/go-modulus/modulus/cli"
+	"github.com/go-modulus/modulus/db/embedded"
 	"github.com/go-modulus/modulus/db/migrator"
 	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/go-modulus/modulus/graphql"
@@ -43,6 +44,7 @@ func main() {
 		),
 		graphql.NewManifestModule(),
 		auth.NewManifestModule(),
+		embedded.NewManifestModule(),
 	}
 
 	manifest, err := module.LoadLocalManifest("./")
