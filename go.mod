@@ -1,10 +1,10 @@
 module github.com/go-modulus/modulus
 
-go 1.23.1
+go 1.24
 
 require (
 	braces.dev/errtrace v0.3.0
-	github.com/99designs/gqlgen v0.17.61
+	github.com/99designs/gqlgen v0.17.66
 	github.com/amacneil/dbmate/v2 v2.24.2
 	github.com/c2h5oh/datasize v0.0.0-20231215233829-aa82cc1e6500
 	github.com/fatih/color v1.18.0
@@ -33,15 +33,15 @@ require (
 	github.com/subosito/gotenv v1.6.0
 	github.com/thanhpk/randstr v1.0.6
 	github.com/urfave/cli/v2 v2.27.5
-	github.com/vektah/gqlparser/v2 v2.5.21
+	github.com/vektah/gqlparser/v2 v2.5.22
 	github.com/vektra/mockery/v2 v2.50.1
 	go.temporal.io/sdk v1.31.0
 	go.temporal.io/sdk/contrib/opentelemetry v0.6.0
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/crypto v0.31.0
-	golang.org/x/text v0.21.0
-	golang.org/x/tools v0.28.0
+	golang.org/x/crypto v0.33.0
+	golang.org/x/text v0.22.0
+	golang.org/x/tools v0.30.0
 	gopkg.in/guregu/null.v4 v4.0.0
 	gopkg.in/yaml.v3 v3.0.1
 )
@@ -81,7 +81,7 @@ require (
 	github.com/lib/pq v1.10.9 // indirect
 	github.com/magiconair/properties v1.8.7 // indirect
 	github.com/maruel/natural v1.1.1 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
@@ -121,15 +121,15 @@ require (
 	go.uber.org/dig v1.18.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20241204233417-43b7b7cde48d // indirect
-	golang.org/x/mod v0.22.0 // indirect
-	golang.org/x/net v0.33.0 // indirect
-	golang.org/x/sync v0.10.0 // indirect
-	golang.org/x/sys v0.28.0 // indirect
-	golang.org/x/term v0.27.0 // indirect
+	golang.org/x/mod v0.23.0 // indirect
+	golang.org/x/net v0.35.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/term v0.29.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241209162323-e6fa225c2576 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241209162323-e6fa225c2576 // indirect
 	google.golang.org/grpc v1.68.1 // indirect
-	google.golang.org/protobuf v1.35.2 // indirect
+	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 )

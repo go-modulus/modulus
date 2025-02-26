@@ -1,11 +1,13 @@
 module blog
 
-go 1.23.1
+go 1.24
+
+toolchain go1.24.0
 
 require (
 	braces.dev/errtrace v0.3.0
 	github.com/99designs/gqlgen v0.17.66
-	github.com/debugger84/sqlc-dataloader v0.1.3
+	github.com/debugger84/sqlc-dataloader v0.1.4
 	github.com/go-modulus/modulus v0.2.4
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gofrs/uuid v4.4.0+incompatible
@@ -13,7 +15,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/rakyll/gotest v0.0.6
 	github.com/vektah/gqlparser/v2 v2.5.22
-	github.com/vektra/mockery/v2 v2.51.1
+	github.com/vektra/mockery/v2 v2.52.3
 	go.uber.org/fx v1.23.0
 	gopkg.in/guregu/null.v4 v4.0.0
 )
@@ -28,7 +30,6 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/fatih/structs v1.1.0 // indirect
-	github.com/fergusstrange/embedded-postgres v1.30.0 // indirect
 	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/ggicci/httpin v0.19.0 // indirect
 	github.com/ggicci/owl v0.8.2 // indirect
@@ -72,11 +73,10 @@ require (
 	github.com/spf13/afero v1.12.0 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/spf13/viper v1.19.0 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/urfave/cli/v2 v2.27.5 // indirect
-	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xrash/smetrics v0.0.0-20240521201337-686a1a2994c1 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib v1.29.0 // indirect
@@ -87,15 +87,15 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.27.0 // indirect
 	golang.org/x/crypto v0.32.0 // indirect
-	golang.org/x/exp v0.0.0-20250106191152-7588d65b2ba8 // indirect
+	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
 	golang.org/x/mod v0.23.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
-	golang.org/x/term v0.28.0 // indirect
+	golang.org/x/term v0.29.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/tools v0.30.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/go-modulus/modulus v0.2.4 => ../../
+//replace github.com/go-modulus/modulus v0.2.4 => ../../
