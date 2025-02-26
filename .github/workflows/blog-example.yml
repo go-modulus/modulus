@@ -3,11 +3,12 @@ name: Upload Blog Example App
 on:
  push:
    branches: [main]
-   paths:
-     - 'examples/blog/**'
+#   paths:
+#     - 'examples/blog/**'
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
  deploy-app:
@@ -15,9 +16,27 @@ jobs:
    steps:
      - name: Checkout repository
        uses: actions/checkout@v4
+
+     - name: Log in to the Container registry
+       uses: docker/login-action@v3.3.0
+       with:
+         registry: ghcr.io
+         username: ${{ github.actor }}
+         password: ${{ secrets.REGISTRY_TOKEN }}
+
+     - name: Build and push Docker image
+       id: push
+       uses: docker/build-push-action@v6.5.0
+       with:
+         context: examples/blog/.
+         push: true
+         tags: ghcr.io/${{ github.repository }}:latest
+
      - name: Deploy the app
        uses: digitalocean/app_action/deploy@v2
+       env:
+         SAMPLE_DIGEST: ${{ steps.push.outputs.digest }}
        with:
          token: ${{ secrets.DO_API_KEY }}
-         app_spec_location: ./.do/app-dev.yaml
+#         app_spec_location: ./.do/app-dev.yaml
          app_name: modulus-app
