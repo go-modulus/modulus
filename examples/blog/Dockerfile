@@ -40,7 +40,7 @@ COPY --from=builder /bin/console /app/bin/
 
 # Copy environment variables
 COPY .env .env
-COPY .env.test .env.test
+#COPY .env.test .env.test
 COPY .env.dev .env.dev
 
 # Expose the port that the application listens on.
