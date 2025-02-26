@@ -64,6 +64,16 @@ module-add-json-api: ## add a new json api route to process in the module
 ## END OF MODULE COMMANDS
 ####################################################################################################
 
+####################################################################################################
+## USEFUL HELPERS
+####################################################################################################
+.PHONY: docker-build-image
+docker-build-image: ## build docker image of the blog-example
+	docker build -f Dockerfile -t blog-example ./
+
+.PHONY: docker-run
+docker-run: ## run the docker image of the blog-example
+	docker run -p 8001:80 --env-file .env.keys blog-example
 
 MAKEFILE_FOLDER := ./mk
 
