@@ -1,6 +1,6 @@
 name: modulus-app
 services:
-  - name: modulus-examples-blog
+  - name: go-modulus-modulus
     image:
       registry_type: GHCR
       registry: go-modulus
