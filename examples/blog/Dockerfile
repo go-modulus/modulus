@@ -1,11 +1,18 @@
 FROM ubuntu:22.04
 
-RUN apk --no-cache add \
-        ca-certificates \
-        coreutils \
-        tzdata \
-        && \
-        update-ca-certificates
+#RUN apk --no-cache add \
+#        ca-certificates \
+#        coreutils \
+#        tzdata \
+#        && \
+#        update-ca-certificates
+#RUN apt-get update && apt-get install -y \
+#    ca-certificates \
+#    coreutils \
+#    tzdata && \
+#    update-ca-certificates && \
+#    rm -rf /var/lib/apt/lists/*
+
 
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/go/dockerfile-user-best-practices/
