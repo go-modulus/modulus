@@ -100,4 +100,7 @@ After that, follow their guide to deploy the application using Github actions: h
 Create DO_API_KEY variable in the Github repository secrets with the Digital Ocean API key. It is used by the Github action to deploy the application.
 
 Create the REGISTRY_TOKEN secret in the Github repository secrets. It is used to push the image to Github Registry. How to create a token is described [here](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token).
+
 Create the DOTENV_PRIVATE_KEY_DEV environment variable in the App platform on the settings page of the application. It is used to decrypt the secrets in the `.env.dev` file.
+
+Copy `.do/app.yaml` and `.github/workflows/blog-example.yml` files to your repository to make the deployment work.

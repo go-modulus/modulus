@@ -3,8 +3,9 @@ name: Upload Blog Example App
 on:
  push:
    branches: [main]
-#   paths:
-#     - 'examples/blog/**'
+   paths:
+     - 'examples/blog/**'
+     - '.github/workflows/blog-example.yml'
 
 permissions:
   contents: read
