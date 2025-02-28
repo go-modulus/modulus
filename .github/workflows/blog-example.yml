@@ -18,6 +18,26 @@ jobs:
      - name: Checkout repository
        uses: actions/checkout@v4
 
+     - name: Setup Golang with cache
+       uses: magnetikonline/action-golang-cache@v5
+       with:
+         go-version-file: examples/blog/go.mod
+
+     - run: go build -o ./bin/console  ./cmd/console/main.go
+       working-directory: examples/blog
+
+     - name: Cache dotenvx binary
+       id: dotenvx-cache
+       uses: actions/cache@v4
+       with:
+         path: examples/blog/dotenvx
+         key: ${{ runner.os }}-dotenvx
+
+     - name: Install dotenvx (if not cached)
+       if: steps.dotenvx-cache.outputs.cache-hit != 'true'
+       run: curl -sfS https://dotenvx.sh/install.sh?directory=. | sh
+       working-directory: examples/blog
+
      - name: Log in to the Container registry
        uses: docker/login-action@v3.3.0
        with:

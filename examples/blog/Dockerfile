@@ -1,15 +1,3 @@
-ARG GO_VERSION=1.24.0
-FROM --platform=$BUILDPLATFORM golang:${GO_VERSION} AS builder
-WORKDIR /src
-
-COPY . .
-
-RUN go mod download -x
-
-ARG TARGETARCH
-
-RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -o /bin/console ./cmd/console/main.go
-
 FROM alpine:latest
 
 RUN apk --no-cache add \
@@ -35,20 +23,17 @@ USER appuser
 
 WORKDIR /app
 
-# Copy the executable from the "build" stage.
-COPY --from=builder /bin/console /app/bin/
+# Copy the executable from the "build" stage of Github Action.
+COPY  /bin/console /app/bin/
 
 # Copy environment variables
 COPY .env .env
 #COPY .env.test .env.test
 COPY .env.dev .env.dev
+COPY dotenvx dotenvx
 
 # Expose the port that the application listens on.
 EXPOSE 8001
 
-RUN curl -sfS https://dotenvx.sh/install.sh?directory=. | sh
-#CMD ["dotenvx", "run", "--", "/bin/console", "serve"]
-
 # What the container should run when it is started.
 ENTRYPOINT [ "./dotenvx", "run", "-f", ".env.dev","--", "bin/console", "serve" ]
-#ENTRYPOINT [ "bin/console", "serve" ]
