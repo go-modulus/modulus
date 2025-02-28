@@ -6,8 +6,6 @@ RUN apk --no-cache add \
         && \
         update-ca-certificates
 
-RUN apk add --no-cache curl
-
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/go/dockerfile-user-best-practices/
 ARG UID=10001
@@ -24,7 +22,9 @@ USER appuser
 WORKDIR /app
 
 # Copy the executable from the "build" stage of Github Action.
-COPY  /bin/console /app/bin/
+COPY  ./bin/console /app/bin/
+RUN chmod +x /app/bin/console
+RUN chmod +x /app/dotenvx
 
 # Copy environment variables
 COPY .env .env

@@ -13,6 +13,7 @@ coverage.html
 
 # Binaries for programs and plugins
 bin/*
+dotenvx
 
 # MacOS specific files
 .DS_Store
