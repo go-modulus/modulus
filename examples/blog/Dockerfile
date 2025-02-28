@@ -2,6 +2,7 @@ FROM alpine:latest
 
 RUN apk --no-cache add \
         ca-certificates \
+        coreutils \
         tzdata \
         && \
         update-ca-certificates
@@ -23,8 +24,9 @@ WORKDIR /app
 
 # Copy the executable from the "build" stage of Github Action.
 COPY  ./bin/console /app/bin/
-#RUN chmod +x /app/bin/console
-#RUN chmod +x /app/dotenvx
+RUN ls -lah /app/bin/
+RUN /bin/chmod +x /app/bin/console
+RUN /bin/chmod +x /app/dotenvx
 
 # Copy environment variables
 COPY .env .env
