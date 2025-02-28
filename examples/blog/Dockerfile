@@ -1,4 +1,4 @@
-FROM alpine:latest
+FROM ubuntu:22.04
 
 RUN apk --no-cache add \
         ca-certificates \
