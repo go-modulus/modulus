@@ -32,10 +32,10 @@ USER appuser
 
 WORKDIR /app
 
-RUN ls -la /app/bin
+RUN ls -la /app
 
 # Expose the port that the application listens on.
 EXPOSE 8001
 
 # What the container should run when it is started.
-ENTRYPOINT [ "./dotenvx", "run", "-f", ".env.dev","--", "/app/bin/console", "serve" ]
+ENTRYPOINT [ "/app/dotenvx", "run", "-f", ".env.dev","--", "/app/bin/console", "serve" ]
