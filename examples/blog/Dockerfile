@@ -19,8 +19,9 @@ RUN adduser \
     --uid "${UID}" \
     appuser
 
+WORKDIR /app
 # Copy the executable from the "build" stage of Github Action.
-COPY  ./bin/console /app/bin/
+COPY  ./bin /app/bin/
 # Copy environment variables
 COPY .env .env
 #COPY .env.test .env.test
@@ -29,8 +30,6 @@ COPY dotenvx dotenvx
 RUN chown -R appuser:appuser /app
 
 USER appuser
-
-WORKDIR /app
 
 RUN ls -la /app
 
