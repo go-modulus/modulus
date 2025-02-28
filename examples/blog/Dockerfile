@@ -23,8 +23,8 @@ WORKDIR /app
 
 # Copy the executable from the "build" stage of Github Action.
 COPY  ./bin/console /app/bin/
-RUN chmod +x /app/bin/console
-RUN chmod +x /app/dotenvx
+#RUN chmod +x /app/bin/console
+#RUN chmod +x /app/dotenvx
 
 # Copy environment variables
 COPY .env .env
