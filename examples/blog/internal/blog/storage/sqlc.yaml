@@ -1,4 +1,77 @@
 options:
+    fixture:
+        overrides:
+            - db_type: uuid
+              engine: postgresql
+              go_type:
+                import: github.com/gofrs/uuid
+                package: uuid
+                type: NullUUID
+              gql_type: Uuid
+              nullable: true
+            - db_type: uuid
+              engine: postgresql
+              go_type:
+                import: github.com/gofrs/uuid
+                package: uuid
+                type: UUID
+              gql_type: Uuid
+              nullable: false
+            - db_type: text
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: String
+              gql_type: String
+              nullable: true
+            - db_type: pg_catalog.timestamp
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: timestamp
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: pg_catalog.timestamptz
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: timestamptz
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: pg_catalog.timestamp
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+            - db_type: timestamp
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+            - db_type: pg_catalog.timestamptz
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+            - db_type: timestamptz
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
     golang:
         overrides:
             - db_type: uuid
@@ -164,6 +237,13 @@ plugins:
         url: https://github.com/debugger84/sqlc-gen-go/releases/download/v1.3.4/sqlc-gen-go.wasm
 sql:
     - codegen:
+        - options:
+            default_schema: blog
+            model_import: blog/internal/blog/storage
+            package: fixture
+            sql_package: pgx/v5
+          out: ./
+          plugin: fixture
         - options:
             default_schema: blog
             emit_all_enum_values: true

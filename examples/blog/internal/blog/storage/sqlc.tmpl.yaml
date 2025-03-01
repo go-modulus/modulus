@@ -5,6 +5,9 @@
 sqlc-tmpl:
   version: "2"
   options:
+    fixture:
+      overrides:
+        *default-overrides
     golang:
       overrides:
         *default-overrides
@@ -21,6 +24,12 @@ sqlc-tmpl:
       queries: "query"
       engine: "postgresql"
       codegen:
+        - <<: *codegen-fixture
+          options:
+            <<: *codegen-fixture-options
+            default_schema: "blog"
+            package: "fixture"
+            model_import: "blog/internal/blog/storage"
         - <<: *codegen-graphql
           options:
             <<: *codegen-graphql-options

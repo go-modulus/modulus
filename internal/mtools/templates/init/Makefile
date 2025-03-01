@@ -23,7 +23,7 @@ analyze: ## Run static analyzer
 
 .PHONY: test
 test: ## Run tests
-	tgo run github.com/rakyll/gotest -v -failfast ./internal/...
+	go run github.com/rakyll/gotest -v -failfast ./internal/...
 
 .PHONY: cover
 cover: ## Run tests with coverage
