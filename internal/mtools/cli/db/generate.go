@@ -54,7 +54,7 @@ func (c *Generate) Invoke(ctx *cli.Context) error {
 			continue
 		}
 		fmt.Println("Generate DTO and DAO files for the", color.BlueString(md.Name), "module")
-		fmt.Println(fmt.Sprintf("Running %s ...", color.BlueString("sqlc -f "+sqlcFile+" generate")))
+		fmt.Printf("Running %s ...\n", color.BlueString("sqlc -f "+sqlcFile+" generate"))
 		cmd := exec.CommandContext(ctx.Context, "sqlc", "-f", sqlcFile, "generate")
 		_, err := cmd.Output()
 		if err != nil {

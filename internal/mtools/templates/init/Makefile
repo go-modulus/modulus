@@ -18,7 +18,7 @@ install: ## Make a binary to ./bin folder
 
 .PHONY: analyze
 analyze: ## Run static analyzer
-	test -s ./bin/golangci-lint || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.59.1
+	test -s ./bin/golangci-lint || curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.64.5
 	./bin/golangci-lint run -c ./.golangci.yaml ./...
 
 .PHONY: test

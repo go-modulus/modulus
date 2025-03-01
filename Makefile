@@ -17,7 +17,7 @@ test: ## Run tests
 	go run github.com/rakyll/gotest -v -failfast  ./...
 
 analyze: ## Run static analyzer
-	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:v1.61.0 golangci-lint run -v
+	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:v1.64.5 golangci-lint run -v
 
 install: ## Make a binary to ./bin folder
 	go build -o ./bin/mtools  ./cmd/mtools/main.go
