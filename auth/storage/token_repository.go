@@ -45,7 +45,7 @@ func (r *DefaultTokenRepository) CreateAccessToken(
 	}
 	dataJson, err := json.Marshal(data)
 	if err != nil {
-		return repository.AccessToken{}, errtrace.Wrap(errors.WrapCause(repository.ErrCannotCreateAccessToken, err))
+		return repository.AccessToken{}, errtrace.Wrap(errors.WithCause(repository.ErrCannotCreateAccessToken, err))
 	}
 
 	storedAccessToken, err := r.queries.CreateAccessToken(
@@ -82,7 +82,7 @@ func (r *DefaultTokenRepository) CreateRefreshToken(
 		},
 	)
 	if err != nil {
-		return repository.RefreshToken{}, errtrace.Wrap(errors.WrapCause(repository.ErrCannotCreateRefreshToken, err))
+		return repository.RefreshToken{}, errtrace.Wrap(errors.WithCause(repository.ErrCannotCreateRefreshToken, err))
 	}
 	return r.transformRefreshToken(storedRefreshToken), nil
 }

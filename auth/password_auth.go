@@ -92,7 +92,7 @@ func (a *PasswordAuthenticator) Register(
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return repository.Identity{}, errtrace.Wrap(errors.WrapCause(ErrCannotHashPassword, err))
+		return repository.Identity{}, errtrace.Wrap(errors.WithCause(ErrCannotHashPassword, err))
 	}
 
 	_, err = a.credentialRepository.Create(

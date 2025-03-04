@@ -234,13 +234,13 @@ func (c *Install) installModule(
 	defer cancel()
 	err := exec.CommandContext(cmdCtx, "go", "get", md.Package).Run()
 	if err != nil {
-		return errors.WrapCause(ErrCannotRunGoGetCommand, err)
+		return errors.WithCause(ErrCannotRunGoGetCommand, err)
 	}
 
 	fmt.Printf("Adding the package %s to the tools.go file...\n", color.BlueString(md.Package))
 	err = files.AddImportToTools(md.Package)
 	if err != nil {
-		return errors.WrapCause(ErrCannotUpdateToolsFile, err)
+		return errors.WithCause(ErrCannotUpdateToolsFile, err)
 	}
 
 	for _, entrypoint := range entrypoints {
@@ -263,7 +263,7 @@ func (c *Install) installModule(
 	fmt.Printf("Running %s...\n", color.BlueString("go mod tidy"))
 	err = exec.CommandContext(cmdCtx, "go", "mod", "tidy").Run()
 	if err != nil {
-		return errors.WrapCause(ErrCannotRunGoGetCommand, err)
+		return errors.WithCause(ErrCannotRunGoGetCommand, err)
 	}
 
 	if len(md.Install.EnvVars) != 0 {
@@ -314,17 +314,17 @@ func (c *Install) installModule(
 			fmt.Printf("Adding the package %s to the tools.go file...\n", color.BlueString(md.Package))
 			err = exec.CommandContext(cmdCtx, "go", "get", cmd.CmdPackage).Run()
 			if err != nil {
-				return errors.WrapCause(ErrCannotRunGoGetCommand, err)
+				return errors.WithCause(ErrCannotRunGoGetCommand, err)
 			}
 			err = files.AddImportToTools(cmd.CmdPackage)
 			if err != nil {
-				return errors.WrapCause(ErrCannotUpdateToolsFile, err)
+				return errors.WithCause(ErrCannotUpdateToolsFile, err)
 			}
 			fmt.Printf("Running %s...\n", color.BlueString("go run "+cmd.CmdPackage))
 			params := append([]string{"run", cmd.CmdPackage}, cmd.Params...)
 			err = exec.CommandContext(cmdCtx, "go", params...).Run()
 			if err != nil {
-				return errors.WrapCause(ErrCannotInstallModule, err)
+				return errors.WithCause(ErrCannotInstallModule, err)
 			}
 		}
 	}

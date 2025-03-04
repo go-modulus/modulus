@@ -44,10 +44,18 @@ func CauseString(err error) string {
 	return cause.Error()
 }
 
-func WrapCause(err error, cause error) error {
+func WithCause(err error, cause error) error {
 	if err == nil {
 		return err
 	}
 
+	return withCause{cause: cause, err: err}
+}
+
+func WithCauseHint(hint string, cause error) error {
+	if cause == nil {
+		return nil
+	}
+	err := New(hint)
 	return withCause{cause: cause, err: err}
 }

@@ -75,7 +75,7 @@ func TestBuilder_Build(t *testing.T) {
 			b := errbuilder.New("test error").WithTags("tag1", "tag2")
 			err := b.Build()
 
-			err = errors.WrapAddingTags(err, "tag3")
+			err = errors.WithAddedTags(err, "tag3")
 
 			t.Log("When create a new error with tags")
 			t.Log("  and add more tags")
@@ -93,7 +93,7 @@ func TestBuilder_Build(t *testing.T) {
 		"system error with added tags", func(t *testing.T) {
 			err := syserrors.New("test error")
 
-			err = errors.WrapAddingTags(err, "tag3")
+			err = errors.WithAddedTags(err, "tag3")
 
 			t.Log("When add tags to a system error")
 			t.Log("	Should return added tags")
@@ -110,7 +110,7 @@ func TestBuilder_Build(t *testing.T) {
 
 			err := errors.New("custom error")
 
-			err = errors.WrapCause(err, cause)
+			err = errors.WithCause(err, cause)
 
 			t.Log("When add a cause to a custom error")
 			t.Log("	Should have custom error as the main error")
@@ -124,12 +124,12 @@ func TestBuilder_Build(t *testing.T) {
 	t.Run(
 		"wrap cause on error with tags", func(t *testing.T) {
 			cause := syserrors.New("test error")
-			cause = errors.WrapAddingTags(cause, "tag3")
+			cause = errors.WithAddedTags(cause, "tag3")
 
 			err := errors.New("custom error")
-			err = errors.WrapAddingTags(err, "tag1", "tag2")
+			err = errors.WithAddedTags(err, "tag1", "tag2")
 
-			err = errors.WrapCause(err, cause)
+			err = errors.WithCause(err, cause)
 
 			t.Log("When add a cause to an error with tags")
 			t.Log("	Should have custom error as the main error")

@@ -5,4 +5,6 @@
 - [Deployment](deployment.md)
 
 - [Testing](testing.md)
+
+- [Error Handling](error_handling.md)
   

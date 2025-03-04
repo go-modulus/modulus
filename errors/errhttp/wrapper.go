@@ -7,7 +7,6 @@ import (
 	"github.com/go-modulus/modulus/errors/errlog"
 	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/go-modulus/modulus/http/context"
-	translationContext "github.com/go-modulus/modulus/translation"
 	"log/slog"
 	"net/http"
 )
@@ -29,8 +28,7 @@ func SendError(
 	}
 	w.WriteHeader(status)
 
-	p := translationContext.GetPrinter(req.Context())
-	message := errors.Hint(p, err)
+	message := errors.Hint(err)
 	details := erruser.Details(err)
 
 	requestID := context.GetRequestID(req.Context())

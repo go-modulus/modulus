@@ -113,7 +113,7 @@ func NewFromFs(manifestFs fs.FS, filename string) (*Manifest, error) {
 func LoadLocalManifest(projPath string) (Manifest, error) {
 	entries, err := readEntries(projPath)
 	if err != nil {
-		return Manifest{}, errors.WrapCause(ErrCannotReadEntries, err)
+		return Manifest{}, errors.WithCause(ErrCannotReadEntries, err)
 	}
 	res := Manifest{
 		Modules:     make([]ManifestModule, 0),

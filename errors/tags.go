@@ -43,7 +43,7 @@ func Tags(err error) []string {
 	return nil
 }
 
-func WrapAddingTags(err error, tags ...string) error {
+func WithAddedTags(err error, tags ...string) error {
 	if err == nil {
 		return err
 	}

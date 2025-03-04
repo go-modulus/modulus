@@ -71,7 +71,7 @@ func (LoadersInitializer) Validate(graphql.ExecutableSchema) error {
 	return nil
 }
 
-// Init loaders before each operation
+// InterceptOperation Init loaders before each operation
 func (l LoadersInitializer) InterceptOperation(
 	ctx context.Context,
 	next graphql.OperationHandler,
@@ -79,7 +79,7 @@ func (l LoadersInitializer) InterceptOperation(
 	return next(WithLoaders(ctx, &sync.Map{}))
 }
 
-// Init loaders before each event in subscription
+// InterceptResponse Init loaders before each event in subscription
 func (l LoadersInitializer) InterceptResponse(ctx context.Context, next graphql.ResponseHandler) *graphql.Response {
 	oc := graphql.GetOperationContext(ctx)
 	operation := oc.Operation

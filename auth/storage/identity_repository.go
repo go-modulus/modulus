@@ -51,7 +51,7 @@ func (r *DefaultIdentityRepository) Create(
 	)
 
 	if err != nil {
-		return repository.Identity{}, errtrace.Wrap(errors.WrapCause(repository.ErrCannotCreateIdentity, err))
+		return repository.Identity{}, errtrace.Wrap(errors.WithCause(repository.ErrCannotCreateIdentity, err))
 	}
 
 	return r.Transform(storedIdentity), nil
