@@ -51,11 +51,3 @@ func WithCause(err error, cause error) error {
 
 	return withCause{cause: cause, err: err}
 }
-
-func WithCauseHint(hint string, cause error) error {
-	if cause == nil {
-		return nil
-	}
-	err := New(hint)
-	return withCause{cause: cause, err: err}
-}

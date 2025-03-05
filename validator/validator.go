@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-modulus/modulus/errors/erruser"
+	errors2 "github.com/go-modulus/modulus/errors"
 	translationContext "github.com/go-modulus/modulus/translation"
 	"strings"
 
@@ -23,7 +23,7 @@ type InvalidField struct {
 	Code    string
 }
 
-func (e ErrInvalidInput) Code() erruser.ErrorCode {
+func (e ErrInvalidInput) Code() string {
 	return "InvalidInput"
 }
 
@@ -56,8 +56,8 @@ func (e ErrInvalidInput) Error() string {
 func AsOzzoError(ctx context.Context, err error) validation.Error {
 	p := translationContext.GetPrinter(ctx)
 	return validation.NewError(
-		string(erruser.Code(err)),
-		erruser.Message(p, err),
+		err.Error(),
+		errors2.Message(p, err),
 	)
 }
 

@@ -104,13 +104,14 @@ import (
 func ReadData() (string, error) {
     data, err := db.ReadData()
     if err != nil {
-        return "", mErrors.WithCauseHint("Failed to read data. Try again later", err)
+        return "", mErrors.NewWithCause("Failed to read data. Try again later", err)
     }
     return data, nil
 }
 ```
 
-It was the first approach of handling system errors. When we don't want to think about the error codes and further error checking by outside backend layers or frontend. The JSON result returned from API looks like this:
+It was the first approach of handling system errors. When we don't want to think about the further error checking by outside backend layers. 
+It is fast to implement, but is not so agile as the second. The JSON result has been returned from API looks like this:
 
 ```json
 {
@@ -165,7 +166,7 @@ You have the second option how to handle system errors. It is to create a custom
 import (
     mErrors "github.com/go-modulus/modulus/errors"
 )
-var ErrCannotReadData = mErrors.NewSysError("cannot read data", "Failed to read data. Try again later")
+var ErrCannotReadData = mErrors.WithHint(mErrors.New("cannot read data"), "Failed to read data. Try again later")
 
 func ReadData() (string, error) {
     data, err := db.ReadData()
@@ -233,3 +234,82 @@ In logs this error will be shown as:
 ```
 
 As you can see the support team can find an error in logs by the `message` field or by `requestId` obtained from the message.
+
+
+Instead using
+
+```go
+var ErrCannotReadData = mErrors.WithHint(mErrors.New("cannot read data"), "Failed to read data. Try again later")
+```
+
+you can try to use the separate subpackage `errsys` to work with the system errors:
+
+```go
+import (
+    "github.com/go-modulus/modulus/errors/errsys"
+)
+
+var ErrCannotReadData = errsys.New("cannot read data", "Failed to read data. Try again later")
+...
+
+if err != nil {
+    return "", errsys.WithCause(ErrCannotReadData, err)
+}
+```
+
+It is a little bit shorter and more readable. Also, it helps to select the necessary package in the IDE's autocompletion popup.
+
+
+## User Errors
+
+User errors are the errors that are caused by incorrect input from the user or incorrect user behavior. These errors should be handled gracefully and the user should be informed about the issue. For example, if the user provides an unknown email address when trying to log in, we can return an error like this:
+
+```go
+import (
+    mErrors "github.com/go-modulus/modulus/errors"
+	// erruser just an alias for simpler user error creation. You are able to create them both ways.
+    "github.com/go-modulus/modulus/errors/erruser"
+)
+var ErrWrongCredentials = erruser.New("wrong credentials", "Email or password is wrong")
+// the second option of how to create a user error in a different way
+var ErrWrongCredentialsExample = mErrors.WithAddedTags(mErrors.WithHint(mErrors.New("wrong credentials"), "Email or password is wrong"), mErrors.UserErrorTag)
+
+func (r *Resolver) LoginUser(ctx context.Context, input action.LoginUserInput) (action.TokenPair, error) {
+	token, err := r.login.Execute(ctx, input)
+	if err != nil {
+        if errors.Is(auth.ErrInvalidPassword, err) ||
+            errors.Is(auth.ErrInvalidIdentity, err) {
+			return action.TokenPair{}, ErrWrongCredentials
+        }
+    }
+    ...
+}
+```
+
+It returns JSON like this:
+```json
+{
+  "errors": [
+    {
+      "message": "Email or password is wrong",
+      "path": [
+        "loginUser"
+      ],
+      "extensions": {
+        "cause": {
+          "code": "identity not found",
+          "message": "identity not found"
+        },
+        "code": "wrong credentials",
+        "meta": {
+          "requestId": "cv3gdhcp5asmvig3tue0"
+        }
+      }
+    }
+  ]
+}
+```
+
+As for logging then the default error pipeline **does not log user errors**.  
+
+If you want to change this behavior you can set the `HTTP_USER_ERROR_LOG_LEVEL=info` environment variable. Available levels are `debug`, `info`, `warn`, `error`, `dont_log`.

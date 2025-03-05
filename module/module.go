@@ -172,7 +172,8 @@ func (m *Module) InitConfig(config any) *Module {
 	val = reflect.ValueOf(config)
 
 	filledConfig := val.Elem().Interface()
-	m.configs[m.getConfigName(config)] = filledConfig
+	name := m.getConfigName(filledConfig)
+	m.configs[name] = filledConfig
 
 	vars := getVariables(config, false)
 	var envVars []ConfigEnvVariable

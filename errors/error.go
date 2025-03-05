@@ -11,27 +11,16 @@ const (
 )
 
 // New creates a new handled system error with the given error code.
-// Error hint equals to the error code.
+// The error hint equals to the error code.
 // This error is tagged with SystemErrorTag.
 //
 // If the default error pipeline is used, this error will be logged and shown to the user as is with added request id to the message.
 func New(code string) error {
-	return WithAddedTags(WithHint(syserrors.New(code), code))
+	return WithAddedTags(WithHint(syserrors.New(code), code), SystemErrorTag)
 }
 
-// NewSysError creates a new handled system error with the given error code and hint.
-// It works as New, but allows to specify a custom hint.
-func NewSysError(code string, hint string) error {
-	return WithAddedTags(WithHint(syserrors.New(code), hint), SystemErrorTag)
-}
-
-// NewUserError creates a new user error with the given error code and message.
-// This error is tagged with UserErrorTag.
-//
-// If the default error pipeline is used, this error will be shown to the user as is without added request id to the message.
-// By default the error is not logged.
-func NewUserError(code string, hint string) error {
-	return WithAddedTags(WithHint(syserrors.New(code), hint), UserErrorTag)
+func NewWithCause(code string, cause error) error {
+	return WithCause(New(code), cause)
 }
 
 func Message(t *message.Printer, err error) string {
@@ -68,17 +57,33 @@ func As(err error, target any) bool {
 }
 
 func IsSystemError(err error) bool {
+	lastTag := getLastErrorTypeTag(err)
+	hint := Hint(err)
+
+	return hint == "" || lastTag == SystemErrorTag
+}
+
+func IsUserError(err error) bool {
+	lastTag := getLastErrorTypeTag(err)
+
+	return lastTag == UserErrorTag
+}
+
+func getLastErrorTypeTag(err error) string {
 	tags := Tags(err)
-	isSystem := false
+	if len(tags) == 0 {
+		return ""
+	}
+	lastTag := ""
 	for _, tag := range tags {
 		switch tag {
 		case SystemErrorTag:
-			isSystem = true
+			lastTag = SystemErrorTag
 			break
 		case UserErrorTag:
-			isSystem = false
+			lastTag = UserErrorTag
 		}
 	}
 
-	return isSystem
+	return lastTag
 }

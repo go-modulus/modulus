@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/errors/errlog"
-	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/go-modulus/modulus/http/context"
 	"log/slog"
 	"net/http"
@@ -19,25 +18,28 @@ func SendError(
 ) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 
-	code := erruser.Code(err)
+	// @TODO convert logic to the error pipeline processing
+	code := err.Error()
+	message := errors.Hint(err)
 	status := Status(err)
-	if code == erruser.InternalErrorCode {
+	if message == "" {
 		logger.ErrorContext(req.Context(), "unhandled error", errlog.Error(err))
+		message = "Internal Server Error"
+		code = "unhandled internal error"
 	} else if status == http.StatusInternalServerError {
 		status = http.StatusBadRequest
 	}
 	w.WriteHeader(status)
 
-	message := errors.Hint(err)
-	details := erruser.Details(err)
+	meta := errors.Meta(err)
 
 	requestID := context.GetRequestID(req.Context())
 	if requestID != "" {
-		if details == nil {
-			details = make(map[string]any)
+		if meta == nil {
+			meta = make(map[string]string)
 		}
-		details["requestId"] = requestID
-		if code == erruser.InternalErrorCode {
+		meta["requestId"] = requestID
+		if message == "Internal Server Error" {
 			message = fmt.Sprintf("%s (RID: %s)", message, requestID)
 		}
 	}
@@ -47,7 +49,10 @@ func SendError(
 			"error": map[string]any{
 				"code":    code,
 				"message": message,
-				"details": details,
+				"extensions": map[string]any{
+					"code": code,
+					"meta": meta,
+				},
 			},
 		},
 	)

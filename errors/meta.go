@@ -20,11 +20,12 @@ func (m withMeta) Unwrap() error {
 }
 
 func (m withMeta) Is(target error) bool {
-	t, ok := target.(withMeta)
-	if !ok {
+	var we withMeta
+	if !errors.As(target, &we) {
 		return false
 	}
-	return m.err.Error() == t.err.Error()
+
+	return m.err.Error() == we.err.Error()
 }
 
 func Meta(err error) map[string]string {

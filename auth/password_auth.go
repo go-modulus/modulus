@@ -9,6 +9,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+var ErrInvalidIdentity = errors.New("invalid identity")
 var ErrIdentityIsBlocked = errors.New("identity is blocked")
 var ErrInvalidPassword = errors.New("invalid password")
 var ErrCannotHashPassword = errors.New("cannot hash password")
@@ -34,11 +35,13 @@ func NewPasswordAuthenticator(
 // Errors:
 // * github.com/go-modulus/modulus/auth.ErrIdentityIsBlocked - if the identity is blocked.
 // * github.com/go-modulus/modulus/auth.ErrInvalidPassword - if the password is invalid.
-// * Any error from the IdentityRepository.Get method (e.g. github.com/go-modulus/modulus/auth/repository.ErrIdentityNotFound).
-// * Any error from the CredentialRepository.GetLast method (e.g. github.com/go-modulus/modulus/auth/repository.ErrCredentialNotFound).
+// * github.com/go-modulus/modulus/auth.ErrInvalidIdentity - if identity is not found in the repository.
 func (a *PasswordAuthenticator) Authenticate(ctx context.Context, identity, password string) (Performer, error) {
 	identityObj, err := a.identityRepository.Get(ctx, identity)
 	if err != nil {
+		if errors.Is(err, repository.ErrIdentityNotFound) {
+			return Performer{}, errtrace.Wrap(ErrInvalidIdentity)
+		}
 		return Performer{}, errtrace.Wrap(err)
 	}
 
@@ -48,6 +51,9 @@ func (a *PasswordAuthenticator) Authenticate(ctx context.Context, identity, pass
 
 	cred, err := a.credentialRepository.GetLast(ctx, identityObj.ID, string(repository.CredentialTypePassword))
 	if err != nil {
+		if errors.Is(err, repository.ErrCredentialNotFound) {
+			return Performer{}, errtrace.Wrap(ErrInvalidPassword)
+		}
 		return Performer{}, errtrace.Wrap(err)
 	}
 

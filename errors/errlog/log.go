@@ -12,8 +12,19 @@ const LogAsInfo = "log_as_info"
 const LogAsDebug = "log_as_debug"
 const DontLog = "dont_log"
 
-func LogError(ctx context.Context, err error, logger *slog.Logger) (slog.Level, bool) {
-	level, dontLog := getLevel(errors.Tags(err))
+func LogError(
+	ctx context.Context,
+	err error,
+	logger *slog.Logger,
+	defaultLogLevel slog.Level,
+) (slog.Level, bool) {
+	if err == nil {
+		return defaultLogLevel, false
+	}
+	if defaultLogLevel < slog.LevelDebug {
+		return defaultLogLevel, false
+	}
+	level, dontLog := getLevel(errors.Tags(err), defaultLogLevel)
 
 	if dontLog {
 		return level, false
@@ -29,8 +40,8 @@ func LogError(ctx context.Context, err error, logger *slog.Logger) (slog.Level, 
 	return level, true
 }
 
-func getLevel(tags []string) (slog.Level, bool) {
-	level := slog.LevelError
+func getLevel(tags []string, defaultLogLevel slog.Level) (slog.Level, bool) {
+	level := defaultLogLevel
 	dontLog := false
 	for _, tag := range tags {
 		switch tag {
@@ -48,4 +59,24 @@ func getLevel(tags []string) (slog.Level, bool) {
 		}
 	}
 	return level, dontLog
+}
+
+func WithLoggingAsError(err error) error {
+	return errors.WithAddedTags(err, LogAsError)
+}
+
+func WithLoggingAsWarn(err error) error {
+	return errors.WithAddedTags(err, LogAsWarn)
+}
+
+func WithLoggingAsInfo(err error) error {
+	return errors.WithAddedTags(err, LogAsInfo)
+}
+
+func WithLoggingAsDebug(err error) error {
+	return errors.WithAddedTags(err, LogAsDebug)
+}
+
+func WithoutLogging(err error) error {
+	return errors.WithAddedTags(err, DontLog)
 }

@@ -67,7 +67,8 @@ func NewModule() *module.Module {
 				}
 			},
 		).
-		InitConfig(ServeConfig{})
+		InitConfig(ServeConfig{}).
+		InitConfig(ErrorLoggerConfig{})
 }
 
 func OverrideErrorPipeline(httpModule *module.Module, pipeline interface{}) *module.Module {

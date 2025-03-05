@@ -22,11 +22,12 @@ func (m withTags) Unwrap() error {
 }
 
 func (m withTags) Is(target error) bool {
-	t, ok := target.(withTags)
-	if !ok {
+	var we withTags
+	if !errors.As(target, &we) {
 		return false
 	}
-	return m.err.Error() == t.err.Error()
+
+	return m.err.Error() == we.err.Error()
 }
 
 func Tags(err error) []string {
