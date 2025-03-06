@@ -8,7 +8,6 @@ import (
 	"github.com/go-modulus/modulus/errors/errwrap"
 	"github.com/go-modulus/modulus/http/errhttp"
 	"github.com/go-modulus/modulus/module"
-	"log/slog"
 	"net/http"
 )
 
@@ -23,11 +22,11 @@ var (
 	)
 )
 
-func NewRouter(logger *slog.Logger, config ServeConfig) chi.Router {
+func NewRouter(errorPipeline *errhttp.ErrorPipeline, config ServeConfig) chi.Router {
 	r := chi.NewRouter()
 	r.MethodNotAllowed(
 		errhttp.WrapHandler(
-			logger,
+			errorPipeline,
 			func(w http.ResponseWriter, req *http.Request) error {
 				return ErrMethodNotAllowed
 			},
@@ -35,7 +34,7 @@ func NewRouter(logger *slog.Logger, config ServeConfig) chi.Router {
 	)
 	r.NotFound(
 		errhttp.WrapHandler(
-			logger,
+			errorPipeline,
 			func(w http.ResponseWriter, req *http.Request) error {
 				return ErrNotFound
 			},
@@ -59,7 +58,7 @@ func NewModule() *module.Module {
 			NewRouter,
 			NewServe,
 		).
-		SetOverriddenProvider("http.ErrorPipeline", NewDefaultErrorPipeline).
+		SetOverriddenProvider("http.ErrorPipeline", errhttp.NewDefaultErrorPipeline).
 		SetOverriddenProvider(
 			"http.MiddlewarePipeline", func(authMd *auth.Middleware) *Pipeline {
 				return &Pipeline{
@@ -68,7 +67,7 @@ func NewModule() *module.Module {
 			},
 		).
 		InitConfig(ServeConfig{}).
-		InitConfig(ErrorLoggerConfig{})
+		InitConfig(errhttp.ErrorLoggerConfig{})
 }
 
 func OverrideErrorPipeline(httpModule *module.Module, pipeline interface{}) *module.Module {

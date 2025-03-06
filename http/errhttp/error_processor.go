@@ -1,4 +1,4 @@
-package http
+package errhttp
 
 import (
 	"context"
@@ -15,6 +15,13 @@ type ErrorProcessor func(ctx context.Context, err error) error
 
 type ErrorPipeline struct {
 	Processors []ErrorProcessor
+}
+
+func (p *ErrorPipeline) Process(ctx context.Context, err error) error {
+	for _, processor := range p.Processors {
+		err = processor(ctx, err)
+	}
+	return err
 }
 
 type ErrorLoggerConfig struct {

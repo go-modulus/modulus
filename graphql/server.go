@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler/apollotracing"
-	"github.com/go-modulus/modulus/http"
+	"github.com/go-modulus/modulus/http/errhttp"
 	"github.com/vektah/gqlparser/v2/ast"
 	"go.uber.org/fx"
 	"log/slog"
@@ -38,7 +38,7 @@ type Config struct {
 type ErrorPresenterParams struct {
 	fx.In
 
-	ErrorPipeline *http.ErrorPipeline `optional:"true"`
+	ErrorPipeline *errhttp.ErrorPipeline `optional:"true"`
 	Config        Config
 }
 
