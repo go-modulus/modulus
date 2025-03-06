@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/go-modulus/modulus/validator"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-modulus/modulus/errors/erruser"
 	"io"
 	"time"
 )
@@ -28,9 +27,10 @@ func UnmarshalTime(ctx context.Context, value interface{}) (time.Time, error) {
 		}
 	}
 
-	return time.Time{}, &validator.ErrInvalidInput{
-		Fields: []validator.InvalidField{
-			validator.NewInvalidFieldFromOzzo(validator.Path(ctx), validation.ErrDateInvalid),
-		},
-	}
+	return time.Time{}, erruser.NewValidationError(
+		erruser.New(
+			graphql.GetPath(ctx).String(),
+			"Invalid Time. Pass it in format "+time.RFC3339,
+		),
+	)
 }

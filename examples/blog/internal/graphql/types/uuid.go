@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
-	"github.com/go-modulus/modulus/validator"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/gofrs/uuid"
 	"io"
 )
@@ -28,9 +27,5 @@ func UnmarshalUuid(ctx context.Context, value interface{}) (uuid.UUID, error) {
 		}
 	}
 
-	return uuid.Nil, &validator.ErrInvalidInput{
-		Fields: []validator.InvalidField{
-			validator.NewInvalidFieldFromOzzo(validator.Path(ctx), is.ErrUUID),
-		},
-	}
+	return uuid.Nil, erruser.NewValidationError(erruser.New(graphql.GetPath(ctx).String(), "Invalid UUID"))
 }

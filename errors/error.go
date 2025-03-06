@@ -5,8 +5,9 @@ import (
 )
 
 const (
-	SystemErrorTag = "system-error"
-	UserErrorTag   = "user-error"
+	SystemErrorTag     = "system-error"
+	UserErrorTag       = "user-error"
+	ValidationErrorTag = "validation-error"
 )
 
 // New creates a new handled system error with the given error code.

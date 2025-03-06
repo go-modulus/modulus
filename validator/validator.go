@@ -7,7 +7,6 @@ import (
 	"github.com/go-modulus/modulus/errors/erruser"
 	"strings"
 
-	"github.com/99designs/gqlgen/graphql"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"golang.org/x/text/message"
 )
@@ -60,7 +59,7 @@ func (e ErrInvalidInput) Error() string {
 //	)
 //}
 
-func ConvertOzzoError(ctx context.Context, err error) error {
+func ConvertOzzoError(err error, structName string) error {
 	if err == nil {
 		return nil
 	}
@@ -70,8 +69,7 @@ func ConvertOzzoError(ctx context.Context, err error) error {
 		return err
 	}
 
-	path := graphql.GetPath(ctx)
-	fields := goFieldsRecursive(err, path.String())
+	fields := goFieldsRecursive(err, structName)
 
 	if len(fields) == 0 {
 		return err
@@ -79,7 +77,7 @@ func ConvertOzzoError(ctx context.Context, err error) error {
 
 	errs := make([]error, 0, len(fields))
 	for _, field := range fields {
-		errs = append(errs, erruser.New(field.Name+"."+field.Code, field.Message))
+		errs = append(errs, erruser.New(field.Name, field.Message))
 	}
 
 	return erruser.NewValidationError(errs...)
@@ -116,11 +114,6 @@ func NewInvalidFieldFromOzzo(field string, err validation.Error) InvalidField {
 	}
 }
 
-func Path(ctx context.Context, path ...string) string {
-	path = append([]string{graphql.GetPath(ctx).String()}, path...)
-	return strings.Join(path, ".")
-}
-
 type Validatable interface {
 	Validate(ctx context.Context) error
 }
@@ -129,7 +122,8 @@ type Validatable interface {
 func ValidateStructWithContext(ctx context.Context, structPtr interface{}, fields ...*validation.FieldRules) error {
 	err := validation.ValidateStructWithContext(ctx, structPtr, fields...)
 	if err != nil {
-		return ConvertOzzoError(ctx, err)
+		structName := strings.Split(fmt.Sprintf("%T", structPtr), ".")[1]
+		return ConvertOzzoError(err, structName)
 	}
 	return nil
 }

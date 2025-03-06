@@ -328,3 +328,75 @@ Also, you can change the user hint message by calling `WithHint`. In this case t
 
 We use [Ozzo Validator](https://github.com/go-ozzo/ozzo-validation) for validation the input values.
 And our validation flows works closely with this library. So, if you want to use another library you have to write your own wrappers from the library to the `modulus` package.
+
+The validation errors are the errors that are caused by incorrect input data. 
+These errors should be handled by the resolver layer and the user should be informed about the issue.
+
+Add the `Validate` call to the login resolver:
+
+```go
+func (r *Resolver) LoginUser(ctx context.Context, input action.LoginUserInput) (action.TokenPair, error) {
+	err := input.Validate(ctx)
+	if err != nil {
+		return action.TokenPair{}, errtrace.Wrap(err)
+	}
+``` 
+
+Check if the action.LoginUserInput has the `Validate` method:
+
+```go
+func (i *LoginUserInput) Validate(ctx context.Context) error {
+	err := validator.ValidateStructWithContext(
+		ctx,
+		i,
+		validation.Field(
+			&i.Email,
+			validation.Required.Error("Email is required"),
+			is.Email.Error("Email is not valid"),
+		),
+		validation.Field(
+			&i.Password,
+			validation.Required.Error("Password is required"),
+			validation.Length(6, 20).Error("Password must be between 6 and 20 characters"),
+		),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+```
+
+
+For example, if the user doesn't provide an invalid email address and password when trying to log in, we can return an error like this:
+
+```json
+{
+  "errors": [
+    {
+      "message": "Email is required",
+      "path": [
+        "loginUser"
+      ],
+      "extensions": {
+        "code": "invalid input",
+        "meta": {
+          "LoginUserInput.email": "Email is required",
+          "LoginUserInput.password": "Password is required",
+          "requestId": "cv4m4fkp5ash60tp1l90"
+        }
+      }
+    }
+  ]
+}
+```
+
+As for logging then the default error pipeline **does not log validation errors**.
+
+If you want to change this behavior you can set the `HTTP_USER_ERROR_LOG_LEVEL=info` environment variable. Available levels are `debug`, `info`, `warn`, `error`, `dont_log`.
+
+Validator returns the validation error as a joining of all errors from all fields. The first error is the error with code `invalid input` and the message as the one from the first validation error.
+
+Then the http pipeline converts the joined error to one error that has a message and a code from the first joined error. Also, it adds metainformation about all errors to the `meta` field like a map `"error code": "ErrorMessage"`.

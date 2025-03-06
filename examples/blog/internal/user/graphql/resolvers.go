@@ -32,6 +32,10 @@ func (r *Resolver) RegisterUser(ctx context.Context, input action.RegisterUserIn
 }
 
 func (r *Resolver) LoginUser(ctx context.Context, input action.LoginUserInput) (action.TokenPair, error) {
+	err := input.Validate(ctx)
+	if err != nil {
+		return action.TokenPair{}, errtrace.Wrap(err)
+	}
 	token, err := r.login.Execute(ctx, input)
 	if err != nil {
 		if mErrors.Is(auth.ErrInvalidPassword, err) ||

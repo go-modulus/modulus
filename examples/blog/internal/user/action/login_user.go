@@ -64,10 +64,6 @@ func NewLoginUser(
 // * github.com/go-modulus/modulus/auth.ErrInvalidPassword - if the password is invalid.
 // * github.com/go-modulus/modulus/auth.ErrInvalidIdentity - if identity is not found in the repository.
 func (l *LoginUser) Execute(ctx context.Context, input LoginUserInput) (TokenPair, error) {
-	err := input.Validate(ctx)
-	if err != nil {
-		return TokenPair{}, errtrace.Wrap(err)
-	}
 	// Authenticate the user with the given email and password.
 	performer, err := l.passwordAuth.Authenticate(ctx, input.Email, input.Password)
 	if err != nil {
