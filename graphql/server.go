@@ -5,11 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler/apollotracing"
-	config2 "github.com/go-modulus/modulus/config"
-	"github.com/go-modulus/modulus/errors/errlog"
-	httpContext "github.com/go-modulus/modulus/http/context"
-	context2 "github.com/go-modulus/modulus/translation"
+	"github.com/go-modulus/modulus/http/errhttp"
 	"github.com/vektah/gqlparser/v2/ast"
+	"go.uber.org/fx"
 	"log/slog"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -32,22 +30,35 @@ type Config struct {
 	Path                 string `env:"GQL_API_URL, default=/graphql"`
 	IntrospectionEnabled bool   `env:"GQL_INTROSPECTION_ENABLED, default=true"`
 	TracingEnabled       bool   `env:"GQL_TRACING_ENABLED, default=false"`
+	ReturnErrorsMeta     bool   `env:"GQL_RETURN_ERRORS_META, default=false"`
+	ReturnCause          bool   `env:"GQL_RETURN_CAUSE, default=false"`
 	Playground           PlaygroundConfig
 }
 
-type UserError interface {
-	ToUserError() map[string]interface{}
+type ErrorPresenterParams struct {
+	fx.In
+
+	ErrorPipeline *errhttp.ErrorPipeline `optional:"true"`
+	Config        Config
+}
+
+type ServerParams struct {
+	fx.In
+
+	Config             Config
+	Schema             graphql.ExecutableSchema
+	LoadersInitializer *LoadersInitializer `optional:"true"`
+	Logger             *slog.Logger
+	ErrorPresenter     graphql.ErrorPresenterFunc
 }
 
 func NewGraphqlServer(
-	config Config,
-	schema graphql.ExecutableSchema,
-	loadersInitializer *LoadersInitializer,
-	logger *slog.Logger,
+	params ServerParams,
 ) *handler.Server {
 	var mb int64 = 1 << 20
 
-	srv := handler.New(schema)
+	config := params.Config
+	srv := handler.New(params.Schema)
 
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})
@@ -65,7 +76,9 @@ func NewGraphqlServer(
 	}
 
 	srv.Use(extension.FixedComplexityLimit(config.ComplexityLimit))
-	srv.Use(loadersInitializer)
+	if params.LoadersInitializer != nil {
+		srv.Use(params.LoadersInitializer)
+	}
 	srv.Use(otelgqlgen.Middleware())
 
 	if config.TracingEnabled {
@@ -79,49 +92,78 @@ func NewGraphqlServer(
 	)
 
 	srv.SetErrorPresenter(
-		func(ctx context.Context, err error) *gqlerror.Error {
-			var gqlErr *gqlerror.Error
-			path := graphql.GetPath(ctx)
-			if errors.As(err, &gqlErr) {
-				if gqlErr.Path == nil {
-					gqlErr.Path = path
-				} else {
-					path = gqlErr.Path
-				}
-
-				originalErr := gqlErr.Unwrap()
-				if originalErr == nil {
-					return gqlErr
-				}
-
-				err = originalErr
-			}
-
-			code := err.Error()
-			message := infraErrors.Message(context2.GetPrinter(ctx), err)
-			extra := make(map[string]any)
-			meta := infraErrors.Meta(err)
-			if meta != nil && !config2.IsProd() {
-				extra["meta"] = meta
-			}
-			extra["code"] = code
-			requestID := httpContext.GetRequestID(ctx)
-			if requestID != "" {
-				extra["requestId"] = requestID
-			}
-
-			level, logged := errlog.LogError(ctx, err, logger)
-			if logged && level == slog.LevelError {
-				message = fmt.Sprintf("%s (RID: %s)", message, requestID)
-			}
-
-			return &gqlerror.Error{
-				Message:    message,
-				Path:       path,
-				Extensions: extra,
-			}
-		},
+		params.ErrorPresenter,
 	)
 
 	return srv
+}
+
+func NewErrorPresenter(params ErrorPresenterParams) graphql.ErrorPresenterFunc {
+	return func(ctx context.Context, err error) *gqlerror.Error {
+		var gqlErr *gqlerror.Error
+		path := graphql.GetPath(ctx)
+		if errors.As(err, &gqlErr) {
+			if gqlErr.Path == nil {
+				gqlErr.Path = path
+			} else {
+				path = gqlErr.Path
+			}
+
+			originalErr := gqlErr.Unwrap()
+			if originalErr == nil {
+				return gqlErr
+			}
+
+			err = originalErr
+		}
+
+		config := params.Config
+
+		if params.ErrorPipeline != nil {
+			for _, converter := range params.ErrorPipeline.Processors {
+				err = converter(ctx, err)
+			}
+		}
+
+		code := err.Error()
+		message := infraErrors.Hint(err)
+		if message == "" {
+			message = code
+		}
+
+		extra := make(map[string]any)
+		if config.ReturnErrorsMeta {
+			meta := infraErrors.Meta(err)
+			if meta != nil {
+				extra["meta"] = infraErrors.Meta(err)
+			}
+		}
+		if config.ReturnCause {
+			cause := infraErrors.Cause(err)
+			if cause != nil {
+				causeMap := map[string]interface{}{
+					"code": cause.Error(),
+				}
+				hint := infraErrors.Hint(cause)
+				if hint != "" {
+					causeMap["message"] = hint
+				}
+				if config.ReturnErrorsMeta {
+					meta := infraErrors.Meta(cause)
+					if meta != nil {
+						causeMap["meta"] = infraErrors.Meta(cause)
+					}
+				}
+				extra["cause"] = causeMap
+			}
+		}
+
+		extra["code"] = code
+
+		return &gqlerror.Error{
+			Message:    message,
+			Path:       path,
+			Extensions: extra,
+		}
+	}
 }

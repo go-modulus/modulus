@@ -45,7 +45,7 @@ func (c *UpdateSqlcConfig) Update(ctx context.Context, storagePath string, projP
 
 	err = yaml.Unmarshal(defContent, &def)
 	if err != nil {
-		return errors2.WrapCause(ErrCannotParseSqlcDefinition, err)
+		return errors2.WithCause(ErrCannotParseSqlcDefinition, err)
 	}
 
 	if _, err := os.Stat(storagePath + "/sqlc.tmpl.yaml"); os.IsNotExist(err) {
@@ -68,7 +68,7 @@ func (c *UpdateSqlcConfig) Update(ctx context.Context, storagePath string, projP
 
 	err = yaml.Unmarshal(resContent, &tmpl)
 	if err != nil {
-		return errors2.WrapCause(ErrCannotParseSqlcTmpl, err)
+		return errors2.WithCause(ErrCannotParseSqlcTmpl, err)
 	}
 	for key, val := range def {
 		tmpl[key] = val
@@ -76,17 +76,17 @@ func (c *UpdateSqlcConfig) Update(ctx context.Context, storagePath string, projP
 
 	_, err = yaml.Marshal(tmpl)
 	if err != nil {
-		return errors2.WrapCause(ErrCannotUpdateSqlcConfig, err)
+		return errors2.WithCause(ErrCannotUpdateSqlcConfig, err)
 	}
 
 	sqlcContent, err := yaml.Marshal(tmpl["sqlc-tmpl"])
 	if err != nil {
-		return errors2.WrapCause(ErrCannotUpdateSqlcConfig, err)
+		return errors2.WithCause(ErrCannotUpdateSqlcConfig, err)
 	}
 
 	err = os.WriteFile(storagePath+"/sqlc.yaml", sqlcContent, 0644)
 	if err != nil {
-		return errors2.WrapCause(ErrCannotUpdateSqlcConfig, err)
+		return errors2.WithCause(ErrCannotUpdateSqlcConfig, err)
 	}
 
 	return nil

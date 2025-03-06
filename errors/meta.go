@@ -20,11 +20,12 @@ func (m withMeta) Unwrap() error {
 }
 
 func (m withMeta) Is(target error) bool {
-	t, ok := target.(withMeta)
-	if !ok {
+	var we withMeta
+	if !errors.As(target, &we) {
 		return false
 	}
-	return m.err.Error() == t.err.Error()
+
+	return m.err.Error() == we.err.Error()
 }
 
 func Meta(err error) map[string]string {
@@ -38,11 +39,26 @@ func Meta(err error) map[string]string {
 	return nil
 }
 
-func WrapMeta(err error, kv ...string) error {
+func WithMeta(err error, kv ...string) error {
 	if err == nil {
 		return err
 	}
 	meta := make(map[string]string)
+	for i := 0; i < len(kv); i += 2 {
+		meta[kv[i]] = kv[i+1]
+	}
+	return withMeta{meta: meta, err: err}
+}
+
+func WithAddedMeta(err error, kv ...string) error {
+	if err == nil {
+		return err
+	}
+	oldMeta := Meta(err)
+	meta := make(map[string]string)
+	for k, v := range oldMeta {
+		meta[k] = v
+	}
 	for i := 0; i < len(kv); i += 2 {
 		meta[kv[i]] = kv[i+1]
 	}

@@ -40,7 +40,7 @@ func (r *DefaultCredentialRepository) Create(
 	)
 
 	if err != nil {
-		return repository.Credential{}, errtrace.Wrap(errors.WrapCause(repository.ErrCannotCreateCredential, err))
+		return repository.Credential{}, errtrace.Wrap(errors.WithCause(repository.ErrCannotCreateCredential, err))
 	}
 
 	return r.transform(cred), nil

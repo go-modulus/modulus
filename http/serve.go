@@ -6,7 +6,7 @@ import (
 	"github.com/c2h5oh/datasize"
 	"github.com/go-chi/chi/v5"
 	infraCli "github.com/go-modulus/modulus/cli"
-	"github.com/go-modulus/modulus/errors/errhttp"
+	"github.com/go-modulus/modulus/http/errhttp"
 	"github.com/urfave/cli/v2"
 	"log/slog"
 	netHttp "net/http"
@@ -22,13 +22,14 @@ type ServeConfig struct {
 }
 
 type Serve struct {
-	runner      *infraCli.Runner
-	router      chi.Router
-	registrars  []HandlerRegistrar `group:"http.handlerRegistrars"`
-	routes      []Route
-	middlewares []Middleware
-	logger      *slog.Logger
-	config      ServeConfig
+	runner        *infraCli.Runner
+	router        chi.Router
+	registrars    []HandlerRegistrar `group:"http.handlerRegistrars"`
+	routes        []Route
+	middlewares   []Middleware
+	errorPipeline *errhttp.ErrorPipeline
+	logger        *slog.Logger
+	config        ServeConfig
 }
 
 type ServeParams struct {
@@ -39,8 +40,10 @@ type ServeParams struct {
 	Registrars []HandlerRegistrar `group:"http.handlerRegistrars"`
 	Routes     []Route            `group:"http.routes"`
 	Pipeline   *Pipeline          `optional:"true"`
-	Logger     *slog.Logger
-	Config     ServeConfig
+	// @todo: think on placing this in each route to be able to override it for specific routes
+	ErrorPipeline *errhttp.ErrorPipeline
+	Logger        *slog.Logger
+	Config        ServeConfig
 }
 
 func NewServe(params ServeParams) *Serve {
@@ -49,13 +52,14 @@ func NewServe(params ServeParams) *Serve {
 		middlewares = params.Pipeline.Middlewares
 	}
 	return &Serve{
-		runner:      params.Runner,
-		router:      params.Router,
-		registrars:  params.Registrars,
-		routes:      params.Routes,
-		logger:      params.Logger,
-		config:      params.Config,
-		middlewares: middlewares,
+		runner:        params.Runner,
+		router:        params.Router,
+		registrars:    params.Registrars,
+		routes:        params.Routes,
+		logger:        params.Logger,
+		config:        params.Config,
+		middlewares:   middlewares,
+		errorPipeline: params.ErrorPipeline,
 	}
 }
 
@@ -99,7 +103,7 @@ func (s *Serve) Invoke(cliCtx *cli.Context) error {
 	}
 	for _, route := range routes.List() {
 		logger.Info("registering route", slog.String("method", route.Method), slog.String("path", route.Path))
-		s.router.Method(route.Method, route.Path, errhttp.WrapHandler(logger, route.Handler))
+		s.router.Method(route.Method, route.Path, errhttp.WrapHandler(s.errorPipeline, route.Handler))
 	}
 
 	return s.runner.Run(

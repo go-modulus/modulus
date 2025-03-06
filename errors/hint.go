@@ -25,7 +25,7 @@ func (m withHint) Unwrap() error {
 	return m.err
 }
 
-func Hint(t *message.Printer, err error) string {
+func Hint(err error) string {
 	if err == nil {
 		return ""
 	}
@@ -34,15 +34,12 @@ func Hint(t *message.Printer, err error) string {
 	}
 	var we withHint
 	if errors.As(err, &we) {
-		hint := we.Hint()
-		if hint != "" && t != nil {
-			return t.Sprintf(hint)
-		}
+		return we.Hint()
 	}
 	return ""
 }
 
-func WrapHint(err error, hint string) error {
+func WithHint(err error, hint string) error {
 	if err == nil {
 		return err
 	}

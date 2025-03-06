@@ -3,10 +3,9 @@ package auth
 import (
 	"braces.dev/errtrace"
 	"errors"
-	"github.com/go-modulus/modulus/errors/errhttp"
+	"github.com/go-modulus/modulus/http/errhttp"
 	"github.com/go-modulus/modulus/logger"
 	"github.com/gofrs/uuid"
-	"log/slog"
 	"net/http"
 	"regexp"
 )
@@ -16,18 +15,18 @@ var authRegexp = regexp.MustCompile(`(Bearer[ ]+)([^,\n$ ]+)`)
 type Middleware struct {
 	authenticator Authenticator
 	config        *MiddlewareConfig
-	logger        *slog.Logger
+	errorPipeline *errhttp.ErrorPipeline
 }
 
 func NewMiddleware(
 	authenticator Authenticator,
 	config *MiddlewareConfig,
-	logger *slog.Logger,
+	errorPipeline *errhttp.ErrorPipeline,
 ) *Middleware {
 	return &Middleware{
 		authenticator: authenticator,
 		config:        config,
-		logger:        logger,
+		errorPipeline: errorPipeline,
 	}
 }
 
@@ -70,7 +69,7 @@ func (a *Middleware) Middleware(next http.Handler) errhttp.Handler {
 }
 
 func (a *Middleware) HttpMiddleware() func(http.Handler) http.Handler {
-	return errhttp.WrapMiddleware(a.logger, a.Middleware)
+	return errhttp.WrapMiddleware(a.errorPipeline, a.Middleware)
 }
 
 func (a *Middleware) parseAccessToken(token string) (string, error) {

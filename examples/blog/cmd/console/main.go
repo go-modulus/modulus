@@ -13,6 +13,7 @@ import (
 	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/go-modulus/modulus/graphql"
 	"github.com/go-modulus/modulus/http"
+	"github.com/go-modulus/modulus/http/middleware"
 	"github.com/go-modulus/modulus/logger"
 	"github.com/go-modulus/modulus/module"
 
@@ -33,11 +34,13 @@ func main() {
 		),
 		pgx.NewModule(),
 		migrator.NewModule(),
-		http.NewModule().AddProviders(
+		http.OverrideMiddlewarePipeline(
+			http.NewModule(),
 			func(authMd *auth.Middleware) *http.Pipeline {
 				return &http.Pipeline{
 					Middlewares: []http.Middleware{
 						authMd.HttpMiddleware(),
+						middleware.RequestID,
 					},
 				}
 			},

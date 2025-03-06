@@ -3,38 +3,38 @@ package http
 import (
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
-	errhttp2 "github.com/go-modulus/modulus/errors/errhttp"
+	"github.com/go-modulus/modulus/auth"
 	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/go-modulus/modulus/errors/errwrap"
+	"github.com/go-modulus/modulus/http/errhttp"
 	"github.com/go-modulus/modulus/module"
-	"log/slog"
 	"net/http"
 )
 
 var (
 	ErrMethodNotAllowed = errwrap.Wrap(
 		erruser.New("MethodNotAllowed", "Method not allowed"),
-		errhttp2.With(http.StatusMethodNotAllowed),
+		errhttp.With(http.StatusMethodNotAllowed),
 	)
 	ErrNotFound = errwrap.Wrap(
 		erruser.New("NotFound", "Not found"),
-		errhttp2.With(http.StatusNotFound),
+		errhttp.With(http.StatusNotFound),
 	)
 )
 
-func NewRouter(logger *slog.Logger, config ServeConfig) chi.Router {
+func NewRouter(errorPipeline *errhttp.ErrorPipeline, config ServeConfig) chi.Router {
 	r := chi.NewRouter()
 	r.MethodNotAllowed(
-		errhttp2.WrapHandler(
-			logger,
+		errhttp.WrapHandler(
+			errorPipeline,
 			func(w http.ResponseWriter, req *http.Request) error {
 				return ErrMethodNotAllowed
 			},
 		),
 	)
 	r.NotFound(
-		errhttp2.WrapHandler(
-			logger,
+		errhttp.WrapHandler(
+			errorPipeline,
 			func(w http.ResponseWriter, req *http.Request) error {
 				return ErrNotFound
 			},
@@ -57,5 +57,23 @@ func NewModule() *module.Module {
 		AddProviders(
 			NewRouter,
 			NewServe,
-		).InitConfig(ServeConfig{})
+		).
+		SetOverriddenProvider("http.ErrorPipeline", errhttp.NewDefaultErrorPipeline).
+		SetOverriddenProvider(
+			"http.MiddlewarePipeline", func(authMd *auth.Middleware) *Pipeline {
+				return &Pipeline{
+					Middlewares: []Middleware{},
+				}
+			},
+		).
+		InitConfig(ServeConfig{}).
+		InitConfig(errhttp.ErrorLoggerConfig{})
+}
+
+func OverrideErrorPipeline(httpModule *module.Module, pipeline interface{}) *module.Module {
+	return httpModule.SetOverriddenProvider("http.ErrorPipeline", pipeline)
+}
+
+func OverrideMiddlewarePipeline(httpModule *module.Module, pipeline interface{}) *module.Module {
+	return httpModule.SetOverriddenProvider("http.MiddlewarePipeline", pipeline)
 }

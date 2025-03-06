@@ -261,7 +261,7 @@ with
 savedPost := fixtures.NewPostFixture().ID(post.ID).PullUpdates(t).Cleanup(t).GetEntity()
 ```
 
-Amd add the following checks to the test:
+And add the following checks to the test:
 ```go
     t.Log("	And the post should be saved in the database")
     require.Equal(t, post.ID, savedPost.ID)

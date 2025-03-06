@@ -85,12 +85,12 @@ func (a *PlainTokenAuthenticator) IssueTokens(
 ) (TokenPair, error) {
 	accessTokenStr, err := a.randomString(32)
 	if err != nil {
-		return TokenPair{}, errtrace.Wrap(errors.WrapCause(ErrCannotCreateAccessToken, err))
+		return TokenPair{}, errtrace.Wrap(errors.WithCause(ErrCannotCreateAccessToken, err))
 	}
 
 	refreshTokenStr, err := a.randomString(32)
 	if err != nil {
-		return TokenPair{}, errtrace.Wrap(errors.WrapCause(ErrCannotCreateRefreshToken, err))
+		return TokenPair{}, errtrace.Wrap(errors.WithCause(ErrCannotCreateRefreshToken, err))
 	}
 
 	identity, err := a.identityRepository.GetById(ctx, identityID)

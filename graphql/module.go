@@ -18,9 +18,18 @@ func NewModule() *module.Module {
 			NewHandlerGetRoute,
 			NewHandlerPostRoute,
 			NewPlaygroundHandlerRoute,
-		).InitConfig(Config{})
+		).
+		SetOverriddenProvider("graphql.ErrorPresenter", NewErrorPresenter).
+		InitConfig(Config{})
 }
 
+// OverrideErrorPresenter overrides the error presenter provider.
+// ErrorPresenter is a function that converts any error to a graphql error.
+func OverrideErrorPresenter(gqlModule *module.Module, presenter interface{}) *module.Module {
+	return gqlModule.SetOverriddenProvider("graphql.ErrorPresenter", presenter)
+}
+
+// NewManifestModule creates a new graphql module with the manifest module.
 func NewManifestModule() module.ManifestModule {
 	graphqlModule := module.NewManifestModule(
 		NewModule(),

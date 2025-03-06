@@ -44,7 +44,7 @@ func CauseString(err error) string {
 	return cause.Error()
 }
 
-func WrapCause(err error, cause error) error {
+func WithCause(err error, cause error) error {
 	if err == nil {
 		return err
 	}
