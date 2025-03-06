@@ -9,7 +9,8 @@ import (
 	"fmt"
 	"github.com/ggicci/httpin"
 	httpinCore "github.com/ggicci/httpin/core"
-	"github.com/go-modulus/modulus/errors/errhttp"
+	"github.com/go-modulus/modulus/errors/erruser"
+	"github.com/go-modulus/modulus/http/errhttp"
 	translationContext "github.com/go-modulus/modulus/translation"
 	"github.com/go-modulus/modulus/validator"
 	"io"
@@ -68,15 +69,7 @@ func WrapInputHandler[B any](handle InputHandler[B]) errhttp.Handler {
 				case "nonzero":
 					msg = t.Sprintf("Required to be non-zero value")
 				}
-				return validator.ErrInvalidInput{
-					Fields: []validator.InvalidField{
-						{
-							Name:    fErr.Key,
-							Code:    fErr.Directive,
-							Message: msg,
-						},
-					},
-				}
+				return erruser.NewValidationError(erruser.New(fErr.Key, msg))
 			}
 			return errtrace.Wrap(err)
 		}

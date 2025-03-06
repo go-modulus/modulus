@@ -4,9 +4,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-modulus/modulus/auth"
-	errhttp2 "github.com/go-modulus/modulus/errors/errhttp"
 	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/go-modulus/modulus/errors/errwrap"
+	"github.com/go-modulus/modulus/http/errhttp"
 	"github.com/go-modulus/modulus/module"
 	"log/slog"
 	"net/http"
@@ -15,18 +15,18 @@ import (
 var (
 	ErrMethodNotAllowed = errwrap.Wrap(
 		erruser.New("MethodNotAllowed", "Method not allowed"),
-		errhttp2.With(http.StatusMethodNotAllowed),
+		errhttp.With(http.StatusMethodNotAllowed),
 	)
 	ErrNotFound = errwrap.Wrap(
 		erruser.New("NotFound", "Not found"),
-		errhttp2.With(http.StatusNotFound),
+		errhttp.With(http.StatusNotFound),
 	)
 )
 
 func NewRouter(logger *slog.Logger, config ServeConfig) chi.Router {
 	r := chi.NewRouter()
 	r.MethodNotAllowed(
-		errhttp2.WrapHandler(
+		errhttp.WrapHandler(
 			logger,
 			func(w http.ResponseWriter, req *http.Request) error {
 				return ErrMethodNotAllowed
@@ -34,7 +34,7 @@ func NewRouter(logger *slog.Logger, config ServeConfig) chi.Router {
 		),
 	)
 	r.NotFound(
-		errhttp2.WrapHandler(
+		errhttp.WrapHandler(
 			logger,
 			func(w http.ResponseWriter, req *http.Request) error {
 				return ErrNotFound

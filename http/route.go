@@ -1,7 +1,7 @@
 package http
 
 import (
-	"github.com/go-modulus/modulus/errors/errhttp"
+	"github.com/go-modulus/modulus/http/errhttp"
 	"go.uber.org/fx"
 	"net/http"
 )

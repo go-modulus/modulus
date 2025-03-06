@@ -3,7 +3,7 @@ package auth
 import (
 	"braces.dev/errtrace"
 	"errors"
-	"github.com/go-modulus/modulus/errors/errhttp"
+	errhttp2 "github.com/go-modulus/modulus/http/errhttp"
 	"github.com/go-modulus/modulus/logger"
 	"github.com/gofrs/uuid"
 	"log/slog"
@@ -31,7 +31,7 @@ func NewMiddleware(
 	}
 }
 
-func (a *Middleware) Middleware(next http.Handler) errhttp.Handler {
+func (a *Middleware) Middleware(next http.Handler) errhttp2.Handler {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var refreshToken string
 		c, err := r.Cookie(a.config.CookieName)
@@ -70,7 +70,7 @@ func (a *Middleware) Middleware(next http.Handler) errhttp.Handler {
 }
 
 func (a *Middleware) HttpMiddleware() func(http.Handler) http.Handler {
-	return errhttp.WrapMiddleware(a.logger, a.Middleware)
+	return errhttp2.WrapMiddleware(a.logger, a.Middleware)
 }
 
 func (a *Middleware) parseAccessToken(token string) (string, error) {

@@ -8,58 +8,15 @@ import (
 	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"golang.org/x/text/message"
 )
 
-type ErrInvalidInput struct {
-	Fields []InvalidField
-}
-
-type InvalidField struct {
+type invalidField struct {
 	Name    string
 	Message string
 	Code    string
 }
 
-func (e ErrInvalidInput) Code() string {
-	return "InvalidInput"
-}
-
-func (e ErrInvalidInput) Message(p *message.Printer) string {
-	return p.Sprintf("Invalid input")
-}
-
-func (e ErrInvalidInput) Details() map[string]any {
-	fields := make(map[string]map[string]string)
-	for _, field := range e.Fields {
-		fields[field.Name] = map[string]string{
-			"code":    field.Code,
-			"message": field.Message,
-		}
-	}
-
-	return map[string]any{
-		"fields": fields,
-	}
-}
-
-func (e ErrInvalidInput) Error() string {
-	var fields []string
-	for _, field := range e.Fields {
-		fields = append(fields, fmt.Sprintf("%s: %s: %s", field.Name, field.Code, field.Message))
-	}
-	return fmt.Sprintf("invalid input (%s)", strings.Join(fields, ", "))
-}
-
-//func AsOzzoError(ctx context.Context, err error) validation.Error {
-//	p := translationContext.GetPrinter(ctx)
-//	return validation.NewError(
-//		err.Error(),
-//		errors2.Message(p, err),
-//	)
-//}
-
-func ConvertOzzoError(err error, structName string) error {
+func convertOzzoError(err error, structName string) error {
 	if err == nil {
 		return nil
 	}
@@ -83,8 +40,8 @@ func ConvertOzzoError(err error, structName string) error {
 	return erruser.NewValidationError(errs...)
 }
 
-func goFieldsRecursive(err error, path string) []InvalidField {
-	fields := make([]InvalidField, 0)
+func goFieldsRecursive(err error, path string) []invalidField {
+	fields := make([]invalidField, 0)
 	if err == nil {
 		return fields
 	}
@@ -96,7 +53,7 @@ func goFieldsRecursive(err error, path string) []InvalidField {
 		innerErr, ok := fieldErr.(validation.ErrorObject)
 		if ok {
 			field := path + "." + strings.ToLower(key)
-			fields = append(fields, NewInvalidFieldFromOzzo(field, innerErr))
+			fields = append(fields, newInvalidFieldFromOzzo(field, innerErr))
 		}
 		innerErrs, ok2 := fieldErr.(validation.Errors)
 		if ok2 {
@@ -106,8 +63,8 @@ func goFieldsRecursive(err error, path string) []InvalidField {
 	return fields
 }
 
-func NewInvalidFieldFromOzzo(field string, err validation.Error) InvalidField {
-	return InvalidField{
+func newInvalidFieldFromOzzo(field string, err validation.Error) invalidField {
+	return invalidField{
 		Name:    field,
 		Code:    strings.Replace(err.Code(), "_", ".", 1),
 		Message: err.Error(),
@@ -123,7 +80,7 @@ func ValidateStructWithContext(ctx context.Context, structPtr interface{}, field
 	err := validation.ValidateStructWithContext(ctx, structPtr, fields...)
 	if err != nil {
 		structName := strings.Split(fmt.Sprintf("%T", structPtr), ".")[1]
-		return ConvertOzzoError(err, structName)
+		return convertOzzoError(err, structName)
 	}
 	return nil
 }
