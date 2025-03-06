@@ -4,8 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	errors2 "github.com/go-modulus/modulus/errors"
-	translationContext "github.com/go-modulus/modulus/translation"
+	"github.com/go-modulus/modulus/errors/erruser"
 	"strings"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -53,15 +52,15 @@ func (e ErrInvalidInput) Error() string {
 	return fmt.Sprintf("invalid input (%s)", strings.Join(fields, ", "))
 }
 
-func AsOzzoError(ctx context.Context, err error) validation.Error {
-	p := translationContext.GetPrinter(ctx)
-	return validation.NewError(
-		err.Error(),
-		errors2.Message(p, err),
-	)
-}
+//func AsOzzoError(ctx context.Context, err error) validation.Error {
+//	p := translationContext.GetPrinter(ctx)
+//	return validation.NewError(
+//		err.Error(),
+//		errors2.Message(p, err),
+//	)
+//}
 
-func NewErrInvalidInputFromOzzo(ctx context.Context, err error) error {
+func ConvertOzzoError(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
 	}
@@ -78,7 +77,12 @@ func NewErrInvalidInputFromOzzo(ctx context.Context, err error) error {
 		return err
 	}
 
-	return ErrInvalidInput{Fields: fields}
+	errs := make([]error, 0, len(fields))
+	for _, field := range fields {
+		errs = append(errs, erruser.New(field.Name+"."+field.Code, field.Message))
+	}
+
+	return erruser.NewValidationError(errs...)
 }
 
 func goFieldsRecursive(err error, path string) []InvalidField {
@@ -119,4 +123,13 @@ func Path(ctx context.Context, path ...string) string {
 
 type Validatable interface {
 	Validate(ctx context.Context) error
+}
+
+// ValidateStructWithContext it is a wrapper around ozzo-validation ValidateStructWithContext
+func ValidateStructWithContext(ctx context.Context, structPtr interface{}, fields ...*validation.FieldRules) error {
+	err := validation.ValidateStructWithContext(ctx, structPtr, fields...)
+	if err != nil {
+		return ConvertOzzoError(ctx, err)
+	}
+	return nil
 }

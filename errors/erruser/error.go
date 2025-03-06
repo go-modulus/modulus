@@ -17,3 +17,14 @@ func NewWithCause(code, hint string, cause error) error {
 func WithCause(err error, cause error) error {
 	return errors.WithAddedTags(errors.WithCause(err, cause), errors.UserErrorTag)
 }
+
+func NewValidationError(validationErrors ...error) error {
+	mainErr := New("invalid input", "Invalid input provided")
+	mainErr = errors.Join(validationErrors...)
+	meta := make(map[string]string, len(validationErrors))
+	for _, err := range validationErrors {
+		meta[err.Error()] = errors.Hint(err)
+	}
+
+	return mainErr
+}

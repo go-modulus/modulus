@@ -276,11 +276,9 @@ var ErrWrongCredentialsExample = mErrors.WithAddedTags(mErrors.WithHint(mErrors.
 
 func (r *Resolver) LoginUser(ctx context.Context, input action.LoginUserInput) (action.TokenPair, error) {
 	token, err := r.login.Execute(ctx, input)
-	if err != nil {
-        if errors.Is(auth.ErrInvalidPassword, err) ||
-            errors.Is(auth.ErrInvalidIdentity, err) {
-			return action.TokenPair{}, ErrWrongCredentials
-        }
+    if mErrors.Is(auth.ErrInvalidPassword, err) ||
+        mErrors.Is(auth.ErrInvalidIdentity, err) {
+        return action.TokenPair{}, ErrWrongCredentials
     }
     ...
 }
@@ -313,3 +311,20 @@ It returns JSON like this:
 As for logging then the default error pipeline **does not log user errors**.  
 
 If you want to change this behavior you can set the `HTTP_USER_ERROR_LOG_LEVEL=info` environment variable. Available levels are `debug`, `info`, `warn`, `error`, `dont_log`.
+
+Also, you can change the user hint message by calling `WithHint`. In this case the error could be checked as the caught error but the user will see the message from the hint.
+
+```go
+    if mErrors.Is(auth.ErrIdentityIsBlocked, err) {
+        return token, mErrors.WithHint(
+            err,
+            "Please contact the administrator. Your account is blocked.",
+        )
+    }
+```
+
+
+## Validation Errors
+
+We use [Ozzo Validator](https://github.com/go-ozzo/ozzo-validation) for validation the input values.
+And our validation flows works closely with this library. So, if you want to use another library you have to write your own wrappers from the library to the `modulus` package.

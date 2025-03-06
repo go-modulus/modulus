@@ -23,7 +23,8 @@ type RegisterUserInput struct {
 }
 
 func (i *RegisterUserInput) Validate(ctx context.Context) error {
-	err := validation.ValidateStruct(
+	err := validator.ValidateStructWithContext(
+		ctx,
 		i,
 		validation.Field(
 			&i.Email,
@@ -43,7 +44,7 @@ func (i *RegisterUserInput) Validate(ctx context.Context) error {
 	)
 
 	if err != nil {
-		return validator.NewErrInvalidInputFromOzzo(ctx, err)
+		return err
 	}
 
 	return nil

@@ -10,8 +10,8 @@ import (
 )
 
 type LoginUserInput struct {
-	Email    string
-	Password string
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type TokenPair struct {
@@ -20,7 +20,8 @@ type TokenPair struct {
 }
 
 func (i *LoginUserInput) Validate(ctx context.Context) error {
-	err := validation.ValidateStruct(
+	err := validator.ValidateStructWithContext(
+		ctx,
 		i,
 		validation.Field(
 			&i.Email,
@@ -35,7 +36,7 @@ func (i *LoginUserInput) Validate(ctx context.Context) error {
 	)
 
 	if err != nil {
-		return validator.NewErrInvalidInputFromOzzo(ctx, err)
+		return err
 	}
 
 	return nil
@@ -63,6 +64,10 @@ func NewLoginUser(
 // * github.com/go-modulus/modulus/auth.ErrInvalidPassword - if the password is invalid.
 // * github.com/go-modulus/modulus/auth.ErrInvalidIdentity - if identity is not found in the repository.
 func (l *LoginUser) Execute(ctx context.Context, input LoginUserInput) (TokenPair, error) {
+	err := input.Validate(ctx)
+	if err != nil {
+		return TokenPair{}, errtrace.Wrap(err)
+	}
 	// Authenticate the user with the given email and password.
 	performer, err := l.passwordAuth.Authenticate(ctx, input.Email, input.Password)
 	if err != nil {

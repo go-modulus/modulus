@@ -28,6 +28,7 @@ func NewDefaultErrorPipeline(
 ) *ErrorPipeline {
 	return &ErrorPipeline{
 		Processors: []ErrorProcessor{
+			SaveMultiErrorsToMeta(),
 			LogError(logger, loggerConfig),
 			HideInternalError(),
 			AddRequestID(),
@@ -84,6 +85,49 @@ func LogError(logger *slog.Logger, loggerConfig ErrorLoggerConfig) ErrorProcesso
 		errlog.LogError(ctx, err, logger, defaultLogLevel)
 		return err
 	}
+}
+
+func SaveMultiErrorsToMeta() ErrorProcessor {
+	return func(ctx context.Context, err error) error {
+		if err == nil {
+			return nil
+		}
+		allErrors := extractErrors(err)
+		if len(allErrors) == 0 {
+			return err
+		}
+		err = allErrors[0]
+		additionalErrors := allErrors[1:]
+
+		if len(additionalErrors) > 0 {
+			meta := make([]string, 0, len(additionalErrors)*2)
+			for _, err2 := range additionalErrors {
+				meta = append(meta, err2.Error(), errors.Hint(err2))
+			}
+			err = errors.WithAddedMeta(err, meta...)
+		}
+
+		return err
+	}
+}
+
+func extractErrors(err error) []error {
+	var allErrors []error
+
+	for err != nil {
+		if uw, ok := err.(interface{ Unwrap() []error }); ok {
+			allErrors = append(allErrors, uw.Unwrap()...)
+			break
+		}
+
+		if uw, ok := err.(interface{ Unwrap() error }); ok {
+			err = uw.Unwrap()
+		} else {
+			break
+		}
+	}
+
+	return allErrors
 }
 
 func convertConfigLogLevelToSlogLevel(logLevel string) slog.Level {

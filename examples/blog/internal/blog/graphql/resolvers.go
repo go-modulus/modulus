@@ -22,7 +22,7 @@ func NewResolver(blogDb *storage.Queries) *Resolver {
 // CreatePost is the resolver for the createPost field.
 func (r *Resolver) CreatePost(ctx context.Context, input model.CreatePostInput) (storage.Post, error) {
 	// validate input using Ozzo validation
-	err := validation.ValidateStructWithContext(
+	err := validator.ValidateStructWithContext(
 		ctx,
 		&input,
 		validation.Field(
@@ -35,7 +35,7 @@ func (r *Resolver) CreatePost(ctx context.Context, input model.CreatePostInput) 
 		),
 	)
 	if err != nil {
-		return storage.Post{}, validator.NewErrInvalidInputFromOzzo(ctx, err)
+		return storage.Post{}, err
 	}
 
 	preview := input.Content
