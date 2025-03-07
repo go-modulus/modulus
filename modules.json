@@ -115,19 +115,14 @@
       "install": {
         "envVars": [
           {
-            "key": "HTTP_HOST",
-            "value": "localhost:8001",
-            "comment": ""
+            "key": "HTTP_SYSTEM_ERROR_LOG_LEVEL",
+            "value": "error",
+            "comment": "Log level for the system errors: dont_log, error, warn, info, debug"
           },
           {
-            "key": "ROUTER_REQUEST_SIZE_LIMIT",
-            "value": "5MB",
-            "comment": ""
-          },
-          {
-            "key": "ROUTER_TTL",
-            "value": "15s",
-            "comment": ""
+            "key": "HTTP_USER_ERROR_LOG_LEVEL",
+            "value": "dont_log",
+            "comment": "Log level for the user errors: dont_log, error, warn, info, debug"
           }
         ]
       },
@@ -162,6 +157,11 @@
           {
             "key": "GQL_PLAYGROUND_URL",
             "value": "/playground",
+            "comment": ""
+          },
+          {
+            "key": "GQL_RETURN_CAUSE",
+            "value": "false",
             "comment": ""
           },
           {

@@ -30,7 +30,6 @@ type Config struct {
 	Path                 string `env:"GQL_API_URL, default=/graphql"`
 	IntrospectionEnabled bool   `env:"GQL_INTROSPECTION_ENABLED, default=true"`
 	TracingEnabled       bool   `env:"GQL_TRACING_ENABLED, default=false"`
-	ReturnErrorsMeta     bool   `env:"GQL_RETURN_ERRORS_META, default=false"`
 	ReturnCause          bool   `env:"GQL_RETURN_CAUSE, default=false"`
 	Playground           PlaygroundConfig
 }
@@ -132,12 +131,12 @@ func NewErrorPresenter(params ErrorPresenterParams) graphql.ErrorPresenterFunc {
 		}
 
 		extra := make(map[string]any)
-		if config.ReturnErrorsMeta {
-			meta := infraErrors.Meta(err)
-			if meta != nil {
-				extra["meta"] = infraErrors.Meta(err)
-			}
+
+		meta := infraErrors.Meta(err)
+		if meta != nil {
+			extra["meta"] = infraErrors.Meta(err)
 		}
+
 		if config.ReturnCause {
 			cause := infraErrors.Cause(err)
 			if cause != nil {
@@ -148,12 +147,11 @@ func NewErrorPresenter(params ErrorPresenterParams) graphql.ErrorPresenterFunc {
 				if hint != "" {
 					causeMap["message"] = hint
 				}
-				if config.ReturnErrorsMeta {
-					meta := infraErrors.Meta(cause)
-					if meta != nil {
-						causeMap["meta"] = infraErrors.Meta(cause)
-					}
+				metaCause := infraErrors.Meta(cause)
+				if metaCause != nil {
+					causeMap["meta"] = infraErrors.Meta(cause)
 				}
+
 				extra["cause"] = causeMap
 			}
 		}
