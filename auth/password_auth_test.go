@@ -174,8 +174,8 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 
 			t.Log("Given the identity is not registered")
 			t.Log("When try to authenticate")
-			t.Log("	Then the error ErrIdentityNotFound is returned")
-			require.ErrorIs(t, err, repository.ErrIdentityNotFound)
+			t.Log("	Then the error ErrInvalidIdentity is returned")
+			require.ErrorIs(t, err, auth.ErrInvalidIdentity)
 		},
 	)
 
@@ -201,7 +201,7 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 			t.Log("Given credentials with the password type are not found")
 			t.Log("When try to authenticate")
 			t.Log("	Then the error ErrCredentialNotFound is returned")
-			require.ErrorIs(t, err, repository.ErrCredentialNotFound)
+			require.ErrorIs(t, err, auth.ErrInvalidPassword)
 		},
 	)
 

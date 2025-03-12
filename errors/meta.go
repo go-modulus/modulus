@@ -1,14 +1,26 @@
 package errors
 
-import "errors"
+import (
+	"errors"
+	"strings"
+)
 
 type withMeta struct {
-	meta map[string]string
+	meta string
 	err  error
 }
 
 func (m withMeta) Meta() map[string]string {
-	return m.meta
+	parts := strings.Split(m.meta, ";")
+	meta := make(map[string]string)
+	for _, part := range parts {
+		kv := strings.Split(part, "=")
+		if len(kv) != 2 {
+			continue
+		}
+		meta[kv[0]] = kv[1]
+	}
+	return meta
 }
 
 func (m withMeta) Error() string {
@@ -29,10 +41,10 @@ func (m withMeta) Is(target error) bool {
 }
 
 func Meta(err error) map[string]string {
-	type withMeta interface {
+	type wm interface {
 		Meta() map[string]string
 	}
-	var we withMeta
+	var we wm
 	if errors.As(err, &we) {
 		return we.Meta()
 	}
@@ -40,27 +52,38 @@ func Meta(err error) map[string]string {
 }
 
 func WithMeta(err error, kv ...string) error {
+	if len(kv)%2 != 0 {
+		panic("WithMeta: odd number of key value pairs")
+	}
 	if err == nil {
 		return err
 	}
-	meta := make(map[string]string)
+
+	metaMap := make(map[string]string)
 	for i := 0; i < len(kv); i += 2 {
-		meta[kv[i]] = kv[i+1]
+		metaMap[kv[i]] = kv[i+1]
 	}
-	return withMeta{meta: meta, err: err}
+
+	parts := make([]string, 0, len(metaMap))
+	for key, value := range metaMap {
+		parts = append(parts, key+"="+value)
+	}
+	return withMeta{meta: strings.Join(parts, ";"), err: err}
 }
 
 func WithAddedMeta(err error, kv ...string) error {
+	if len(kv)%2 != 0 {
+		panic("WithAddedMeta: odd number of arguments")
+	}
 	if err == nil {
 		return err
 	}
 	oldMeta := Meta(err)
-	meta := make(map[string]string)
+	newKV := make([]string, 0, len(oldMeta)*2+len(kv))
 	for k, v := range oldMeta {
-		meta[k] = v
+		newKV = append(newKV, k, v)
 	}
-	for i := 0; i < len(kv); i += 2 {
-		meta[kv[i]] = kv[i+1]
-	}
-	return withMeta{meta: meta, err: err}
+	newKV = append(newKV, kv...)
+
+	return WithMeta(err, newKV...)
 }

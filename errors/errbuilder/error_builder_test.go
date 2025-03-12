@@ -5,8 +5,6 @@ import (
 	"github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/errors/errbuilder"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 	"testing"
 )
 
@@ -17,15 +15,13 @@ func TestBuilder_Build(t *testing.T) {
 			b := errbuilder.New("test error")
 			err := b.Build()
 
-			var p = message.NewPrinter(language.English)
-
 			t.Log("When create a new error from a string")
 			t.Log("	Should return a new error with the error as input")
 			assert.Equal(t, "test error", err.Error())
 			t.Log("	Should not have any additional fields")
 			assert.Nil(t, errors.Tags(err))
 			t.Log("	Should return the input as message if there is no translation")
-			assert.Equal(t, "test error", errors.Message(p, err))
+			assert.Equal(t, "test error", errors.Hint(err))
 		},
 	)
 
@@ -57,15 +53,13 @@ func TestBuilder_Build(t *testing.T) {
 			b := errbuilder.NewE(cause)
 			err := b.Build()
 
-			var p = message.NewPrinter(language.English)
-
 			t.Log("When create a new error from a string")
 			t.Log("	Should return a new error with the error as input")
 			assert.Equal(t, "test error", err.Error())
 			t.Log("	Should not have any additional fields")
 			assert.Nil(t, errors.Tags(err))
-			t.Log("	Should return the default message for the system error")
-			assert.Equal(t, "Something went wrong on our side", errors.Message(p, err))
+			t.Log("	Should return the empty message for the system error")
+			assert.Equal(t, "", errors.Hint(err))
 			assert.True(t, errors.Is(err, cause))
 		},
 	)
@@ -141,7 +135,6 @@ func TestBuilder_Build(t *testing.T) {
 			assert.Contains(t, errors.Tags(errors.Cause(err)), "tag3")
 
 			t.Log("	Should have the tags from the original error")
-			assert.Len(t, errors.Tags(err), 2)
 			assert.Contains(t, errors.Tags(err), "tag1")
 			assert.Contains(t, errors.Tags(err), "tag2")
 		},

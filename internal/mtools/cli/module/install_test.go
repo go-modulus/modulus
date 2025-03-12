@@ -249,7 +249,7 @@ func TestInstall_Invoke(t *testing.T) {
 			app := cli.NewApp()
 			set := flag.NewFlagSet("test", 0)
 			set.Var(cli.NewStringSlice("dbmate migrator"), "modules", "doc")
-			set.String("manifest", "file://"+projDir+"/manifest", "doc")
+			set.String("manifest", projDir+"/manifest/modules.json", "doc")
 			ctx := cli.NewContext(app, set, nil)
 			err = installModule.Invoke(ctx)
 

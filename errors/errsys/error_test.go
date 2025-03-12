@@ -1,6 +1,7 @@
 package errsys_test
 
 import (
+	"braces.dev/errtrace"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/errors/errsys"
 	"github.com/stretchr/testify/assert"
@@ -25,12 +26,14 @@ func TestNew(t *testing.T) {
 			errInit := errsys.New("code", "hint")
 
 			err := errors.WithAddedMeta(errInit, "key", "value")
-			target := err
+			err = errors.WithAddedMeta(err, "key2", "value2")
+			target := errtrace.Wrap(err)
 
 			assert.True(t, errors.IsSystemError(err))
 			assert.Equal(t, "code", err.Error())
 			assert.Equal(t, "hint", errors.Hint(err))
 			assert.Equal(t, "value", errors.Meta(err)["key"])
+			assert.Equal(t, "value2", errors.Meta(err)["key2"])
 			assert.True(t, errors.Is(errInit, target))
 		},
 	)

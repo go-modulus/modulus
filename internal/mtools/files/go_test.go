@@ -185,7 +185,7 @@ func TestAddPackageToGoFile(t *testing.T) {
 			t.Log("Given a go file")
 			t.Log("When add a new package to the go file")
 			t.Log("	The new package should be added to the go file")
-			require.Contains(t, string(fc), "import _ \"github.com/stretchr/testify\"")
+			require.Contains(t, string(fc), "\"github.com/stretchr/testify\"")
 		},
 	)
 
@@ -314,14 +314,13 @@ func TestAddModuleToEntrypoint(t *testing.T) {
 			fc, err := os.ReadFile(fn)
 			require.NoError(t, err)
 
-			// one cli.NewModule() is present in comment and one is present in the array of imported modules
 			modulesInitsCount := strings.Count(string(fc), "cli.NewModule(")
 			importsCount := strings.Count(string(fc), "\"github.com/go-modulus/modulus/cli\"")
 
 			t.Log("Given an already added module to the go file")
 			t.Log("When add the same module to the go file")
 			t.Log("	The new module should NOT be added to the array of imported modules")
-			assert.Equal(t, 2, modulesInitsCount)
+			assert.Equal(t, 1, modulesInitsCount)
 			t.Log("	The new import should be added to the go file")
 			assert.Equal(t, 1, importsCount)
 

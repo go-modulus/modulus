@@ -3,7 +3,7 @@
 ## This file is a template for the sqlc configuration file.
 ## It is used to generate the final sqlc.yaml file.
 ## All anchors will be used from the <ROOT_OF_PROJECT>/sqlc.definition.yaml file.
-## Run make db-sqlc-update to generate the final sqlc.yaml file.
+## Run make db-sqlc-generate to generate the final sqlc.yaml file.
 sqlc-tmpl:
   version: "2"
   options:
@@ -24,7 +24,7 @@ sqlc-tmpl:
     fixture:
       overrides:
         *default-overrides
-    {{- end -}}
+    {{- end }}
   plugins:
     {{- if .Config.GenerateGraphql }}
     - <<: *plugin-graphql

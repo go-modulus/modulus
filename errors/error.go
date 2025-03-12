@@ -83,7 +83,6 @@ func getLastErrorTypeTag(err error) string {
 		switch tag {
 		case SystemErrorTag:
 			lastTag = SystemErrorTag
-			break
 		case UserErrorTag:
 			lastTag = UserErrorTag
 		}

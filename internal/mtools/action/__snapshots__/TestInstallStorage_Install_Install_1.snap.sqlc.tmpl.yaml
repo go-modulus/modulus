@@ -1,11 +1,20 @@
 ## This file is a template for the sqlc configuration file.
 ## It is used to generate the final sqlc.yaml file.
 ## All anchors will be used from the <ROOT_OF_PROJECT>/sqlc.definition.yaml file.
-## Run make db-sqlc-update to generate the final sqlc.yaml file.
+## Run make db-sqlc-generate to generate the final sqlc.yaml file.
 sqlc-tmpl:
   version: "2"
   options:
     golang:
+      overrides:
+        *default-overrides
+    graphql:
+      overrides:
+        *default-overrides
+    dataloader:
+      overrides:
+        *default-overrides
+    fixture:
       overrides:
         *default-overrides
   plugins:
@@ -27,5 +36,9 @@ sqlc-tmpl:
               ##- db_type: "test"
               ##  go_type: "github.com/shopspring/test"
               ##  nullable: true
-
-
+        - <<: *codegen-graphql
+          options:
+            <<: *codegen-graphql-options
+            default_schema: "schema"
+            package: "/tmp/testproj-storage/mypckg/storage"
+        

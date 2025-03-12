@@ -14,8 +14,6 @@ import (
 	"github.com/go-modulus/modulus/module"
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 	"log/slog"
 	"net/http"
 	"os"
@@ -59,7 +57,7 @@ Uses interactive prompts to make a choice.
 Adds the chosen module to the project and inits it with default files.
 Example: mtools module install
 Example without UI: mtools module install --modules="urfave cli,pgx"
-Example with a custom manifest located at https://example.com/modules.json: mtools module install --manifest="https://example.com"
+Example with a custom manifest located at proj-dir/manifest/modules.json: mtools module install --manifest="proj-dir/manifest/modules.json"
 `,
 		Action: addModule.Invoke,
 		Flags: []cli.Flag{
@@ -79,7 +77,6 @@ Example: mtools module install --manifest="local_folder/modules.json"`,
 func (c *Install) Invoke(
 	ctx *cli.Context,
 ) error {
-	p := message.NewPrinter(language.English)
 	modulesValue := ctx.StringSlice("modules")
 	if len(modulesValue) == 0 {
 		utils.PrintLogo()
@@ -174,8 +171,8 @@ func (c *Install) Invoke(
 		err = c.installModule(ctx.Context, md, entrypoints)
 		if err != nil {
 			fmt.Println(color.RedString("Cannot install the module %s: %s", md.Name, err.Error()))
-			if errors.Hint(p, err) != "" {
-				fmt.Println(color.YellowString("Hint: %s", errors.Hint(p, err)))
+			if errors.Hint(err) != "" {
+				fmt.Println(color.YellowString("Hint: %s", errors.Hint(err)))
 			}
 			hasErrors = true
 			continue

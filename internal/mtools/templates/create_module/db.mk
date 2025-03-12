@@ -8,7 +8,7 @@ db: ## Run all db commands
 	$(MAKE) db-sqlc-update
 	$(MAKE) db-migrate
 
-.PHONY: db-migrate
+.PHONY: db-add
 db-add: ## Create new migration in the selected module
 	mtools db add
 
@@ -30,7 +30,7 @@ db-check-migration: ## Run migrations on test environment, then rollback and mig
 db-sqlc-install: ## Install sqlc
 	go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 
-.PHONY: db-sqlc-update
+.PHONY: db-sqlc-update-config
 db-sqlc-update-config: ## Update sqlc.yaml configs in all modules and geberates Golang code from SQL queries
 	mtools db update-sqlc-config
 

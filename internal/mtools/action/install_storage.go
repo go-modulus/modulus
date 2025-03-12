@@ -10,8 +10,6 @@ import (
 	"github.com/go-modulus/modulus/internal/mtools/templates"
 	"github.com/go-modulus/modulus/internal/mtools/utils"
 	"github.com/go-modulus/modulus/module"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 	"os"
 	"os/exec"
 	"text/template"
@@ -127,8 +125,7 @@ func (c *InstallStorage) addFilesOfModule(
 
 	err = c.UpdateSqlcConfig.Update(context.Background(), storagePath, projPath)
 	if err != nil {
-		p := message.NewPrinter(language.English)
-		fmt.Println(color.RedString("Cannot update sqlc config: %s: %s", errors.Hint(p, err), errors.CauseString(err)))
+		fmt.Println(color.RedString("Cannot update sqlc config: %s: %s", errors.Hint(err), errors.CauseString(err)))
 		return err
 	}
 	return nil

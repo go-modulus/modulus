@@ -2,15 +2,16 @@ package errors
 
 import (
 	"errors"
+	"strings"
 )
 
 type withTags struct {
-	tags []string
+	tags string
 	err  error
 }
 
 func (m withTags) Tags() []string {
-	return m.tags
+	return strings.Split(m.tags, ",")
 }
 
 func (m withTags) Error() string {
@@ -34,10 +35,10 @@ func Tags(err error) []string {
 	if err == nil {
 		return nil
 	}
-	type withTags interface {
+	type wt interface {
 		Tags() []string
 	}
-	var we withTags
+	var we wt
 	if errors.As(err, &we) {
 		return we.Tags()
 	}
@@ -51,5 +52,5 @@ func WithAddedTags(err error, tags ...string) error {
 	oldTags := Tags(err)
 	tags = append(oldTags, tags...)
 
-	return withTags{tags: tags, err: err}
+	return withTags{tags: strings.Join(tags, ","), err: err}
 }

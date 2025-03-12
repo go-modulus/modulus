@@ -1,5 +1,224 @@
 options:
+    dataloader:
+        overrides:
+            - db_type: uuid
+              engine: postgresql
+              go_type:
+                import: github.com/gofrs/uuid
+                package: uuid
+                type: NullUUID
+              gql_type: Uuid
+              nullable: true
+            - db_type: uuid
+              engine: postgresql
+              go_type:
+                import: github.com/gofrs/uuid
+                package: uuid
+                type: UUID
+              gql_type: Uuid
+              nullable: false
+            - db_type: text
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: String
+              gql_type: String
+              nullable: true
+            - db_type: pg_catalog.timestamp
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: timestamp
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: pg_catalog.timestamptz
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: timestamptz
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: pg_catalog.timestamp
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+            - db_type: timestamp
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+            - db_type: pg_catalog.timestamptz
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+            - db_type: timestamptz
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+    fixture:
+        overrides:
+            - db_type: uuid
+              engine: postgresql
+              go_type:
+                import: github.com/gofrs/uuid
+                package: uuid
+                type: NullUUID
+              gql_type: Uuid
+              nullable: true
+            - db_type: uuid
+              engine: postgresql
+              go_type:
+                import: github.com/gofrs/uuid
+                package: uuid
+                type: UUID
+              gql_type: Uuid
+              nullable: false
+            - db_type: text
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: String
+              gql_type: String
+              nullable: true
+            - db_type: pg_catalog.timestamp
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: timestamp
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: pg_catalog.timestamptz
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: timestamptz
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: pg_catalog.timestamp
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+            - db_type: timestamp
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+            - db_type: pg_catalog.timestamptz
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+            - db_type: timestamptz
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
     golang:
+        overrides:
+            - db_type: uuid
+              engine: postgresql
+              go_type:
+                import: github.com/gofrs/uuid
+                package: uuid
+                type: NullUUID
+              gql_type: Uuid
+              nullable: true
+            - db_type: uuid
+              engine: postgresql
+              go_type:
+                import: github.com/gofrs/uuid
+                package: uuid
+                type: UUID
+              gql_type: Uuid
+              nullable: false
+            - db_type: text
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: String
+              gql_type: String
+              nullable: true
+            - db_type: pg_catalog.timestamp
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: timestamp
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: pg_catalog.timestamptz
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: timestamptz
+              go_type:
+                import: gopkg.in/guregu/null.v4
+                package: "null"
+                type: Time
+              gql_type: Time
+              nullable: true
+            - db_type: pg_catalog.timestamp
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+            - db_type: timestamp
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+            - db_type: pg_catalog.timestamptz
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+            - db_type: timestamptz
+              go_type:
+                import: time
+                type: Time
+              gql_type: Time
+    graphql:
         overrides:
             - db_type: uuid
               engine: postgresql
@@ -103,6 +322,13 @@ sql:
             sql_package: pgx/v5
           out: ./
           plugin: golang
+        - options:
+            default_schema: schema
+            emit_all_enum_values: true
+            gen_common_parts: false
+            package: /tmp/testproj-storage/mypckg/storage
+          out: ../graphql
+          plugin: graphql
       engine: postgresql
       queries: query
       schema: migration
