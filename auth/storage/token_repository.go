@@ -70,15 +70,17 @@ func (r *DefaultTokenRepository) CreateRefreshToken(
 	ctx context.Context,
 	refreshToken string,
 	sessionId uuid.UUID,
+	identityID uuid.UUID,
 	expiresAt time.Time,
 ) (repository.RefreshToken, error) {
 	refreshToken = r.hashToken(refreshToken)
 	storedRefreshToken, err := r.queries.CreateRefreshToken(
 		ctx,
 		CreateRefreshTokenParams{
-			Hash:      refreshToken,
-			SessionID: sessionId,
-			ExpiresAt: expiresAt,
+			Hash:       refreshToken,
+			SessionID:  sessionId,
+			ExpiresAt:  expiresAt,
+			IdentityID: identityID,
 		},
 	)
 	if err != nil {
@@ -174,10 +176,11 @@ func (r *DefaultTokenRepository) transformAccessToken(storedAccessToken AccessTo
 
 func (r *DefaultTokenRepository) transformRefreshToken(storedRefreshToken RefreshToken) repository.RefreshToken {
 	return repository.RefreshToken{
-		Hash:      storedRefreshToken.Hash,
-		SessionID: storedRefreshToken.SessionID,
-		RevokedAt: storedRefreshToken.RevokedAt,
-		ExpiresAt: storedRefreshToken.ExpiresAt,
+		Hash:       storedRefreshToken.Hash,
+		IdentityID: storedRefreshToken.IdentityID,
+		SessionID:  storedRefreshToken.SessionID,
+		RevokedAt:  storedRefreshToken.RevokedAt,
+		ExpiresAt:  storedRefreshToken.ExpiresAt,
 	}
 }
 

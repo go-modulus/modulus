@@ -1,6 +1,6 @@
 -- name: CreateRefreshToken :one
-INSERT INTO auth.refresh_token (hash, session_id, expires_at)
-VALUES (@hash::text, @session_id::uuid, @expires_at)
+INSERT INTO auth.refresh_token (hash, session_id, identity_id, expires_at)
+VALUES (@hash::text, @session_id::uuid, @identity_id, @expires_at)
 RETURNING *;
 
 -- name: RevokeRefreshToken :exec

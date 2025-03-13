@@ -13,22 +13,29 @@ import (
 )
 
 const createRefreshToken = `-- name: CreateRefreshToken :one
-INSERT INTO auth.refresh_token (hash, session_id, expires_at)
-VALUES ($1::text, $2::uuid, $3)
-RETURNING hash, session_id, revoked_at, expires_at, created_at`
+INSERT INTO auth.refresh_token (hash, session_id, identity_id, expires_at)
+VALUES ($1::text, $2::uuid, $3, $4)
+RETURNING hash, session_id, identity_id, revoked_at, expires_at, created_at`
 
 type CreateRefreshTokenParams struct {
-	Hash      string    `db:"hash" json:"hash"`
-	SessionID uuid.UUID `db:"session_id" json:"sessionId"`
-	ExpiresAt time.Time `db:"expires_at" json:"expiresAt"`
+	Hash       string    `db:"hash" json:"hash"`
+	SessionID  uuid.UUID `db:"session_id" json:"sessionId"`
+	IdentityID uuid.UUID `db:"identity_id" json:"identityId"`
+	ExpiresAt  time.Time `db:"expires_at" json:"expiresAt"`
 }
 
 func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (RefreshToken, error) {
-	row := q.db.QueryRow(ctx, createRefreshToken, arg.Hash, arg.SessionID, arg.ExpiresAt)
+	row := q.db.QueryRow(ctx, createRefreshToken,
+		arg.Hash,
+		arg.SessionID,
+		arg.IdentityID,
+		arg.ExpiresAt,
+	)
 	var i RefreshToken
 	err := row.Scan(
 		&i.Hash,
 		&i.SessionID,
+		&i.IdentityID,
 		&i.RevokedAt,
 		&i.ExpiresAt,
 		&i.CreatedAt,
@@ -37,7 +44,7 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 }
 
 const getRefreshTokenByHash = `-- name: GetRefreshTokenByHash :one
-SELECT hash, session_id, revoked_at, expires_at, created_at
+SELECT hash, session_id, identity_id, revoked_at, expires_at, created_at
 FROM auth.refresh_token
 WHERE hash = $1`
 
@@ -47,6 +54,7 @@ func (q *Queries) GetRefreshTokenByHash(ctx context.Context, hash string) (Refre
 	err := row.Scan(
 		&i.Hash,
 		&i.SessionID,
+		&i.IdentityID,
 		&i.RevokedAt,
 		&i.ExpiresAt,
 		&i.CreatedAt,

@@ -21,11 +21,12 @@ CREATE INDEX identity_user_id_idx ON auth.identity (user_id);
 
 CREATE TABLE auth.refresh_token
 (
-    hash       text PRIMARY KEY,
-    session_id uuid        NOT NULL,
-    revoked_at timestamptz,
-    expires_at timestamptz NOT NULL,
-    created_at timestamptz NOT NULL DEFAULT NOW()
+    hash        text PRIMARY KEY,
+    session_id  uuid        NOT NULL,
+    identity_id uuid        NOT NULL,
+    revoked_at  timestamptz,
+    expires_at  timestamptz NOT NULL,
+    created_at  timestamptz NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX refresh_token_session_id_idx ON auth.refresh_token (session_id);
@@ -59,11 +60,11 @@ CREATE TABLE "auth".session
 
 CREATE TABLE auth.credential
 (
-    hash  text PRIMARY KEY,
-    identity_id     uuid        NOT NULL,
-    type            text        NOT NULL,
-    expired_at      timestamptz          DEFAULT NOW(),
-    created_at      timestamptz NOT NULL DEFAULT NOW()
+    hash        text PRIMARY KEY,
+    identity_id uuid        NOT NULL,
+    type        text        NOT NULL,
+    expired_at  timestamptz          DEFAULT NOW(),
+    created_at  timestamptz NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX credential_identity_id_idx ON auth.credential (identity_id);

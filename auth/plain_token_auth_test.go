@@ -138,3 +138,47 @@ func TestPlainTokenAuthenticator_Authenticate(t *testing.T) {
 		},
 	)
 }
+
+func TestPlainTokenAuthenticator_IssueNewAccessToken(t *testing.T) {
+	t.Parallel()
+	t.Run(
+		"should return a new access token", func(t *testing.T) {
+			t.Parallel()
+			identity := fixtureFactory.Identity().Create(t).GetEntity()
+
+			pair, err := plainTokenAuth.IssueTokens(
+				context.Background(),
+				identity.ID,
+				nil,
+			)
+
+			require.NoError(t, err)
+
+			at, err := plainTokenAuth.IssueNewAccessToken(
+				context.Background(),
+				pair.RefreshToken.Token.String,
+				nil,
+			)
+			require.NoError(t, err)
+
+			performer, err := plainTokenAuth.Authenticate(
+				context.Background(),
+				pair.AccessToken.Token.String,
+			)
+
+			rt := pair.RefreshToken
+
+			fixtureFactory.AccessToken().Hash(at.Hash).Cleanup(t)
+			fixtureFactory.AccessToken().Hash(pair.AccessToken.Hash).Cleanup(t)
+			fixtureFactory.RefreshToken().Hash(rt.Hash).Cleanup(t)
+
+			t.Log("Given the valid refreshed access token")
+			t.Log("When authenticate the user")
+			t.Log(" Then valid performer should be returned")
+			require.NoError(t, err)
+			require.Equal(t, at.UserID, performer.ID)
+			require.Equal(t, at.SessionID, performer.SessionID)
+			require.Equal(t, identity.Roles, performer.Roles)
+		},
+	)
+}

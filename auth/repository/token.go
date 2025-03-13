@@ -25,11 +25,12 @@ type AccessToken struct {
 }
 
 type RefreshToken struct {
-	Token     null.String `json:"token"`
-	Hash      string      `json:"hash"`
-	SessionID uuid.UUID   `json:"sessionId"`
-	RevokedAt null.Time   `json:"revokedAt"`
-	ExpiresAt time.Time   `json:"expiresAt"`
+	Token      null.String `json:"token"`
+	Hash       string      `json:"hash"`
+	IdentityID uuid.UUID   `json:"identityId"`
+	SessionID  uuid.UUID   `json:"sessionId"`
+	RevokedAt  null.Time   `json:"revokedAt"`
+	ExpiresAt  time.Time   `json:"expiresAt"`
 }
 
 type TokenRepository interface {
@@ -56,7 +57,8 @@ type TokenRepository interface {
 	CreateRefreshToken(
 		ctx context.Context,
 		refreshToken string,
-		sessionId uuid.UUID,
+		sessionID uuid.UUID,
+		identityID uuid.UUID,
 		expiresAt time.Time,
 	) (RefreshToken, error)
 	// GetRefreshToken returns the refresh token by the given token.
