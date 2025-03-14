@@ -8,6 +8,14 @@ import (
 	"time"
 )
 
+type ExpirationTokenType string
+
+const (
+	AccessTokenType  ExpirationTokenType = "access"
+	RefreshTokenType ExpirationTokenType = "refresh"
+	BothTokenType    ExpirationTokenType = "both"
+)
+
 var ErrTokenNotExist = errors.New("token does not exist")
 var ErrCannotCreateAccessToken = errors.New("cannot create access token")
 var ErrCannotCreateRefreshToken = errors.New("cannot create refresh token")
@@ -71,12 +79,26 @@ type TokenRepository interface {
 	// Errors:
 	// * ErrTokenNotExist - if the token does not exist.
 	GetAccessToken(ctx context.Context, accessToken string) (AccessToken, error)
-	// RevokeAccessToken revokes the access token by the given token. Be careful, with token not its hash, stored in DB
-	RevokeAccessToken(ctx context.Context, accessToken string) error
-	// RevokeRefreshToken revokes the refresh token by the given token. Be careful, with token not its hash, stored in DB
-	RevokeRefreshToken(ctx context.Context, refreshToken string) error
+
+	// ExpireTokens makes the valid tokens of the given session expired.
+	// It returns an error if the operation failed.
+	// Params:
+	// * sessionId - the session where we want to expire the tokens.
+	// * lag - the parameter is used to make the tokens expired in the future. It is helpful to avoid race conditions in the token refreshing.
+	// 		   We make tokens expired in several seconds to get the time for frontend to refresh the tokens in local storage and get the responses from simultaneous requests to the backend without error.
+	// * tokenType - the type of tokens that we want to expire.
+	ExpireTokens(
+		ctx context.Context,
+		sessionId uuid.UUID,
+		lag time.Duration,
+		tokenType ExpirationTokenType,
+	) error
+
 	// RevokeSessionTokens revokes all tokens of the session by the given session ID.
+	// It can be used from the user settings to log out from some devices.
 	RevokeSessionTokens(ctx context.Context, sessionId uuid.UUID) error
+
 	// RevokeUserTokens revokes all tokens of the user by the given user ID.
+	// It can be used from the user settings to log out from all devices.
 	RevokeUserTokens(ctx context.Context, userId uuid.UUID) error
 }

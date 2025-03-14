@@ -119,14 +119,53 @@ func (r *DefaultTokenRepository) GetAccessToken(ctx context.Context, accessToken
 	return r.transformAccessToken(storedAccessToken), nil
 }
 
-func (r *DefaultTokenRepository) RevokeAccessToken(ctx context.Context, accessToken string) error {
-	accessToken = r.hashToken(accessToken)
-	return r.queries.RevokeAccessToken(ctx, accessToken)
-}
+//func (r *DefaultTokenRepository) RevokeAccessToken(ctx context.Context, accessToken string) error {
+//	accessToken = r.hashToken(accessToken)
+//	return r.queries.RevokeAccessToken(ctx, accessToken)
+//}
+//
+//func (r *DefaultTokenRepository) RevokeRefreshToken(ctx context.Context, refreshToken string) error {
+//	refreshToken = r.hashToken(refreshToken)
+//	return r.queries.RevokeRefreshToken(ctx, refreshToken)
+//}
 
-func (r *DefaultTokenRepository) RevokeRefreshToken(ctx context.Context, refreshToken string) error {
-	refreshToken = r.hashToken(refreshToken)
-	return r.queries.RevokeRefreshToken(ctx, refreshToken)
+// ExpireTokens makes the valid tokens of the given session expired.
+// It returns an error if the operation failed.
+// Params:
+//   - sessionId - the session where we want to expire the tokens.
+//   - lag - the parameter is used to make the tokens expired in the future. It is helpful to avoid race conditions in the token refreshing.
+//     We make tokens expired in several seconds to get the time for frontend to refresh the tokens in local storage and get the responses from simultaneous requests to the backend without error.
+//   - tokenType - the type of tokens that we want to expire.
+func (r *DefaultTokenRepository) ExpireTokens(
+	ctx context.Context,
+	sessionId uuid.UUID,
+	lag time.Duration,
+	tokenType repository.ExpirationTokenType,
+) error {
+	if tokenType == repository.AccessTokenType || tokenType == repository.BothTokenType {
+		err := r.queries.ExpireSessionAccessTokens(
+			ctx, ExpireSessionAccessTokensParams{
+				ExpiresAt: time.Now().Add(lag),
+				SessionID: sessionId,
+			},
+		)
+		if err != nil {
+			return errtrace.Wrap(err)
+		}
+	}
+	if tokenType == repository.RefreshTokenType || tokenType == repository.BothTokenType {
+		err := r.queries.ExpireSessionRefreshTokens(
+			ctx, ExpireSessionRefreshTokensParams{
+				ExpiresAt: time.Now().Add(lag),
+				SessionID: sessionId,
+			},
+		)
+		if err != nil {
+			return errtrace.Wrap(err)
+		}
+	}
+
+	return nil
 }
 
 func (r *DefaultTokenRepository) RevokeSessionTokens(ctx context.Context, sessionId uuid.UUID) error {

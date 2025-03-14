@@ -43,6 +43,22 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 	return i, err
 }
 
+const expireSessionRefreshTokens = `-- name: ExpireSessionRefreshTokens :exec
+UPDATE auth.refresh_token
+SET expires_at = $1
+WHERE session_id = $2 AND revoked_at IS NULL
+  AND expires_at > now()`
+
+type ExpireSessionRefreshTokensParams struct {
+	ExpiresAt time.Time `db:"expires_at" json:"expiresAt"`
+	SessionID uuid.UUID `db:"session_id" json:"sessionId"`
+}
+
+func (q *Queries) ExpireSessionRefreshTokens(ctx context.Context, arg ExpireSessionRefreshTokensParams) error {
+	_, err := q.db.Exec(ctx, expireSessionRefreshTokens, arg.ExpiresAt, arg.SessionID)
+	return err
+}
+
 const getRefreshTokenByHash = `-- name: GetRefreshTokenByHash :one
 SELECT hash, session_id, identity_id, revoked_at, expires_at, created_at
 FROM auth.refresh_token

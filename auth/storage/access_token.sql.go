@@ -51,6 +51,22 @@ func (q *Queries) CreateAccessToken(ctx context.Context, arg CreateAccessTokenPa
 	return i, err
 }
 
+const expireSessionAccessTokens = `-- name: ExpireSessionAccessTokens :exec
+UPDATE auth.access_token
+SET expires_at = $1
+WHERE session_id = $2 AND revoked_at IS NULL
+  AND expires_at > now()`
+
+type ExpireSessionAccessTokensParams struct {
+	ExpiresAt time.Time `db:"expires_at" json:"expiresAt"`
+	SessionID uuid.UUID `db:"session_id" json:"sessionId"`
+}
+
+func (q *Queries) ExpireSessionAccessTokens(ctx context.Context, arg ExpireSessionAccessTokensParams) error {
+	_, err := q.db.Exec(ctx, expireSessionAccessTokens, arg.ExpiresAt, arg.SessionID)
+	return err
+}
+
 const getAccessTokenByHash = `-- name: GetAccessTokenByHash :one
 SELECT hash, identity_id, session_id, user_id, roles, data, revoked_at, expires_at, created_at
 FROM auth.access_token
