@@ -28,3 +28,8 @@ FROM auth.access_token
 WHERE revoked_at IS NULL
   AND user_id = $1;
 
+-- name: ExpireSessionAccessTokens :exec
+UPDATE auth.access_token
+SET expires_at = @expires_at
+WHERE session_id = @session_id AND revoked_at IS NULL
+  AND expires_at > now();

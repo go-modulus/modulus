@@ -94,11 +94,12 @@ type Identity struct {
 }
 
 type RefreshToken struct {
-	Hash      string    `db:"hash" json:"hash"`
-	SessionID uuid.UUID `db:"session_id" json:"sessionId"`
-	RevokedAt null.Time `db:"revoked_at" json:"revokedAt"`
-	ExpiresAt time.Time `db:"expires_at" json:"expiresAt"`
-	CreatedAt time.Time `db:"created_at" json:"createdAt"`
+	Hash       string    `db:"hash" json:"hash"`
+	SessionID  uuid.UUID `db:"session_id" json:"sessionId"`
+	IdentityID uuid.UUID `db:"identity_id" json:"identityId"`
+	RevokedAt  null.Time `db:"revoked_at" json:"revokedAt"`
+	ExpiresAt  time.Time `db:"expires_at" json:"expiresAt"`
+	CreatedAt  time.Time `db:"created_at" json:"createdAt"`
 }
 
 type Session struct {

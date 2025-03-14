@@ -83,26 +83,124 @@ func (a *PlainTokenAuthenticator) IssueTokens(
 	identityID uuid.UUID,
 	additionalData map[string]interface{},
 ) (TokenPair, error) {
-	accessTokenStr, err := a.randomString(32)
-	if err != nil {
-		return TokenPair{}, errtrace.Wrap(errors.WithCause(ErrCannotCreateAccessToken, err))
-	}
-
-	refreshTokenStr, err := a.randomString(32)
-	if err != nil {
-		return TokenPair{}, errtrace.Wrap(errors.WithCause(ErrCannotCreateRefreshToken, err))
-	}
-
-	identity, err := a.identityRepository.GetById(ctx, identityID)
+	sessionID := uuid.Must(uuid.NewV6())
+	accessToken, err := a.createAccessToken(ctx, identityID, sessionID, additionalData)
 	if err != nil {
 		return TokenPair{}, errtrace.Wrap(err)
 	}
 
-	sessionID := uuid.Must(uuid.NewV6())
-	accessToken, err := a.tokenRepository.CreateAccessToken(
+	refreshToken, err := a.createRefreshToken(
+		ctx,
+		identityID,
+		sessionID,
+	)
+	if err != nil {
+		return TokenPair{}, errtrace.Wrap(err)
+	}
+
+	return TokenPair{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
+}
+
+// IssueNewAccessToken issues the new access token linking it to the session from the given refresh token.
+// It returns a new access token. Refresh token is not revoked. Old access token is not revoked.
+// The session is not changed.
+//
+// Errors:
+// * ErrTokenIsRevoked - if the refresh token is revoked.
+// * ErrTokenIsExpired - if the refresh token expired.
+// * ErrCannotCreateAccessToken - if the access token cannot be created.
+// * ErrCannotCreateRefreshToken - if the refresh token cannot be created.
+func (a *PlainTokenAuthenticator) IssueNewAccessToken(
+	ctx context.Context,
+	refreshToken string,
+	additionalData map[string]interface{},
+) (repository.AccessToken, error) {
+	rt, err := a.tokenRepository.GetRefreshToken(ctx, refreshToken)
+	if err != nil {
+		return repository.AccessToken{}, errtrace.Wrap(err)
+	}
+
+	if rt.RevokedAt.Valid {
+		return repository.AccessToken{}, ErrTokenIsRevoked
+	}
+
+	if rt.ExpiresAt.Before(time.Now()) {
+		return repository.AccessToken{}, ErrTokenIsExpired
+	}
+
+	accessToken, err := a.createAccessToken(ctx, rt.IdentityID, rt.SessionID, additionalData)
+	if err != nil {
+		return repository.AccessToken{}, errtrace.Wrap(err)
+	}
+
+	return accessToken, nil
+}
+
+// RefreshAccessToken refreshes the access token with the given refresh token.
+// It returns a new access token. Refresh token is not revoked.
+// Old access token expires.
+// The session is not changed.
+//
+// Errors:
+// * ErrTokenIsRevoked - if the refresh token is revoked.
+// * ErrTokenIsExpired - if the refresh token expired.
+// * ErrCannotCreateAccessToken - if the access token cannot be created.
+// * ErrCannotCreateRefreshToken - if the refresh token cannot be created.
+func (a *PlainTokenAuthenticator) RefreshAccessToken(
+	ctx context.Context,
+	refreshToken string,
+	additionalData map[string]interface{},
+	expirationLag time.Duration,
+) (repository.AccessToken, error) {
+	rt, err := a.tokenRepository.GetRefreshToken(ctx, refreshToken)
+	if err != nil {
+		return repository.AccessToken{}, errtrace.Wrap(err)
+	}
+
+	if rt.RevokedAt.Valid {
+		return repository.AccessToken{}, ErrTokenIsRevoked
+	}
+
+	if rt.ExpiresAt.Before(time.Now()) {
+		return repository.AccessToken{}, ErrTokenIsExpired
+	}
+
+	err = a.tokenRepository.ExpireTokens(ctx, rt.SessionID, expirationLag, repository.AccessTokenType)
+	if err != nil {
+		return repository.AccessToken{}, errtrace.Wrap(err)
+	}
+
+	accessToken, err := a.createAccessToken(ctx, rt.IdentityID, rt.SessionID, additionalData)
+	if err != nil {
+		return repository.AccessToken{}, errtrace.Wrap(err)
+	}
+
+	return accessToken, nil
+}
+
+func (a *PlainTokenAuthenticator) createAccessToken(
+	ctx context.Context,
+	identityID uuid.UUID,
+	sessionID uuid.UUID,
+	additionalData map[string]interface{},
+) (accessToken repository.AccessToken, err error) {
+	identity, err := a.identityRepository.GetById(ctx, identityID)
+	if err != nil {
+		return repository.AccessToken{}, errtrace.Wrap(err)
+	}
+
+	accessTokenStr, err := a.randomString(32)
+	if err != nil {
+		err = errtrace.Wrap(errors.WithCause(ErrCannotCreateAccessToken, err))
+		return
+	}
+	accessToken, err = a.tokenRepository.CreateAccessToken(
 		ctx,
 		accessTokenStr,
-		identityID,
+		identity.ID,
 		identity.UserID,
 		identity.Roles,
 		sessionID,
@@ -110,26 +208,40 @@ func (a *PlainTokenAuthenticator) IssueTokens(
 		time.Now().Add(a.config.AccessTokenTTL),
 	)
 	if err != nil {
-		return TokenPair{}, errtrace.Wrap(err)
+		err = errtrace.Wrap(errors.WithCause(ErrCannotCreateAccessToken, err))
+		return
+	}
+	accessToken.Token = null.StringFrom(accessTokenStr)
+
+	return
+}
+
+func (a *PlainTokenAuthenticator) createRefreshToken(
+	ctx context.Context,
+	identityID uuid.UUID,
+	sessionID uuid.UUID,
+) (refreshToken repository.RefreshToken, err error) {
+	refreshTokenStr, err := a.randomString(32)
+	if err != nil {
+		err = errtrace.Wrap(errors.WithCause(ErrCannotCreateRefreshToken, err))
+		return
 	}
 
-	refreshToken, err := a.tokenRepository.CreateRefreshToken(
+	refreshToken, err = a.tokenRepository.CreateRefreshToken(
 		ctx,
 		refreshTokenStr,
 		sessionID,
+		identityID,
 		time.Now().Add(a.config.RefreshTokenTTL),
 	)
 	if err != nil {
-		return TokenPair{}, errtrace.Wrap(err)
+		err = errtrace.Wrap(err)
+		return
 	}
 
-	accessToken.Token = null.StringFrom(accessTokenStr)
 	refreshToken.Token = null.StringFrom(refreshTokenStr)
 
-	return TokenPair{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-	}, nil
+	return
 }
 
 func (a *PlainTokenAuthenticator) randomString(length int) (string, error) {
