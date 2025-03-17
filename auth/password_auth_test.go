@@ -59,8 +59,9 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 				},
 			)
 
-			savedIdentity := fixtureFactory.Identity().ID(identity.ID).PullUpdates(t).Cleanup(t).GetEntity()
+			savedIdentity := fixtureFactory.Identity().ID(identity.ID).PullUpdates(t).GetEntity()
 			fixtureFactory.Credential().IdentityID(identity.ID).CleanupAllOfIdentity(t)
+			fixtureFactory.Identity().UserID(userId).CleanupAllOfUser(t)
 
 			t.Log("When the identity is registered")
 			t.Log("	Then the identity is returned")
