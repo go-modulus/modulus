@@ -66,10 +66,10 @@ func (f *SessionFixture) clone() *SessionFixture {
 }
 
 func (f *SessionFixture) save(ctx context.Context) error {
-	query := `INSERT INTO auth.session
-            (id, user_id, identity_id, data, expires_at, created_at)
+	query := `INSERT INTO "auth"."session"
+            ("id", "user_id", "identity_id", "data", "expires_at", "created_at")
             VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id, user_id, identity_id, data, expires_at, created_at
+            RETURNING "id", "user_id", "identity_id", "data", "expires_at", "created_at"
         `
 	row := f.db.QueryRow(ctx, query,
 		f.entity.ID,
@@ -109,7 +109,7 @@ func (f *SessionFixture) Create(tb testing.TB) *SessionFixture {
 func (f *SessionFixture) Cleanup(tb testing.TB) *SessionFixture {
 	tb.Cleanup(
 		func() {
-			query := `DELETE FROM auth.session WHERE id = $1`
+			query := `DELETE FROM "auth"."session" WHERE id = $1`
 			_, err := f.db.Exec(context.Background(), query, f.entity.ID)
 
 			if err != nil {
@@ -123,7 +123,7 @@ func (f *SessionFixture) Cleanup(tb testing.TB) *SessionFixture {
 func (f *SessionFixture) PullUpdates(tb testing.TB) *SessionFixture {
 	c := f.clone()
 	ctx := context.Background()
-	query := `SELECT * FROM auth.session WHERE id = $1`
+	query := `SELECT "id", "user_id", "identity_id", "data", "expires_at", "created_at" FROM "auth"."session" WHERE id = $1`
 	row := f.db.QueryRow(ctx, query,
 		c.entity.ID,
 	)
@@ -145,13 +145,13 @@ func (f *SessionFixture) PullUpdates(tb testing.TB) *SessionFixture {
 func (f *SessionFixture) PushUpdates(tb testing.TB) *SessionFixture {
 	c := f.clone()
 	query := `
-        UPDATE auth.session SET 
-            user_id = $2,
-            identity_id = $3,
-            data = $4,
-            expires_at = $5,
-            created_at = $6
-        WHERE id = $1
+        UPDATE "auth"."session" SET 
+            "user_id" = $2,
+            "identity_id" = $3,
+            "data" = $4,
+            "expires_at" = $5,
+            "created_at" = $6
+        WHERE "id" = $1
         `
 	_, err := f.db.Exec(
 		context.Background(),

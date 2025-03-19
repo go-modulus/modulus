@@ -78,10 +78,10 @@ func (f *IdentityFixture) clone() *IdentityFixture {
 }
 
 func (f *IdentityFixture) save(ctx context.Context) error {
-	query := `INSERT INTO auth.identity
-            (id, identity, user_id, status, data, roles, updated_at, created_at)
+	query := `INSERT INTO "auth"."identity"
+            ("id", "identity", "user_id", "status", "data", "roles", "updated_at", "created_at")
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING id, identity, user_id, status, data, roles, updated_at, created_at
+            RETURNING "id", "identity", "user_id", "status", "data", "roles", "updated_at", "created_at"
         `
 	row := f.db.QueryRow(ctx, query,
 		f.entity.ID,
@@ -125,7 +125,7 @@ func (f *IdentityFixture) Create(tb testing.TB) *IdentityFixture {
 func (f *IdentityFixture) Cleanup(tb testing.TB) *IdentityFixture {
 	tb.Cleanup(
 		func() {
-			query := `DELETE FROM auth.identity WHERE id = $1`
+			query := `DELETE FROM "auth"."identity" WHERE id = $1`
 			_, err := f.db.Exec(context.Background(), query, f.entity.ID)
 
 			if err != nil {
@@ -139,7 +139,7 @@ func (f *IdentityFixture) Cleanup(tb testing.TB) *IdentityFixture {
 func (f *IdentityFixture) PullUpdates(tb testing.TB) *IdentityFixture {
 	c := f.clone()
 	ctx := context.Background()
-	query := `SELECT * FROM auth.identity WHERE id = $1`
+	query := `SELECT "id", "identity", "user_id", "status", "data", "roles", "updated_at", "created_at" FROM "auth"."identity" WHERE id = $1`
 	row := f.db.QueryRow(ctx, query,
 		c.entity.ID,
 	)
@@ -163,15 +163,15 @@ func (f *IdentityFixture) PullUpdates(tb testing.TB) *IdentityFixture {
 func (f *IdentityFixture) PushUpdates(tb testing.TB) *IdentityFixture {
 	c := f.clone()
 	query := `
-        UPDATE auth.identity SET 
-            identity = $2,
-            user_id = $3,
-            status = $4,
-            data = $5,
-            roles = $6,
-            updated_at = $7,
-            created_at = $8
-        WHERE id = $1
+        UPDATE "auth"."identity" SET 
+            "identity" = $2,
+            "user_id" = $3,
+            "status" = $4,
+            "data" = $5,
+            "roles" = $6,
+            "updated_at" = $7,
+            "created_at" = $8
+        WHERE "id" = $1
         `
 	_, err := f.db.Exec(
 		context.Background(),

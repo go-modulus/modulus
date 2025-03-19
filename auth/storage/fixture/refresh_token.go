@@ -67,10 +67,10 @@ func (f *RefreshTokenFixture) clone() *RefreshTokenFixture {
 }
 
 func (f *RefreshTokenFixture) save(ctx context.Context) error {
-	query := `INSERT INTO auth.refresh_token
-            (hash, session_id, identity_id, revoked_at, expires_at, created_at)
+	query := `INSERT INTO "auth"."refresh_token"
+            ("hash", "session_id", "identity_id", "revoked_at", "expires_at", "created_at")
             VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING hash, session_id, identity_id, revoked_at, expires_at, created_at
+            RETURNING "hash", "session_id", "identity_id", "revoked_at", "expires_at", "created_at"
         `
 	row := f.db.QueryRow(ctx, query,
 		f.entity.Hash,
@@ -110,7 +110,7 @@ func (f *RefreshTokenFixture) Create(tb testing.TB) *RefreshTokenFixture {
 func (f *RefreshTokenFixture) Cleanup(tb testing.TB) *RefreshTokenFixture {
 	tb.Cleanup(
 		func() {
-			query := `DELETE FROM auth.refresh_token WHERE hash = $1`
+			query := `DELETE FROM "auth"."refresh_token" WHERE hash = $1`
 			_, err := f.db.Exec(context.Background(), query, f.entity.Hash)
 
 			if err != nil {
@@ -124,7 +124,7 @@ func (f *RefreshTokenFixture) Cleanup(tb testing.TB) *RefreshTokenFixture {
 func (f *RefreshTokenFixture) PullUpdates(tb testing.TB) *RefreshTokenFixture {
 	c := f.clone()
 	ctx := context.Background()
-	query := `SELECT * FROM auth.refresh_token WHERE hash = $1`
+	query := `SELECT "hash", "session_id", "identity_id", "revoked_at", "expires_at", "created_at" FROM "auth"."refresh_token" WHERE hash = $1`
 	row := f.db.QueryRow(ctx, query,
 		c.entity.Hash,
 	)
@@ -146,13 +146,13 @@ func (f *RefreshTokenFixture) PullUpdates(tb testing.TB) *RefreshTokenFixture {
 func (f *RefreshTokenFixture) PushUpdates(tb testing.TB) *RefreshTokenFixture {
 	c := f.clone()
 	query := `
-        UPDATE auth.refresh_token SET 
-            session_id = $2,
-            identity_id = $3,
-            revoked_at = $4,
-            expires_at = $5,
-            created_at = $6
-        WHERE hash = $1
+        UPDATE "auth"."refresh_token" SET 
+            "session_id" = $2,
+            "identity_id" = $3,
+            "revoked_at" = $4,
+            "expires_at" = $5,
+            "created_at" = $6
+        WHERE "hash" = $1
         `
 	_, err := f.db.Exec(
 		context.Background(),

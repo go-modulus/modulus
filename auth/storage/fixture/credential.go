@@ -61,10 +61,10 @@ func (f *CredentialFixture) clone() *CredentialFixture {
 }
 
 func (f *CredentialFixture) save(ctx context.Context) error {
-	query := `INSERT INTO auth.credential
-            (hash, identity_id, type, expired_at, created_at)
+	query := `INSERT INTO "auth"."credential"
+            ("hash", "identity_id", "type", "expired_at", "created_at")
             VALUES ($1, $2, $3, $4, $5)
-            RETURNING hash, identity_id, type, expired_at, created_at
+            RETURNING "hash", "identity_id", "type", "expired_at", "created_at"
         `
 	row := f.db.QueryRow(ctx, query,
 		f.entity.Hash,
@@ -102,7 +102,7 @@ func (f *CredentialFixture) Create(tb testing.TB) *CredentialFixture {
 func (f *CredentialFixture) Cleanup(tb testing.TB) *CredentialFixture {
 	tb.Cleanup(
 		func() {
-			query := `DELETE FROM auth.credential WHERE hash = $1`
+			query := `DELETE FROM "auth"."credential" WHERE hash = $1`
 			_, err := f.db.Exec(context.Background(), query, f.entity.Hash)
 
 			if err != nil {
@@ -116,7 +116,7 @@ func (f *CredentialFixture) Cleanup(tb testing.TB) *CredentialFixture {
 func (f *CredentialFixture) PullUpdates(tb testing.TB) *CredentialFixture {
 	c := f.clone()
 	ctx := context.Background()
-	query := `SELECT * FROM auth.credential WHERE hash = $1`
+	query := `SELECT "hash", "identity_id", "type", "expired_at", "created_at" FROM "auth"."credential" WHERE hash = $1`
 	row := f.db.QueryRow(ctx, query,
 		c.entity.Hash,
 	)
@@ -137,12 +137,12 @@ func (f *CredentialFixture) PullUpdates(tb testing.TB) *CredentialFixture {
 func (f *CredentialFixture) PushUpdates(tb testing.TB) *CredentialFixture {
 	c := f.clone()
 	query := `
-        UPDATE auth.credential SET 
-            identity_id = $2,
-            type = $3,
-            expired_at = $4,
-            created_at = $5
-        WHERE hash = $1
+        UPDATE "auth"."credential" SET 
+            "identity_id" = $2,
+            "type" = $3,
+            "expired_at" = $4,
+            "created_at" = $5
+        WHERE "hash" = $1
         `
 	_, err := f.db.Exec(
 		context.Background(),
