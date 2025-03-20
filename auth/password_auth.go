@@ -141,3 +141,30 @@ func (a *PasswordAuthenticator) Register(
 
 	return account, nil
 }
+
+func (a *PasswordAuthenticator) RemoveIdentity(ctx context.Context, identity string) error {
+	ident, err := a.identityRepository.Get(ctx, identity)
+	if err != nil {
+		if errors.Is(err, repository.ErrIdentityNotFound) {
+			return nil
+		}
+	}
+
+	err = a.identityRepository.RemoveIdentity(ctx, identity)
+	if err != nil {
+		return errtrace.Wrap(err)
+	}
+
+	identities, err := a.identityRepository.GetByAccountID(ctx, ident.AccountID)
+	if err != nil {
+		return errtrace.Wrap(err)
+	}
+	if len(identities) == 0 {
+		err = a.accountRepository.RemoveAccount(ctx, ident.AccountID)
+		if err != nil {
+			return errtrace.Wrap(err)
+		}
+	}
+
+	return nil
+}

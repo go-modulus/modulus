@@ -54,7 +54,7 @@ func (r *DefaultAccountRepository) Get(ctx context.Context, ID uuid.UUID) (repos
 
 func (r *DefaultAccountRepository) RemoveAccount(ctx context.Context, ID uuid.UUID) error {
 	_, err := r.Get(ctx, ID)
-	if err == nil {
+	if err != nil {
 		return errtrace.Wrap(err)
 	}
 	tx, err := r.db.Begin(ctx)
@@ -80,7 +80,7 @@ func (r *DefaultAccountRepository) RemoveAccount(ctx context.Context, ID uuid.UU
 
 func (r *DefaultAccountRepository) BlockAccount(ctx context.Context, ID uuid.UUID) error {
 	_, err := r.Get(ctx, ID)
-	if err == nil {
+	if err != nil {
 		return errtrace.Wrap(err)
 	}
 	tx, err := r.db.Begin(ctx)

@@ -261,3 +261,49 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 		},
 	)
 }
+
+func TestPasswordAuthenticator_RemoveIdentity(t *testing.T) {
+	t.Parallel()
+	t.Run(
+		"remove identity with account", func(t *testing.T) {
+			t.Parallel()
+			account := fixtureFactory.Account().Create(t).GetEntity()
+			identity := fixtureFactory.Identity().AccountID(account.ID).Create(t).GetEntity()
+
+			err := passwordAuth.RemoveIdentity(context.Background(), identity.Identity)
+
+			_, errIdent := identityRepository.Get(context.Background(), identity.Identity)
+			_, errAcc := accountRepository.Get(context.Background(), account.ID)
+
+			t.Log("Given only one identity is registered")
+			t.Log("  When the identity is removed")
+			t.Log("  Then both identity and account are removed")
+			require.NoError(t, err)
+			require.ErrorIs(t, errIdent, repository.ErrIdentityNotFound)
+			require.ErrorIs(t, errAcc, repository.ErrAccountNotFound)
+		},
+	)
+
+	t.Run(
+		"remove identity only", func(t *testing.T) {
+			t.Parallel()
+			account := fixtureFactory.Account().Create(t).GetEntity()
+			identity := fixtureFactory.Identity().AccountID(account.ID).Create(t).GetEntity()
+			identity2 := fixtureFactory.Identity().AccountID(account.ID).Create(t).GetEntity()
+
+			err := passwordAuth.RemoveIdentity(context.Background(), identity.Identity)
+
+			_, errIdent := identityRepository.Get(context.Background(), identity.Identity)
+			_, errIdent2 := identityRepository.Get(context.Background(), identity2.Identity)
+			_, errAcc := accountRepository.Get(context.Background(), account.ID)
+
+			t.Log("Given more than one identity is registered")
+			t.Log("  When the identity is removed")
+			t.Log("  Then both identity and account are removed")
+			require.NoError(t, err)
+			require.ErrorIs(t, errIdent, repository.ErrIdentityNotFound)
+			require.NoError(t, errAcc)
+			require.NoError(t, errIdent2)
+		},
+	)
+}
