@@ -11,113 +11,79 @@ import (
 	uuid "github.com/gofrs/uuid"
 )
 
-const addRoles = `-- name: AddRoles :exec
+const activateIdentity = `-- name: ActivateIdentity :exec
 update "auth"."identity"
-set roles = array(select distinct unnest(roles || $1::text[]))
-where id = $2::uuid`
+set status = 'active'::auth.identity_status
+where id = $1::uuid`
 
-type AddRolesParams struct {
-	Roles []string  `db:"roles" json:"roles"`
-	ID    uuid.UUID `db:"id" json:"id"`
+func (q *Queries) ActivateIdentity(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, activateIdentity, id)
+	return err
 }
 
-func (q *Queries) AddRoles(ctx context.Context, arg AddRolesParams) error {
-	_, err := q.db.Exec(ctx, addRoles, arg.Roles, arg.ID)
+const blockIdentitiesOfAccount = `-- name: BlockIdentitiesOfAccount :exec
+update "auth"."identity"
+set status = 'blocked'::auth.identity_status
+where account_id = $1::uuid`
+
+func (q *Queries) BlockIdentitiesOfAccount(ctx context.Context, accountID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, blockIdentitiesOfAccount, accountID)
+	return err
+}
+
+const blockIdentity = `-- name: BlockIdentity :exec
+update "auth"."identity"
+set status = 'blocked'::auth.identity_status
+where id = $1::uuid`
+
+func (q *Queries) BlockIdentity(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, blockIdentity, id)
 	return err
 }
 
 const createIdentity = `-- name: CreateIdentity :one
 insert into "auth"."identity"
-    (id, identity, user_id, "data")
-values ($1::uuid, $2::text, $3::uuid, $4::jsonb)
-RETURNING id, identity, user_id, status, data, roles, updated_at, created_at`
+    (id, identity, account_id, "data", "type")
+values ($1::uuid, $2::text, $3::uuid, $4::jsonb, $5::text)
+RETURNING id, identity, account_id, status, data, updated_at, created_at, type`
 
 type CreateIdentityParams struct {
-	ID       uuid.UUID `db:"id" json:"id"`
-	Identity string    `db:"identity" json:"identity"`
-	UserID   uuid.UUID `db:"user_id" json:"userId"`
-	Data     []byte    `db:"data" json:"data"`
+	ID        uuid.UUID `db:"id" json:"id"`
+	Identity  string    `db:"identity" json:"identity"`
+	AccountID uuid.UUID `db:"account_id" json:"accountId"`
+	Data      []byte    `db:"data" json:"data"`
+	Type      string    `db:"type" json:"type"`
 }
 
 func (q *Queries) CreateIdentity(ctx context.Context, arg CreateIdentityParams) (Identity, error) {
 	row := q.db.QueryRow(ctx, createIdentity,
 		arg.ID,
 		arg.Identity,
-		arg.UserID,
+		arg.AccountID,
 		arg.Data,
+		arg.Type,
 	)
 	var i Identity
 	err := row.Scan(
 		&i.ID,
 		&i.Identity,
-		&i.UserID,
+		&i.AccountID,
 		&i.Status,
 		&i.Data,
-		&i.Roles,
 		&i.UpdatedAt,
 		&i.CreatedAt,
+		&i.Type,
 	)
 	return i, err
 }
 
-const deleteIdentity = `-- name: DeleteIdentity :exec
-delete from "auth"."identity"
-where id = $1`
-
-func (q *Queries) DeleteIdentity(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteIdentity, id)
-	return err
-}
-
-const findIdentity = `-- name: FindIdentity :one
-select id, identity, user_id, status, data, roles, updated_at, created_at
+const findAccountIdentities = `-- name: FindAccountIdentities :many
+select id, identity, account_id, status, data, updated_at, created_at, type
 from "auth"."identity"
-where identity = $1::text`
+where account_id = $1::uuid`
 
-func (q *Queries) FindIdentity(ctx context.Context, identity string) (Identity, error) {
-	row := q.db.QueryRow(ctx, findIdentity, identity)
-	var i Identity
-	err := row.Scan(
-		&i.ID,
-		&i.Identity,
-		&i.UserID,
-		&i.Status,
-		&i.Data,
-		&i.Roles,
-		&i.UpdatedAt,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
-const findIdentityById = `-- name: FindIdentityById :one
-select id, identity, user_id, status, data, roles, updated_at, created_at
-from "auth"."identity"
-where id = $1::uuid`
-
-func (q *Queries) FindIdentityById(ctx context.Context, id uuid.UUID) (Identity, error) {
-	row := q.db.QueryRow(ctx, findIdentityById, id)
-	var i Identity
-	err := row.Scan(
-		&i.ID,
-		&i.Identity,
-		&i.UserID,
-		&i.Status,
-		&i.Data,
-		&i.Roles,
-		&i.UpdatedAt,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
-const findUserIdentities = `-- name: FindUserIdentities :many
-select id, identity, user_id, status, data, roles, updated_at, created_at
-from "auth"."identity"
-where user_id = $1::uuid`
-
-func (q *Queries) FindUserIdentities(ctx context.Context, userID uuid.UUID) ([]Identity, error) {
-	rows, err := q.db.Query(ctx, findUserIdentities, userID)
+func (q *Queries) FindAccountIdentities(ctx context.Context, accountID uuid.UUID) ([]Identity, error) {
+	rows, err := q.db.Query(ctx, findAccountIdentities, accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -128,12 +94,12 @@ func (q *Queries) FindUserIdentities(ctx context.Context, userID uuid.UUID) ([]I
 		if err := rows.Scan(
 			&i.ID,
 			&i.Identity,
-			&i.UserID,
+			&i.AccountID,
 			&i.Status,
 			&i.Data,
-			&i.Roles,
 			&i.UpdatedAt,
 			&i.CreatedAt,
+			&i.Type,
 		); err != nil {
 			return nil, err
 		}
@@ -145,17 +111,72 @@ func (q *Queries) FindUserIdentities(ctx context.Context, userID uuid.UUID) ([]I
 	return items, nil
 }
 
-const removeRoles = `-- name: RemoveRoles :exec
-update "auth"."identity"
-set roles = array(select distinct unnest(roles) except select distinct unnest($1::text[]))
-where id = $2::uuid`
+const findIdentity = `-- name: FindIdentity :one
+select id, identity, account_id, status, data, updated_at, created_at, type
+from "auth"."identity"
+where identity = $1::text`
 
-type RemoveRolesParams struct {
-	Roles []string  `db:"roles" json:"roles"`
-	ID    uuid.UUID `db:"id" json:"id"`
+func (q *Queries) FindIdentity(ctx context.Context, identity string) (Identity, error) {
+	row := q.db.QueryRow(ctx, findIdentity, identity)
+	var i Identity
+	err := row.Scan(
+		&i.ID,
+		&i.Identity,
+		&i.AccountID,
+		&i.Status,
+		&i.Data,
+		&i.UpdatedAt,
+		&i.CreatedAt,
+		&i.Type,
+	)
+	return i, err
 }
 
-func (q *Queries) RemoveRoles(ctx context.Context, arg RemoveRolesParams) error {
-	_, err := q.db.Exec(ctx, removeRoles, arg.Roles, arg.ID)
+const findIdentityById = `-- name: FindIdentityById :one
+select id, identity, account_id, status, data, updated_at, created_at, type
+from "auth"."identity"
+where id = $1::uuid`
+
+func (q *Queries) FindIdentityById(ctx context.Context, id uuid.UUID) (Identity, error) {
+	row := q.db.QueryRow(ctx, findIdentityById, id)
+	var i Identity
+	err := row.Scan(
+		&i.ID,
+		&i.Identity,
+		&i.AccountID,
+		&i.Status,
+		&i.Data,
+		&i.UpdatedAt,
+		&i.CreatedAt,
+		&i.Type,
+	)
+	return i, err
+}
+
+const removeIdentitiesOfAccount = `-- name: RemoveIdentitiesOfAccount :exec
+delete from "auth"."identity"
+where account_id = $1::uuid`
+
+func (q *Queries) RemoveIdentitiesOfAccount(ctx context.Context, accountID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, removeIdentitiesOfAccount, accountID)
+	return err
+}
+
+const removeIdentity = `-- name: RemoveIdentity :exec
+delete from "auth"."identity"
+where id = $1`
+
+func (q *Queries) RemoveIdentity(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, removeIdentity, id)
+	return err
+}
+
+const requestIdentityVerification = `-- name: RequestIdentityVerification :exec
+update "auth"."identity"
+set status = 'not-verified'::auth.identity_status
+where id = $1::uuid`
+
+func (q *Queries) RequestIdentityVerification(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, requestIdentityVerification, id)
 	return err
 }

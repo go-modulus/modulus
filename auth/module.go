@@ -31,6 +31,7 @@ func NewModule() *module.Module {
 		SetOverriddenProvider("CredentialRepository", storage.NewDefaultCredentialRepository).
 		SetOverriddenProvider("IdentityRepository", storage.NewDefaultIdentityRepository).
 		SetOverriddenProvider("TokenRepository", storage.NewDefaultTokenRepository).
+		SetOverriddenProvider("AccountRepository", storage.NewDefaultAccountRepository).
 		SetOverriddenProvider("TokenHashStrategy", hash.NewSha1).
 		SetOverriddenProvider(
 			"MiddlewareAuthenticator", func(auth *PlainTokenAuthenticator) Authenticator {
@@ -58,6 +59,12 @@ func OverrideTokenRepository(authModule *module.Module, repository interface{}) 
 	return authModule.SetOverriddenProvider("TokenRepository", repository)
 }
 
+// OverrideAccountRepository overrides the default account storage implementation with the custom one.
+// repository should be a constructor returning the implementation of the AccountRepository interface.
+func OverrideAccountRepository(authModule *module.Module, repository interface{}) *module.Module {
+	return authModule.SetOverriddenProvider("AccountRepository", repository)
+}
+
 // OverrideTokenHashStrategy overrides the default token hash strategy with the custom one.
 // strategy should be a constructor returning the implementation of the hash.TokenHashStrategy interface.
 // by default, the sha1 hash strategy is used.
@@ -83,6 +90,10 @@ func NewManifestModule() module.ManifestModule {
 		module.InstalledFile{
 			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/storage/migration/20240214134322_auth.sql",
 			DestFile:  "internal/auth/storage/migration/20240214134322_auth.sql",
+		},
+		module.InstalledFile{
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/storage/migration/20240320084613_auth_account.sql",
+			DestFile:  "internal/auth/storage/migration/20240320084613_auth_account.sql",
 		},
 		module.InstalledFile{
 			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/install/module.go.tmpl",

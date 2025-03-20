@@ -25,7 +25,7 @@ type AccessToken struct {
 	Hash       string                 `json:"hash"`
 	IdentityID uuid.UUID              `json:"identityId"`
 	SessionID  uuid.UUID              `json:"sessionId"`
-	UserID     uuid.UUID              `json:"userId"`
+	AccountID  uuid.UUID              `json:"accountId"`
 	Roles      []string               `json:"roles"`
 	Data       map[string]interface{} `json:"data"`
 	RevokedAt  null.Time              `json:"revokedAt"`
@@ -44,6 +44,7 @@ type RefreshToken struct {
 type TokenRepository interface {
 	// CreateAccessToken creates an access token.
 	// It returns the created access token.
+	// Roles in token are obtained from the account of identity.
 	//
 	// Errors:
 	// * ErrCannotCreateAccessToken - if the access token cannot be created.
@@ -51,7 +52,6 @@ type TokenRepository interface {
 		ctx context.Context,
 		accessToken string,
 		identityId uuid.UUID,
-		userId uuid.UUID,
 		roles []string,
 		sessionId uuid.UUID,
 		data map[string]interface{},
@@ -98,7 +98,7 @@ type TokenRepository interface {
 	// It can be used from the user settings to log out from some devices.
 	RevokeSessionTokens(ctx context.Context, sessionId uuid.UUID) error
 
-	// RevokeUserTokens revokes all tokens of the user by the given user ID.
+	// RevokeAccountTokens revokes all tokens of the user by the given account ID.
 	// It can be used from the user settings to log out from all devices.
-	RevokeUserTokens(ctx context.Context, userId uuid.UUID) error
+	RevokeAccountTokens(ctx context.Context, accountId uuid.UUID) error
 }

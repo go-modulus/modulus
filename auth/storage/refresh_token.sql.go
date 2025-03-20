@@ -59,13 +59,13 @@ func (q *Queries) ExpireSessionRefreshTokens(ctx context.Context, arg ExpireSess
 	return err
 }
 
-const getRefreshTokenByHash = `-- name: GetRefreshTokenByHash :one
+const findRefreshTokenByHash = `-- name: FindRefreshTokenByHash :one
 SELECT hash, session_id, identity_id, revoked_at, expires_at, created_at
 FROM auth.refresh_token
 WHERE hash = $1`
 
-func (q *Queries) GetRefreshTokenByHash(ctx context.Context, hash string) (RefreshToken, error) {
-	row := q.db.QueryRow(ctx, getRefreshTokenByHash, hash)
+func (q *Queries) FindRefreshTokenByHash(ctx context.Context, hash string) (RefreshToken, error) {
+	row := q.db.QueryRow(ctx, findRefreshTokenByHash, hash)
 	var i RefreshToken
 	err := row.Scan(
 		&i.Hash,

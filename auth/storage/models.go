@@ -13,11 +13,61 @@ import (
 	null "gopkg.in/guregu/null.v4"
 )
 
+type AccountStatus string
+
+const (
+	AccountStatusActive  AccountStatus = "active"
+	AccountStatusBlocked AccountStatus = "blocked"
+)
+
+func (e *AccountStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = AccountStatus(s)
+	case string:
+		*e = AccountStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for AccountStatus: %T", src)
+	}
+	return nil
+}
+
+type NullAccountStatus struct {
+	AccountStatus AccountStatus `json:"accountStatus"`
+	Valid         bool          `json:"valid"` // Valid is true if AccountStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullAccountStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.AccountStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.AccountStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullAccountStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.AccountStatus), nil
+}
+
+func AllAccountStatusValues() []AccountStatus {
+	return []AccountStatus{
+		AccountStatusActive,
+		AccountStatusBlocked,
+	}
+}
+
 type IdentityStatus string
 
 const (
-	IdentityStatusActive  IdentityStatus = "active"
-	IdentityStatusBlocked IdentityStatus = "blocked"
+	IdentityStatusActive      IdentityStatus = "active"
+	IdentityStatusBlocked     IdentityStatus = "blocked"
+	IdentityStatusNotVerified IdentityStatus = "not-verified"
 )
 
 func (e *IdentityStatus) Scan(src interface{}) error {
@@ -59,6 +109,7 @@ func AllIdentityStatusValues() []IdentityStatus {
 	return []IdentityStatus{
 		IdentityStatusActive,
 		IdentityStatusBlocked,
+		IdentityStatusNotVerified,
 	}
 }
 
@@ -66,7 +117,7 @@ type AccessToken struct {
 	Hash       string    `db:"hash" json:"hash"`
 	IdentityID uuid.UUID `db:"identity_id" json:"identityId"`
 	SessionID  uuid.UUID `db:"session_id" json:"sessionId"`
-	UserID     uuid.UUID `db:"user_id" json:"userId"`
+	AccountID  uuid.UUID `db:"account_id" json:"accountId"`
 	Roles      []string  `db:"roles" json:"roles"`
 	Data       []byte    `db:"data" json:"data"`
 	RevokedAt  null.Time `db:"revoked_at" json:"revokedAt"`
@@ -74,23 +125,32 @@ type AccessToken struct {
 	CreatedAt  time.Time `db:"created_at" json:"createdAt"`
 }
 
+type Account struct {
+	ID        uuid.UUID     `db:"id" json:"id"`
+	Status    AccountStatus `db:"status" json:"status"`
+	Roles     []string      `db:"roles" json:"roles"`
+	UpdatedAt time.Time     `db:"updated_at" json:"updatedAt"`
+	CreatedAt time.Time     `db:"created_at" json:"createdAt"`
+}
+
 type Credential struct {
-	Hash       string    `db:"hash" json:"hash"`
-	IdentityID uuid.UUID `db:"identity_id" json:"identityId"`
-	Type       string    `db:"type" json:"type"`
-	ExpiredAt  null.Time `db:"expired_at" json:"expiredAt"`
-	CreatedAt  time.Time `db:"created_at" json:"createdAt"`
+	Hash      string    `db:"hash" json:"hash"`
+	AccountID uuid.UUID `db:"account_id" json:"accountId"`
+	Type      string    `db:"type" json:"type"`
+	ExpiredAt null.Time `db:"expired_at" json:"expiredAt"`
+	CreatedAt time.Time `db:"created_at" json:"createdAt"`
 }
 
 type Identity struct {
 	ID        uuid.UUID      `db:"id" json:"id"`
 	Identity  string         `db:"identity" json:"identity"`
-	UserID    uuid.UUID      `db:"user_id" json:"userId"`
+	AccountID uuid.UUID      `db:"account_id" json:"accountId"`
 	Status    IdentityStatus `db:"status" json:"status"`
 	Data      []byte         `db:"data" json:"data"`
-	Roles     []string       `db:"roles" json:"roles"`
 	UpdatedAt time.Time      `db:"updated_at" json:"updatedAt"`
 	CreatedAt time.Time      `db:"created_at" json:"createdAt"`
+	// Type of the identity (eg. email, phone, google-auth, etc.).
+	Type string `db:"type" json:"type"`
 }
 
 type RefreshToken struct {
@@ -104,7 +164,7 @@ type RefreshToken struct {
 
 type Session struct {
 	ID         uuid.UUID `db:"id" json:"id"`
-	UserID     uuid.UUID `db:"user_id" json:"userId"`
+	AccountID  uuid.UUID `db:"account_id" json:"accountId"`
 	IdentityID uuid.UUID `db:"identity_id" json:"identityId"`
 	Data       []byte    `db:"data" json:"data"`
 	ExpiresAt  time.Time `db:"expires_at" json:"expiresAt"`

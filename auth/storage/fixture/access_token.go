@@ -41,9 +41,9 @@ func (f *AccessTokenFixture) SessionID(sessionID uuid.UUID) *AccessTokenFixture 
 	return c
 }
 
-func (f *AccessTokenFixture) UserID(userID uuid.UUID) *AccessTokenFixture {
+func (f *AccessTokenFixture) AccountID(accountID uuid.UUID) *AccessTokenFixture {
 	c := f.clone()
-	c.entity.UserID = userID
+	c.entity.AccountID = accountID
 	return c
 }
 
@@ -86,15 +86,15 @@ func (f *AccessTokenFixture) clone() *AccessTokenFixture {
 
 func (f *AccessTokenFixture) save(ctx context.Context) error {
 	query := `INSERT INTO "auth"."access_token"
-            ("hash", "identity_id", "session_id", "user_id", "roles", "data", "revoked_at", "expires_at", "created_at")
+            ("hash", "identity_id", "session_id", "account_id", "roles", "data", "revoked_at", "expires_at", "created_at")
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING "hash", "identity_id", "session_id", "user_id", "roles", "data", "revoked_at", "expires_at", "created_at"
+            RETURNING "hash", "identity_id", "session_id", "account_id", "roles", "data", "revoked_at", "expires_at", "created_at"
         `
 	row := f.db.QueryRow(ctx, query,
 		f.entity.Hash,
 		f.entity.IdentityID,
 		f.entity.SessionID,
-		f.entity.UserID,
+		f.entity.AccountID,
 		f.entity.Roles,
 		f.entity.Data,
 		f.entity.RevokedAt,
@@ -105,7 +105,7 @@ func (f *AccessTokenFixture) save(ctx context.Context) error {
 		&f.entity.Hash,
 		&f.entity.IdentityID,
 		&f.entity.SessionID,
-		&f.entity.UserID,
+		&f.entity.AccountID,
 		&f.entity.Roles,
 		&f.entity.Data,
 		&f.entity.RevokedAt,
@@ -148,7 +148,7 @@ func (f *AccessTokenFixture) Cleanup(tb testing.TB) *AccessTokenFixture {
 func (f *AccessTokenFixture) PullUpdates(tb testing.TB) *AccessTokenFixture {
 	c := f.clone()
 	ctx := context.Background()
-	query := `SELECT "hash", "identity_id", "session_id", "user_id", "roles", "data", "revoked_at", "expires_at", "created_at" FROM "auth"."access_token" WHERE hash = $1`
+	query := `SELECT "hash", "identity_id", "session_id", "account_id", "roles", "data", "revoked_at", "expires_at", "created_at" FROM "auth"."access_token" WHERE hash = $1`
 	row := f.db.QueryRow(ctx, query,
 		c.entity.Hash,
 	)
@@ -157,7 +157,7 @@ func (f *AccessTokenFixture) PullUpdates(tb testing.TB) *AccessTokenFixture {
 		&c.entity.Hash,
 		&c.entity.IdentityID,
 		&c.entity.SessionID,
-		&c.entity.UserID,
+		&c.entity.AccountID,
 		&c.entity.Roles,
 		&c.entity.Data,
 		&c.entity.RevokedAt,
@@ -176,7 +176,7 @@ func (f *AccessTokenFixture) PushUpdates(tb testing.TB) *AccessTokenFixture {
         UPDATE "auth"."access_token" SET 
             "identity_id" = $2,
             "session_id" = $3,
-            "user_id" = $4,
+            "account_id" = $4,
             "roles" = $5,
             "data" = $6,
             "revoked_at" = $7,
@@ -190,7 +190,7 @@ func (f *AccessTokenFixture) PushUpdates(tb testing.TB) *AccessTokenFixture {
 		f.entity.Hash,
 		f.entity.IdentityID,
 		f.entity.SessionID,
-		f.entity.UserID,
+		f.entity.AccountID,
 		f.entity.Roles,
 		f.entity.Data,
 		f.entity.RevokedAt,

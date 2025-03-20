@@ -15,15 +15,18 @@ var ErrInvalidPassword = errors.New("invalid password")
 var ErrCannotHashPassword = errors.New("cannot hash password")
 
 type PasswordAuthenticator struct {
+	accountRepository    repository.AccountRepository
 	identityRepository   repository.IdentityRepository
 	credentialRepository repository.CredentialRepository
 }
 
 func NewPasswordAuthenticator(
+	accountRepository repository.AccountRepository,
 	identityRepository repository.IdentityRepository,
 	credentialRepository repository.CredentialRepository,
 ) *PasswordAuthenticator {
 	return &PasswordAuthenticator{
+		accountRepository:    accountRepository,
 		identityRepository:   identityRepository,
 		credentialRepository: credentialRepository,
 	}
@@ -49,7 +52,7 @@ func (a *PasswordAuthenticator) Authenticate(ctx context.Context, identity, pass
 		return Performer{}, errtrace.Wrap(ErrIdentityIsBlocked)
 	}
 
-	cred, err := a.credentialRepository.GetLast(ctx, identityObj.ID, string(repository.CredentialTypePassword))
+	cred, err := a.credentialRepository.GetLast(ctx, identityObj.AccountID, string(repository.CredentialTypePassword))
 	if err != nil {
 		if errors.Is(err, repository.ErrCredentialNotFound) {
 			return Performer{}, errtrace.Wrap(ErrInvalidPassword)
@@ -61,7 +64,7 @@ func (a *PasswordAuthenticator) Authenticate(ctx context.Context, identity, pass
 	if err != nil {
 		return Performer{}, errtrace.Wrap(ErrInvalidPassword)
 	}
-	return Performer{ID: identityObj.UserID, SessionID: uuid.Must(uuid.NewV6()), IdentityID: identityObj.ID}, nil
+	return Performer{ID: identityObj.AccountID, SessionID: uuid.Must(uuid.NewV6()), IdentityID: identityObj.ID}, nil
 }
 
 // Register registers a new user account with the given identity and password.
@@ -77,47 +80,64 @@ func (a *PasswordAuthenticator) Register(
 	ctx context.Context,
 	identity,
 	password string,
-	userID uuid.UUID,
+	identityType repository.IdentityType,
 	roles []string,
 	additionalData map[string]interface{},
-) (repository.Identity, error) {
+) (repository.Account, error) {
 	identityObj, err := a.identityRepository.Get(ctx, identity)
 	if err == nil {
 		if identityObj.IsBlocked() {
-			return repository.Identity{}, errtrace.Wrap(ErrIdentityIsBlocked)
+			return repository.Account{}, errtrace.Wrap(ErrIdentityIsBlocked)
 		}
-		return repository.Identity{}, errtrace.Wrap(repository.ErrIdentityExists)
+		return repository.Account{}, errtrace.Wrap(repository.ErrIdentityExists)
 	} else if !errors.Is(err, repository.ErrIdentityNotFound) {
-		return repository.Identity{}, errtrace.Wrap(err)
+		return repository.Account{}, errtrace.Wrap(err)
 	}
 
-	identityObj, err = a.identityRepository.Create(ctx, identity, userID, additionalData)
+	accountID, err := uuid.NewV6()
 	if err != nil {
-		return repository.Identity{}, errtrace.Wrap(err)
+		return repository.Account{}, errtrace.Wrap(err)
 	}
+
+	account, err := a.accountRepository.Create(ctx, accountID)
+	if err != nil {
+		return repository.Account{}, errtrace.Wrap(err)
+	}
+
+	identityObj, err = a.identityRepository.Create(ctx, identity, accountID, identityType, additionalData)
+	if err != nil {
+		return repository.Account{}, errtrace.Wrap(err)
+	}
+
+	defer func() {
+		if err != nil {
+			_ = a.accountRepository.RemoveAccount(ctx, accountID)
+			_ = a.identityRepository.RemoveIdentity(ctx, identity)
+		}
+	}()
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return repository.Identity{}, errtrace.Wrap(errors.WithCause(ErrCannotHashPassword, err))
+		return repository.Account{}, errtrace.Wrap(errors.WithCause(ErrCannotHashPassword, err))
 	}
 
 	_, err = a.credentialRepository.Create(
 		ctx,
-		identityObj.ID,
+		accountID,
 		string(hash),
-		string(repository.CredentialTypePassword),
+		repository.CredentialTypePassword,
 		nil,
 	)
 	if err != nil {
-		return repository.Identity{}, errtrace.Wrap(err)
+		return repository.Account{}, errtrace.Wrap(err)
 	}
 
 	if len(roles) > 0 {
-		err = a.identityRepository.AddRoles(ctx, identityObj.ID, roles...)
+		err = a.accountRepository.AddRoles(ctx, identityObj.ID, roles...)
 		if err != nil {
-			return repository.Identity{}, errtrace.Wrap(err)
+			return repository.Account{}, errtrace.Wrap(err)
 		}
 	}
 
-	return identityObj, nil
+	return account, nil
 }

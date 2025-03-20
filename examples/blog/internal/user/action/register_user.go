@@ -6,11 +6,11 @@ import (
 	"context"
 	"errors"
 	"github.com/go-modulus/modulus/auth"
+	"github.com/go-modulus/modulus/auth/repository"
 	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/go-modulus/modulus/validator"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
-	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx/v5"
 )
 
@@ -79,24 +79,26 @@ func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (st
 	} else {
 		return storage.User{}, ErrUserAlreadyExists
 	}
-	user, err := r.userDb.RegisterUser(
-		ctx, storage.RegisterUserParams{
-			ID:    uuid.Must(uuid.NewV6()),
-			Email: input.Email,
-			Name:  input.Name,
-		},
+
+	account, err := r.passwordAuth.Register(
+		ctx,
+		input.Email,
+		input.Password,
+		// type of the created account
+		repository.IdentityTypeEmail,
+		// the authenticated user role that will be used in the future
+		[]string{"user"},
+		nil,
 	)
 	if err != nil {
 		return storage.User{}, errtrace.Wrap(err)
 	}
-	_, err = r.passwordAuth.Register(
-		ctx,
-		input.Email,
-		input.Password,
-		user.ID,
-		// the authenticated user role that will be used in the future
-		[]string{"user"},
-		nil,
+	user, err := r.userDb.RegisterUser(
+		ctx, storage.RegisterUserParams{
+			ID:    account.ID,
+			Email: input.Email,
+			Name:  input.Name,
+		},
 	)
 	if err != nil {
 		return storage.User{}, errtrace.Wrap(err)

@@ -1,10 +1,10 @@
 -- name: CreateIdentity :one
 insert into "auth"."identity"
-    (id, identity, user_id, "data")
-values (@id::uuid, @identity::text, @user_id::uuid, @data::jsonb)
+    (id, identity, account_id, "data", "type")
+values (@id::uuid, @identity::text, @account_id::uuid, @data::jsonb, @type::text)
 RETURNING *;
 
--- name: DeleteIdentity :exec
+-- name: RemoveIdentity :exec
 delete from "auth"."identity"
 where id = @id;
 
@@ -13,22 +13,36 @@ select *
 from "auth"."identity"
 where identity = @identity::text;
 
--- name: FindUserIdentities :many
+-- name: FindAccountIdentities :many
 select *
 from "auth"."identity"
-where user_id = @user_id::uuid;
+where account_id = @account_id::uuid;
 
 -- name: FindIdentityById :one
 select *
 from "auth"."identity"
 where id = @id::uuid;
 
--- name: AddRoles :exec
+-- name: BlockIdentity :exec
 update "auth"."identity"
-set roles = array(select distinct unnest(roles || @roles::text[]))
+set status = 'blocked'::auth.identity_status
 where id = @id::uuid;
 
--- name: RemoveRoles :exec
+-- name: BlockIdentitiesOfAccount :exec
 update "auth"."identity"
-set roles = array(select distinct unnest(roles) except select distinct unnest(@roles::text[]))
+set status = 'blocked'::auth.identity_status
+where account_id = @account_id::uuid;
+
+-- name: ActivateIdentity :exec
+update "auth"."identity"
+set status = 'active'::auth.identity_status
 where id = @id::uuid;
+
+-- name: RequestIdentityVerification :exec
+update "auth"."identity"
+set status = 'not-verified'::auth.identity_status
+where id = @id::uuid;
+
+-- name: RemoveIdentitiesOfAccount :exec
+delete from "auth"."identity"
+where account_id = @account_id::uuid;

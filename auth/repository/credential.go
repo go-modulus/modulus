@@ -12,25 +12,19 @@ var ErrCannotCreateCredential = errors.New("cannot create credential")
 var ErrCredentialNotFound = errors.New("credential not found")
 
 type Credential struct {
-	Hash       string    `json:"hash"`
-	IdentityID uuid.UUID `json:"identityId"`
-	Type       string    `json:"type"`
-	ExpiredAt  null.Time `json:"expiredAt"`
+	Hash      string         `json:"hash"`
+	AccountID uuid.UUID      `json:"accountId"`
+	Type      CredentialType `json:"type"`
+	ExpiredAt null.Time      `json:"expiredAt"`
 }
 
 type CredentialRepository interface {
-	// Create creates a new identity for the given user ID.
-	// If the identity already exists, it returns github.com/go-modulus/modulus/auth/errors.ErrCredentialExists.
-	// Otherwise, it returns nil.
-	// The identity is a unique string that represents the user.
-	// It is used for login and other operations.
-	// It may be an email, username, or other unique identifier.
-	// You are able to create multiple identities for a single user.
+	// Create creates a new credential for the given account ID.
 	Create(
 		ctx context.Context,
-		identityID uuid.UUID,
+		accountID uuid.UUID,
 		credentialHash string,
-		credType string,
+		credType CredentialType,
 		expiredAt *time.Time,
 	) (Credential, error)
 
@@ -38,9 +32,15 @@ type CredentialRepository interface {
 	// If the credential does not exist, it returns github.com/go-modulus/modulus/auth.ErrCredentialNotFound.
 	GetLast(
 		ctx context.Context,
-		identityID uuid.UUID,
+		accountID uuid.UUID,
 		credType string,
 	) (Credential, error)
+
+	// RemoveCredentials removes all credentials of the given account ID.
+	RemoveCredentials(
+		ctx context.Context,
+		accountID uuid.UUID,
+	) error
 }
 
 type CredentialType string

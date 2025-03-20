@@ -2,6 +2,7 @@ package auth_test
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/go-modulus/modulus/auth"
 	"github.com/go-modulus/modulus/auth/repository"
 	"github.com/go-modulus/modulus/auth/storage"
@@ -15,76 +16,81 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 	t.Run(
 		"register identity without additional data", func(t *testing.T) {
 			t.Parallel()
-			userId := uuid.Must(uuid.NewV6())
-			identity, err := passwordAuth.Register(
+			account, err := passwordAuth.Register(
 				context.Background(),
 				"user",
 				"password",
-				userId,
+				repository.IdentityTypeNickname,
 				[]string{},
 				nil,
 			)
 			require.NoError(t, err)
 
-			savedIdentity := fixtureFactory.Identity().ID(identity.ID).PullUpdates(t).Cleanup(t).GetEntity()
-			fixtureFactory.Credential().IdentityID(identity.ID).CleanupAllOfIdentity(t)
+			savedAccount := fixtureFactory.Account().ID(account.ID).PullUpdates(t).Cleanup(t).GetEntity()
+			savedIdentity := fixtureFactory.Identity().AccountID(account.ID).PullUpdatesLastAccountIdentity(t).CleanupAllOfAccount(t).GetEntity()
+			fixtureFactory.Credential().AccountID(account.ID).CleanupAllOfAccount(t)
 
-			t.Log("When the identity is registered")
-			t.Log("	Then the identity is returned")
+			t.Log("When the account is registered")
+			t.Log("	Then the account is returned")
 			require.NoError(t, err)
-			require.Equal(t, userId, identity.UserID)
-			require.Equal(t, "user", identity.Identity)
-			require.Equal(t, repository.IdentityStatusActive, identity.Status)
-			require.Empty(t, identity.Data)
+			require.Equal(t, repository.AccountStatusActive, account.Status)
 
-			t.Log("	And the identity is saved")
-			require.Equal(t, identity.UserID, savedIdentity.UserID)
-			require.Equal(t, identity.Identity, savedIdentity.Identity)
+			t.Log("	And the account is saved")
+			require.Equal(t, "user", savedIdentity.Identity)
 			require.Equal(t, storage.IdentityStatusActive, savedIdentity.Status)
+
+			t.Log("	And the account is created")
+			require.Equal(t, account.ID, savedAccount.ID)
+			require.Equal(t, storage.AccountStatusActive, savedAccount.Status)
 		},
 	)
 
 	t.Run(
 		"register identity with additional data", func(t *testing.T) {
 			t.Parallel()
-			userId := uuid.Must(uuid.NewV6())
-			identity, err := passwordAuth.Register(
+			account, err := passwordAuth.Register(
 				context.Background(),
 				"user1",
 				"password",
-				userId,
+				repository.IdentityTypeNickname,
 				[]string{},
 				map[string]interface{}{
 					"key": "value",
 				},
 			)
 
-			savedIdentity := fixtureFactory.Identity().ID(identity.ID).PullUpdates(t).GetEntity()
-			fixtureFactory.Credential().IdentityID(identity.ID).CleanupAllOfIdentity(t)
-			fixtureFactory.Identity().UserID(userId).CleanupAllOfUser(t)
+			savedAccount := fixtureFactory.Account().ID(account.ID).PullUpdates(t).Cleanup(t).GetEntity()
+			savedIdentity := fixtureFactory.Identity().AccountID(account.ID).PullUpdatesLastAccountIdentity(t).CleanupAllOfAccount(t).GetEntity()
+			fixtureFactory.Credential().AccountID(account.ID).CleanupAllOfAccount(t)
+			fixtureFactory.Identity().AccountID(account.ID).CleanupAllOfAccount(t)
 
-			t.Log("When the identity is registered")
-			t.Log("	Then the identity is returned")
+			var data map[string]interface{}
+			errUnmarshal := json.Unmarshal(savedIdentity.Data, &data)
+
+			t.Log("When the account is registered")
+			t.Log("	Then the account is returned")
 			require.NoError(t, err)
-			require.Equal(t, userId, identity.UserID)
-			require.Equal(t, "user1", identity.Identity)
-			require.Equal(t, repository.IdentityStatusActive, identity.Status)
-			require.Equal(t, "value", identity.Data["key"])
+			require.Equal(t, repository.AccountStatusActive, account.Status)
 
-			t.Log("	And the identity is saved")
-			require.Equal(t, identity.UserID, savedIdentity.UserID)
-			require.Equal(t, identity.Identity, savedIdentity.Identity)
+			t.Log("	And the account is saved")
+			require.NoError(t, errUnmarshal)
+			require.Equal(t, "user1", savedIdentity.Identity)
 			require.Equal(t, storage.IdentityStatusActive, savedIdentity.Status)
+			require.Equal(t, "value", data["key"])
+
+			t.Log("	And the account is created")
+			require.Equal(t, account.ID, savedAccount.ID)
+			require.Equal(t, storage.AccountStatusActive, savedAccount.Status)
 		},
 	)
 
 	t.Run(
 		"fail on the second registration of identity", func(t *testing.T) {
 			t.Parallel()
-			userId := uuid.Must(uuid.NewV6())
+			account := fixtureFactory.Account().Create(t).GetEntity()
 			identity := fixtureFactory.Identity().
 				ID(uuid.Must(uuid.NewV6())).
-				UserID(userId).
+				AccountID(account.ID).
 				Identity("user2").
 				Create(t).
 				GetEntity()
@@ -92,7 +98,7 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 				context.Background(),
 				identity.Identity,
 				"password",
-				userId,
+				repository.IdentityTypeNickname,
 				[]string{},
 				nil,
 			)
@@ -107,10 +113,10 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 	t.Run(
 		"fail if identity is blocked", func(t *testing.T) {
 			t.Parallel()
-			userId := uuid.Must(uuid.NewV6())
+			accountId := uuid.Must(uuid.NewV6())
 			identity := fixtureFactory.Identity().
 				ID(uuid.Must(uuid.NewV6())).
-				UserID(userId).
+				AccountID(accountId).
 				Identity("user3").
 				Status(storage.IdentityStatusBlocked).
 				Create(t).
@@ -120,7 +126,7 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 				context.Background(),
 				identity.Identity,
 				"password",
-				userId,
+				repository.IdentityTypeNickname,
 				[]string{},
 				nil,
 			)
@@ -137,12 +143,12 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 	t.Run(
 		"authenticate", func(t *testing.T) {
 			t.Parallel()
-			userId := uuid.Must(uuid.NewV6())
-			identity, err := passwordAuth.Register(
+			identity := "user4"
+			account, err := passwordAuth.Register(
 				context.Background(),
-				"user4",
+				identity,
 				"password",
-				userId,
+				repository.IdentityTypeNickname,
 				[]string{},
 				map[string]interface{}{
 					"key": "value",
@@ -150,20 +156,21 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 			)
 			require.NoError(t, err)
 
-			fixtureFactory.Identity().ID(identity.ID).Cleanup(t)
-			fixtureFactory.Credential().IdentityID(identity.ID).CleanupAllOfIdentity(t)
+			fixtureFactory.Account().ID(account.ID).Cleanup(t)
+			fixtureFactory.Identity().AccountID(account.ID).CleanupAllOfAccount(t)
+			fixtureFactory.Credential().AccountID(account.ID).CleanupAllOfAccount(t)
 
 			performer, err := passwordAuth.Authenticate(
 				context.Background(),
-				identity.Identity,
+				identity,
 				"password",
 			)
 
-			t.Log("Given the identity is registered")
+			t.Log("Given the account is registered")
 			t.Log("When try to authenticate with the correct password")
 			t.Log("	Then the performer is returned")
 			require.NoError(t, err)
-			require.Equal(t, userId, performer.ID)
+			require.Equal(t, account.ID, performer.ID)
 		},
 	)
 
@@ -184,15 +191,15 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 		"fail if no password in database", func(t *testing.T) {
 			t.Parallel()
 
-			userId := uuid.Must(uuid.NewV6())
+			account := fixtureFactory.Account().Create(t).GetEntity()
 			identity := fixtureFactory.Identity().
 				ID(uuid.Must(uuid.NewV6())).
 				Identity("user6").
-				UserID(userId).
+				AccountID(account.ID).
 				Create(t).
 				GetEntity()
 			fixtureFactory.Credential().
-				IdentityID(identity.ID).
+				AccountID(account.ID).
 				Type(string(repository.CredentialTypeOTP)).
 				Hash("ssss").
 				Create(t)
@@ -214,12 +221,12 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 			identity := fixtureFactory.Identity().
 				ID(uuid.Must(uuid.NewV6())).
 				Identity("user7").
-				UserID(userId).
+				AccountID(userId).
 				Create(t).
 				GetEntity()
 
 			fixtureFactory.Credential().
-				IdentityID(identity.ID).
+				AccountID(userId).
 				Hash("ssss2").
 				Create(t)
 			_, err := passwordAuth.Authenticate(context.Background(), identity.Identity, "password")
@@ -240,7 +247,7 @@ func TestPasswordAuthenticator_Authenticate(t *testing.T) {
 			identity := fixtureFactory.Identity().
 				ID(uuid.Must(uuid.NewV6())).
 				Identity("user8").
-				UserID(userId).
+				AccountID(userId).
 				Status(storage.IdentityStatusBlocked).
 				Create(t).
 				GetEntity()
