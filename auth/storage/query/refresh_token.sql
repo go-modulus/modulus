@@ -18,7 +18,7 @@ UPDATE auth.refresh_token
 SET revoked_at = now()
 WHERE session_id = @session_ids::uuid[] AND revoked_at IS NULL;
 
--- name: GetRefreshTokenByHash :one
+-- name: FindRefreshTokenByHash :one
 SELECT *
 FROM auth.refresh_token
 WHERE hash = $1;

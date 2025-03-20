@@ -24,7 +24,8 @@ func NewDefaultIdentityRepository(db *pgxpool.Pool) repository.IdentityRepositor
 func (r *DefaultIdentityRepository) Create(
 	ctx context.Context,
 	identity string,
-	userID uuid.UUID,
+	accountID uuid.UUID,
+	identityType repository.IdentityType,
 	additionalData map[string]interface{},
 ) (repository.Identity, error) {
 	_, err := r.Get(ctx, identity)
@@ -43,10 +44,11 @@ func (r *DefaultIdentityRepository) Create(
 	}
 	storedIdentity, err := r.queries.CreateIdentity(
 		ctx, CreateIdentityParams{
-			ID:       id,
-			Identity: identity,
-			UserID:   userID,
-			Data:     dataVal,
+			ID:        id,
+			Identity:  identity,
+			AccountID: accountID,
+			Data:      dataVal,
+			Type:      string(identityType),
 		},
 	)
 
@@ -57,6 +59,43 @@ func (r *DefaultIdentityRepository) Create(
 	return r.Transform(storedIdentity), nil
 }
 
+func (r *DefaultIdentityRepository) GetByAccountID(ctx context.Context, accountID uuid.UUID) (
+	[]repository.Identity,
+	error,
+) {
+	idents, err := r.queries.FindAccountIdentities(ctx, accountID)
+	if err != nil {
+		return nil, errtrace.Wrap(err)
+	}
+	var res []repository.Identity
+	for _, ident := range idents {
+		res = append(res, r.Transform(ident))
+	}
+	return res, nil
+}
+
+func (r *DefaultIdentityRepository) RemoveAccountIdentities(ctx context.Context, accountID uuid.UUID) error {
+	return errtrace.Wrap(r.queries.RemoveIdentitiesOfAccount(ctx, accountID))
+}
+
+func (r *DefaultIdentityRepository) RemoveIdentity(ctx context.Context, identity string) error {
+	ident, err := r.Get(ctx, identity)
+	if err != nil {
+		return errtrace.Wrap(err)
+	}
+
+	return errtrace.Wrap(r.queries.RemoveIdentity(ctx, ident.ID))
+}
+
+func (r *DefaultIdentityRepository) BlockIdentity(ctx context.Context, identity string) error {
+	ident, err := r.Get(ctx, identity)
+	if err != nil {
+		return errtrace.Wrap(err)
+	}
+
+	return errtrace.Wrap(r.queries.BlockIdentity(ctx, ident.ID))
+}
+
 func (r *DefaultIdentityRepository) Transform(
 	identity Identity,
 ) repository.Identity {
@@ -65,12 +104,11 @@ func (r *DefaultIdentityRepository) Transform(
 		data = make(map[string]interface{})
 	}
 	return repository.Identity{
-		ID:       identity.ID,
-		Identity: identity.Identity,
-		UserID:   identity.UserID,
-		Roles:    identity.Roles,
-		Status:   repository.IdentityStatus(identity.Status),
-		Data:     data,
+		ID:        identity.ID,
+		Identity:  identity.Identity,
+		AccountID: identity.AccountID,
+		Status:    repository.IdentityStatus(identity.Status),
+		Data:      data,
 	}
 }
 
@@ -100,30 +138,4 @@ func (r *DefaultIdentityRepository) GetById(
 		return repository.Identity{}, errtrace.Wrap(err)
 	}
 	return r.Transform(res), nil
-}
-
-func (r *DefaultIdentityRepository) AddRoles(
-	ctx context.Context,
-	identityID uuid.UUID,
-	roles ...string,
-) error {
-	return r.queries.AddRoles(
-		ctx, AddRolesParams{
-			ID:    identityID,
-			Roles: roles,
-		},
-	)
-}
-
-func (r *DefaultIdentityRepository) RemoveRoles(
-	ctx context.Context,
-	identityID uuid.UUID,
-	roles ...string,
-) error {
-	return r.queries.RemoveRoles(
-		ctx, RemoveRolesParams{
-			ID:    identityID,
-			Roles: roles,
-		},
-	)
 }

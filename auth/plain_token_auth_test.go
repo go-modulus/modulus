@@ -15,7 +15,8 @@ func TestPlainTokenAuthenticator_StartSession(t *testing.T) {
 	t.Run(
 		"should return a valid pair", func(t *testing.T) {
 			t.Parallel()
-			identity := fixtureFactory.Identity().Create(t).GetEntity()
+			account := fixtureFactory.Account().Create(t).GetEntity()
+			identity := fixtureFactory.Identity().AccountID(account.ID).Create(t).GetEntity()
 
 			pair, err := plainTokenAuth.IssueTokens(
 				context.Background(),
@@ -31,7 +32,7 @@ func TestPlainTokenAuthenticator_StartSession(t *testing.T) {
 			t.Log("When the session is started")
 			t.Log(" Then the access and refresh tokens should be created")
 			require.NoError(t, err)
-			require.Equal(t, at.UserID, savedAt.UserID)
+			require.Equal(t, at.AccountID, savedAt.AccountID)
 			require.Equal(t, at.SessionID, savedAt.SessionID)
 			require.Equal(t, rt.SessionID, savedRt.SessionID)
 
@@ -49,7 +50,8 @@ func TestPlainTokenAuthenticator_Authenticate(t *testing.T) {
 	t.Run(
 		"should return a valid performer", func(t *testing.T) {
 			t.Parallel()
-			identity := fixtureFactory.Identity().Create(t).GetEntity()
+			account := fixtureFactory.Account().Create(t).GetEntity()
+			identity := fixtureFactory.Identity().AccountID(account.ID).Create(t).GetEntity()
 
 			pair, err := plainTokenAuth.IssueTokens(
 				context.Background(),
@@ -73,9 +75,9 @@ func TestPlainTokenAuthenticator_Authenticate(t *testing.T) {
 			t.Log("When authenticate the user")
 			t.Log(" Then valid performer should be returned")
 			require.NoError(t, err)
-			require.Equal(t, at.UserID, performer.ID)
+			require.Equal(t, at.AccountID, performer.ID)
 			require.Equal(t, at.SessionID, performer.SessionID)
-			require.Equal(t, identity.Roles, performer.Roles)
+			require.Equal(t, account.Roles, performer.Roles)
 		},
 	)
 
@@ -144,7 +146,8 @@ func TestPlainTokenAuthenticator_IssueNewAccessToken(t *testing.T) {
 	t.Run(
 		"should return a new access token", func(t *testing.T) {
 			t.Parallel()
-			identity := fixtureFactory.Identity().Create(t).GetEntity()
+			account := fixtureFactory.Account().Create(t).GetEntity()
+			identity := fixtureFactory.Identity().AccountID(account.ID).Create(t).GetEntity()
 
 			pair, err := plainTokenAuth.IssueTokens(
 				context.Background(),
@@ -176,9 +179,9 @@ func TestPlainTokenAuthenticator_IssueNewAccessToken(t *testing.T) {
 			t.Log("When authenticate the user")
 			t.Log(" Then valid performer should be returned")
 			require.NoError(t, err)
-			require.Equal(t, at.UserID, performer.ID)
+			require.Equal(t, at.AccountID, performer.ID)
 			require.Equal(t, at.SessionID, performer.SessionID)
-			require.Equal(t, identity.Roles, performer.Roles)
+			require.Equal(t, account.Roles, performer.Roles)
 		},
 	)
 }
@@ -188,7 +191,8 @@ func TestPlainTokenAuthenticator_RefreshAccessToken(t *testing.T) {
 	t.Run(
 		"should return a new access token", func(t *testing.T) {
 			t.Parallel()
-			identity := fixtureFactory.Identity().Create(t).GetEntity()
+			account := fixtureFactory.Account().Create(t).GetEntity()
+			identity := fixtureFactory.Identity().AccountID(account.ID).Create(t).GetEntity()
 
 			pair, err := plainTokenAuth.IssueTokens(
 				context.Background(),
@@ -221,9 +225,9 @@ func TestPlainTokenAuthenticator_RefreshAccessToken(t *testing.T) {
 			t.Log("When authenticate the user")
 			t.Log(" Then valid performer should be returned")
 			require.NoError(t, err)
-			require.Equal(t, at.UserID, performer.ID)
+			require.Equal(t, at.AccountID, performer.ID)
 			require.Equal(t, at.SessionID, performer.SessionID)
-			require.Equal(t, identity.Roles, performer.Roles)
+			require.Equal(t, account.Roles, performer.Roles)
 			require.True(t, oldToken.ExpiresAt.Before(time.Now()))
 		},
 	)

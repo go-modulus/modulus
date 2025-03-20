@@ -14,20 +14,20 @@ import (
 
 const createCredential = `-- name: CreateCredential :one
 INSERT INTO "auth"."credential"
-    (identity_id, type, hash, expired_at)
+    (account_id, type, hash, expired_at)
 VALUES ($1::uuid, $2::text, $3::text, $4)
-RETURNING hash, identity_id, type, expired_at, created_at`
+RETURNING hash, account_id, type, expired_at, created_at`
 
 type CreateCredentialParams struct {
-	IdentityID uuid.UUID `db:"identity_id" json:"identityId"`
-	Type       string    `db:"type" json:"type"`
-	Hash       string    `db:"hash" json:"hash"`
-	ExpiredAt  null.Time `db:"expired_at" json:"expiredAt"`
+	AccountID uuid.UUID `db:"account_id" json:"accountId"`
+	Type      string    `db:"type" json:"type"`
+	Hash      string    `db:"hash" json:"hash"`
+	ExpiredAt null.Time `db:"expired_at" json:"expiredAt"`
 }
 
 func (q *Queries) CreateCredential(ctx context.Context, arg CreateCredentialParams) (Credential, error) {
 	row := q.db.QueryRow(ctx, createCredential,
-		arg.IdentityID,
+		arg.AccountID,
 		arg.Type,
 		arg.Hash,
 		arg.ExpiredAt,
@@ -35,7 +35,7 @@ func (q *Queries) CreateCredential(ctx context.Context, arg CreateCredentialPara
 	var i Credential
 	err := row.Scan(
 		&i.Hash,
-		&i.IdentityID,
+		&i.AccountID,
 		&i.Type,
 		&i.ExpiredAt,
 		&i.CreatedAt,
@@ -44,7 +44,7 @@ func (q *Queries) CreateCredential(ctx context.Context, arg CreateCredentialPara
 }
 
 const findAllCredentialsOfType = `-- name: FindAllCredentialsOfType :many
-SELECT hash, identity_id, type, expired_at, created_at
+SELECT hash, account_id, type, expired_at, created_at
 FROM "auth"."credential"
 WHERE type = $1::text
 ORDER BY created_at DESC`
@@ -60,7 +60,7 @@ func (q *Queries) FindAllCredentialsOfType(ctx context.Context, type_ string) ([
 		var i Credential
 		if err := rows.Scan(
 			&i.Hash,
-			&i.IdentityID,
+			&i.AccountID,
 			&i.Type,
 			&i.ExpiredAt,
 			&i.CreatedAt,
@@ -76,17 +76,17 @@ func (q *Queries) FindAllCredentialsOfType(ctx context.Context, type_ string) ([
 }
 
 const findLastCredential = `-- name: FindLastCredential :one
-SELECT hash, identity_id, type, expired_at, created_at
+SELECT hash, account_id, type, expired_at, created_at
 FROM "auth"."credential"
-WHERE identity_id = $1::uuid
+WHERE account_id = $1::uuid
 ORDER BY created_at DESC`
 
-func (q *Queries) FindLastCredential(ctx context.Context, identityID uuid.UUID) (Credential, error) {
-	row := q.db.QueryRow(ctx, findLastCredential, identityID)
+func (q *Queries) FindLastCredential(ctx context.Context, accountID uuid.UUID) (Credential, error) {
+	row := q.db.QueryRow(ctx, findLastCredential, accountID)
 	var i Credential
 	err := row.Scan(
 		&i.Hash,
-		&i.IdentityID,
+		&i.AccountID,
 		&i.Type,
 		&i.ExpiredAt,
 		&i.CreatedAt,
@@ -95,26 +95,35 @@ func (q *Queries) FindLastCredential(ctx context.Context, identityID uuid.UUID) 
 }
 
 const findLastCredentialOfType = `-- name: FindLastCredentialOfType :one
-SELECT hash, identity_id, type, expired_at, created_at
+SELECT hash, account_id, type, expired_at, created_at
 FROM "auth"."credential"
-WHERE identity_id = $1::uuid
+WHERE account_id = $1::uuid
 AND type = $2::text
 ORDER BY created_at DESC`
 
 type FindLastCredentialOfTypeParams struct {
-	IdentityID uuid.UUID `db:"identity_id" json:"identityId"`
-	Type       string    `db:"type" json:"type"`
+	AccountID uuid.UUID `db:"account_id" json:"accountId"`
+	Type      string    `db:"type" json:"type"`
 }
 
 func (q *Queries) FindLastCredentialOfType(ctx context.Context, arg FindLastCredentialOfTypeParams) (Credential, error) {
-	row := q.db.QueryRow(ctx, findLastCredentialOfType, arg.IdentityID, arg.Type)
+	row := q.db.QueryRow(ctx, findLastCredentialOfType, arg.AccountID, arg.Type)
 	var i Credential
 	err := row.Scan(
 		&i.Hash,
-		&i.IdentityID,
+		&i.AccountID,
 		&i.Type,
 		&i.ExpiredAt,
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const removeCredentialsOfAccount = `-- name: RemoveCredentialsOfAccount :exec
+DELETE FROM "auth"."credential"
+WHERE account_id = $1::uuid`
+
+func (q *Queries) RemoveCredentialsOfAccount(ctx context.Context, accountID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, removeCredentialsOfAccount, accountID)
+	return err
 }

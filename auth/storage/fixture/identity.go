@@ -34,9 +34,9 @@ func (f *IdentityFixture) Identity(identity string) *IdentityFixture {
 	return c
 }
 
-func (f *IdentityFixture) UserID(userID uuid.UUID) *IdentityFixture {
+func (f *IdentityFixture) AccountID(accountID uuid.UUID) *IdentityFixture {
 	c := f.clone()
-	c.entity.UserID = userID
+	c.entity.AccountID = accountID
 	return c
 }
 
@@ -52,12 +52,6 @@ func (f *IdentityFixture) Data(data []byte) *IdentityFixture {
 	return c
 }
 
-func (f *IdentityFixture) Roles(roles []string) *IdentityFixture {
-	c := f.clone()
-	c.entity.Roles = roles
-	return c
-}
-
 func (f *IdentityFixture) UpdatedAt(updatedAt time.Time) *IdentityFixture {
 	c := f.clone()
 	c.entity.UpdatedAt = updatedAt
@@ -70,6 +64,12 @@ func (f *IdentityFixture) CreatedAt(createdAt time.Time) *IdentityFixture {
 	return c
 }
 
+func (f *IdentityFixture) Type(typ string) *IdentityFixture {
+	c := f.clone()
+	c.entity.Type = typ
+	return c
+}
+
 func (f *IdentityFixture) clone() *IdentityFixture {
 	return &IdentityFixture{
 		db:     f.db,
@@ -79,29 +79,29 @@ func (f *IdentityFixture) clone() *IdentityFixture {
 
 func (f *IdentityFixture) save(ctx context.Context) error {
 	query := `INSERT INTO "auth"."identity"
-            ("id", "identity", "user_id", "status", "data", "roles", "updated_at", "created_at")
+            ("id", "identity", "account_id", "status", "data", "updated_at", "created_at", "type")
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING "id", "identity", "user_id", "status", "data", "roles", "updated_at", "created_at"
+            RETURNING "id", "identity", "account_id", "status", "data", "updated_at", "created_at", "type"
         `
 	row := f.db.QueryRow(ctx, query,
 		f.entity.ID,
 		f.entity.Identity,
-		f.entity.UserID,
+		f.entity.AccountID,
 		f.entity.Status,
 		f.entity.Data,
-		f.entity.Roles,
 		f.entity.UpdatedAt,
 		f.entity.CreatedAt,
+		f.entity.Type,
 	)
 	err := row.Scan(
 		&f.entity.ID,
 		&f.entity.Identity,
-		&f.entity.UserID,
+		&f.entity.AccountID,
 		&f.entity.Status,
 		&f.entity.Data,
-		&f.entity.Roles,
 		&f.entity.UpdatedAt,
 		&f.entity.CreatedAt,
+		&f.entity.Type,
 	)
 	return err
 }
@@ -139,7 +139,7 @@ func (f *IdentityFixture) Cleanup(tb testing.TB) *IdentityFixture {
 func (f *IdentityFixture) PullUpdates(tb testing.TB) *IdentityFixture {
 	c := f.clone()
 	ctx := context.Background()
-	query := `SELECT "id", "identity", "user_id", "status", "data", "roles", "updated_at", "created_at" FROM "auth"."identity" WHERE id = $1`
+	query := `SELECT "id", "identity", "account_id", "status", "data", "updated_at", "created_at", "type" FROM "auth"."identity" WHERE id = $1`
 	row := f.db.QueryRow(ctx, query,
 		c.entity.ID,
 	)
@@ -147,12 +147,12 @@ func (f *IdentityFixture) PullUpdates(tb testing.TB) *IdentityFixture {
 	err := row.Scan(
 		&c.entity.ID,
 		&c.entity.Identity,
-		&c.entity.UserID,
+		&c.entity.AccountID,
 		&c.entity.Status,
 		&c.entity.Data,
-		&c.entity.Roles,
 		&c.entity.UpdatedAt,
 		&c.entity.CreatedAt,
+		&c.entity.Type,
 	)
 	if err != nil {
 		tb.Fatalf("failed to actualize data Identity: %v", err)
@@ -165,12 +165,12 @@ func (f *IdentityFixture) PushUpdates(tb testing.TB) *IdentityFixture {
 	query := `
         UPDATE "auth"."identity" SET 
             "identity" = $2,
-            "user_id" = $3,
+            "account_id" = $3,
             "status" = $4,
             "data" = $5,
-            "roles" = $6,
-            "updated_at" = $7,
-            "created_at" = $8
+            "updated_at" = $6,
+            "created_at" = $7,
+            "type" = $8
         WHERE "id" = $1
         `
 	_, err := f.db.Exec(
@@ -178,12 +178,12 @@ func (f *IdentityFixture) PushUpdates(tb testing.TB) *IdentityFixture {
 		query,
 		f.entity.ID,
 		f.entity.Identity,
-		f.entity.UserID,
+		f.entity.AccountID,
 		f.entity.Status,
 		f.entity.Data,
-		f.entity.Roles,
 		f.entity.UpdatedAt,
 		f.entity.CreatedAt,
+		f.entity.Type,
 	)
 	if err != nil {
 		tb.Fatalf("failed to push the data Identity: %v", err)

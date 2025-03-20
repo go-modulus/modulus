@@ -29,9 +29,9 @@ func (f *CredentialFixture) Hash(hash string) *CredentialFixture {
 	return c
 }
 
-func (f *CredentialFixture) IdentityID(identityID uuid.UUID) *CredentialFixture {
+func (f *CredentialFixture) AccountID(accountID uuid.UUID) *CredentialFixture {
 	c := f.clone()
-	c.entity.IdentityID = identityID
+	c.entity.AccountID = accountID
 	return c
 }
 
@@ -62,20 +62,20 @@ func (f *CredentialFixture) clone() *CredentialFixture {
 
 func (f *CredentialFixture) save(ctx context.Context) error {
 	query := `INSERT INTO "auth"."credential"
-            ("hash", "identity_id", "type", "expired_at", "created_at")
+            ("hash", "account_id", "type", "expired_at", "created_at")
             VALUES ($1, $2, $3, $4, $5)
-            RETURNING "hash", "identity_id", "type", "expired_at", "created_at"
+            RETURNING "hash", "account_id", "type", "expired_at", "created_at"
         `
 	row := f.db.QueryRow(ctx, query,
 		f.entity.Hash,
-		f.entity.IdentityID,
+		f.entity.AccountID,
 		f.entity.Type,
 		f.entity.ExpiredAt,
 		f.entity.CreatedAt,
 	)
 	err := row.Scan(
 		&f.entity.Hash,
-		&f.entity.IdentityID,
+		&f.entity.AccountID,
 		&f.entity.Type,
 		&f.entity.ExpiredAt,
 		&f.entity.CreatedAt,
@@ -116,14 +116,14 @@ func (f *CredentialFixture) Cleanup(tb testing.TB) *CredentialFixture {
 func (f *CredentialFixture) PullUpdates(tb testing.TB) *CredentialFixture {
 	c := f.clone()
 	ctx := context.Background()
-	query := `SELECT "hash", "identity_id", "type", "expired_at", "created_at" FROM "auth"."credential" WHERE hash = $1`
+	query := `SELECT "hash", "account_id", "type", "expired_at", "created_at" FROM "auth"."credential" WHERE hash = $1`
 	row := f.db.QueryRow(ctx, query,
 		c.entity.Hash,
 	)
 
 	err := row.Scan(
 		&c.entity.Hash,
-		&c.entity.IdentityID,
+		&c.entity.AccountID,
 		&c.entity.Type,
 		&c.entity.ExpiredAt,
 		&c.entity.CreatedAt,
@@ -138,7 +138,7 @@ func (f *CredentialFixture) PushUpdates(tb testing.TB) *CredentialFixture {
 	c := f.clone()
 	query := `
         UPDATE "auth"."credential" SET 
-            "identity_id" = $2,
+            "account_id" = $2,
             "type" = $3,
             "expired_at" = $4,
             "created_at" = $5
@@ -148,7 +148,7 @@ func (f *CredentialFixture) PushUpdates(tb testing.TB) *CredentialFixture {
 		context.Background(),
 		query,
 		f.entity.Hash,
-		f.entity.IdentityID,
+		f.entity.AccountID,
 		f.entity.Type,
 		f.entity.ExpiredAt,
 		f.entity.CreatedAt,

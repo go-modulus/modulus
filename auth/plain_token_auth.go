@@ -23,17 +23,20 @@ type TokenPair struct {
 }
 
 type PlainTokenAuthenticator struct {
+	accountRepository  repository.AccountRepository
 	tokenRepository    repository.TokenRepository
 	identityRepository repository.IdentityRepository
 	config             ModuleConfig
 }
 
 func NewPlainTokenAuthenticator(
+	accountRepository repository.AccountRepository,
 	tokenRepository repository.TokenRepository,
 	identityRepository repository.IdentityRepository,
 	config ModuleConfig,
 ) *PlainTokenAuthenticator {
 	return &PlainTokenAuthenticator{
+		accountRepository:  accountRepository,
 		tokenRepository:    tokenRepository,
 		identityRepository: identityRepository,
 		config:             config,
@@ -61,7 +64,7 @@ func (a *PlainTokenAuthenticator) Authenticate(ctx context.Context, token string
 	}
 
 	return Performer{
-		ID:        accessToken.UserID,
+		ID:        accessToken.AccountID,
 		SessionID: accessToken.SessionID,
 		Roles:     accessToken.Roles,
 	}, nil
@@ -197,12 +200,18 @@ func (a *PlainTokenAuthenticator) createAccessToken(
 		err = errtrace.Wrap(errors.WithCause(ErrCannotCreateAccessToken, err))
 		return
 	}
+
+	account, err := a.accountRepository.Get(ctx, identity.AccountID)
+	if err != nil {
+		err = errtrace.Wrap(err)
+		return
+	}
+
 	accessToken, err = a.tokenRepository.CreateAccessToken(
 		ctx,
 		accessTokenStr,
 		identity.ID,
-		identity.UserID,
-		identity.Roles,
+		account.Roles,
 		sessionID,
 		additionalData,
 		time.Now().Add(a.config.AccessTokenTTL),

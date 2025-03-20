@@ -13,14 +13,14 @@ import (
 )
 
 const createAccessToken = `-- name: CreateAccessToken :one
-INSERT INTO auth.access_token (hash, identity_id, session_id, user_id, roles, data, expires_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING hash, identity_id, session_id, user_id, roles, data, revoked_at, expires_at, created_at`
+INSERT INTO auth.access_token (hash, identity_id, session_id, account_id, roles, data, expires_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING hash, identity_id, session_id, account_id, roles, data, revoked_at, expires_at, created_at`
 
 type CreateAccessTokenParams struct {
 	Hash       string    `db:"hash" json:"hash"`
 	IdentityID uuid.UUID `db:"identity_id" json:"identityId"`
 	SessionID  uuid.UUID `db:"session_id" json:"sessionId"`
-	UserID     uuid.UUID `db:"user_id" json:"userId"`
+	AccountID  uuid.UUID `db:"account_id" json:"accountId"`
 	Roles      []string  `db:"roles" json:"roles"`
 	Data       []byte    `db:"data" json:"data"`
 	ExpiresAt  time.Time `db:"expires_at" json:"expiresAt"`
@@ -31,7 +31,7 @@ func (q *Queries) CreateAccessToken(ctx context.Context, arg CreateAccessTokenPa
 		arg.Hash,
 		arg.IdentityID,
 		arg.SessionID,
-		arg.UserID,
+		arg.AccountID,
 		arg.Roles,
 		arg.Data,
 		arg.ExpiresAt,
@@ -41,7 +41,7 @@ func (q *Queries) CreateAccessToken(ctx context.Context, arg CreateAccessTokenPa
 		&i.Hash,
 		&i.IdentityID,
 		&i.SessionID,
-		&i.UserID,
+		&i.AccountID,
 		&i.Roles,
 		&i.Data,
 		&i.RevokedAt,
@@ -67,19 +67,19 @@ func (q *Queries) ExpireSessionAccessTokens(ctx context.Context, arg ExpireSessi
 	return err
 }
 
-const getAccessTokenByHash = `-- name: GetAccessTokenByHash :one
-SELECT hash, identity_id, session_id, user_id, roles, data, revoked_at, expires_at, created_at
+const findAccessTokenByHash = `-- name: FindAccessTokenByHash :one
+SELECT hash, identity_id, session_id, account_id, roles, data, revoked_at, expires_at, created_at
 FROM auth.access_token
 WHERE hash = $1`
 
-func (q *Queries) GetAccessTokenByHash(ctx context.Context, hash string) (AccessToken, error) {
-	row := q.db.QueryRow(ctx, getAccessTokenByHash, hash)
+func (q *Queries) FindAccessTokenByHash(ctx context.Context, hash string) (AccessToken, error) {
+	row := q.db.QueryRow(ctx, findAccessTokenByHash, hash)
 	var i AccessToken
 	err := row.Scan(
 		&i.Hash,
 		&i.IdentityID,
 		&i.SessionID,
-		&i.UserID,
+		&i.AccountID,
 		&i.Roles,
 		&i.Data,
 		&i.RevokedAt,
@@ -89,14 +89,14 @@ func (q *Queries) GetAccessTokenByHash(ctx context.Context, hash string) (Access
 	return i, err
 }
 
-const getUserNotRevokedSessionIds = `-- name: GetUserNotRevokedSessionIds :many
+const findAccountNotRevokedSessionIds = `-- name: FindAccountNotRevokedSessionIds :many
 SELECT session_id
 FROM auth.access_token
 WHERE revoked_at IS NULL
-  AND user_id = $1`
+  AND account_id = $1`
 
-func (q *Queries) GetUserNotRevokedSessionIds(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, getUserNotRevokedSessionIds, userID)
+func (q *Queries) FindAccountNotRevokedSessionIds(ctx context.Context, accountID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, findAccountNotRevokedSessionIds, accountID)
 	if err != nil {
 		return nil, err
 	}
@@ -125,6 +125,16 @@ func (q *Queries) RevokeAccessToken(ctx context.Context, hash string) error {
 	return err
 }
 
+const revokeAccountAccessTokens = `-- name: RevokeAccountAccessTokens :exec
+UPDATE auth.access_token
+SET revoked_at = now()
+WHERE account_id = $1 AND revoked_at IS NULL`
+
+func (q *Queries) RevokeAccountAccessTokens(ctx context.Context, accountID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, revokeAccountAccessTokens, accountID)
+	return err
+}
+
 const revokeSessionAccessTokens = `-- name: RevokeSessionAccessTokens :exec
 UPDATE auth.access_token
 SET revoked_at = now()
@@ -132,15 +142,5 @@ WHERE session_id = $1 AND revoked_at IS NULL`
 
 func (q *Queries) RevokeSessionAccessTokens(ctx context.Context, sessionID uuid.UUID) error {
 	_, err := q.db.Exec(ctx, revokeSessionAccessTokens, sessionID)
-	return err
-}
-
-const revokeUserAccessTokens = `-- name: RevokeUserAccessTokens :exec
-UPDATE auth.access_token
-SET revoked_at = now()
-WHERE user_id = $1 AND revoked_at IS NULL`
-
-func (q *Queries) RevokeUserAccessTokens(ctx context.Context, userID uuid.UUID) error {
-	_, err := q.db.Exec(ctx, revokeUserAccessTokens, userID)
 	return err
 }

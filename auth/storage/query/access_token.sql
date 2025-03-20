@@ -1,8 +1,8 @@
 -- name: CreateAccessToken :one
-INSERT INTO auth.access_token (hash, identity_id, session_id, user_id, roles, data, expires_at)
+INSERT INTO auth.access_token (hash, identity_id, session_id, account_id, roles, data, expires_at)
 VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *;
 
--- name: GetAccessTokenByHash :one
+-- name: FindAccessTokenByHash :one
 SELECT *
 FROM auth.access_token
 WHERE hash = $1;
@@ -17,16 +17,16 @@ UPDATE auth.access_token
 SET revoked_at = now()
 WHERE session_id = $1 AND revoked_at IS NULL;
 
--- name: RevokeUserAccessTokens :exec
+-- name: RevokeAccountAccessTokens :exec
 UPDATE auth.access_token
 SET revoked_at = now()
-WHERE user_id = $1 AND revoked_at IS NULL;
+WHERE account_id = $1 AND revoked_at IS NULL;
 
--- name: GetUserNotRevokedSessionIds :many
+-- name: FindAccountNotRevokedSessionIds :many
 SELECT session_id
 FROM auth.access_token
 WHERE revoked_at IS NULL
-  AND user_id = $1;
+  AND account_id = $1;
 
 -- name: ExpireSessionAccessTokens :exec
 UPDATE auth.access_token

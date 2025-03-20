@@ -28,9 +28,9 @@ func (f *SessionFixture) ID(iD uuid.UUID) *SessionFixture {
 	return c
 }
 
-func (f *SessionFixture) UserID(userID uuid.UUID) *SessionFixture {
+func (f *SessionFixture) AccountID(accountID uuid.UUID) *SessionFixture {
 	c := f.clone()
-	c.entity.UserID = userID
+	c.entity.AccountID = accountID
 	return c
 }
 
@@ -67,13 +67,13 @@ func (f *SessionFixture) clone() *SessionFixture {
 
 func (f *SessionFixture) save(ctx context.Context) error {
 	query := `INSERT INTO "auth"."session"
-            ("id", "user_id", "identity_id", "data", "expires_at", "created_at")
+            ("id", "account_id", "identity_id", "data", "expires_at", "created_at")
             VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING "id", "user_id", "identity_id", "data", "expires_at", "created_at"
+            RETURNING "id", "account_id", "identity_id", "data", "expires_at", "created_at"
         `
 	row := f.db.QueryRow(ctx, query,
 		f.entity.ID,
-		f.entity.UserID,
+		f.entity.AccountID,
 		f.entity.IdentityID,
 		f.entity.Data,
 		f.entity.ExpiresAt,
@@ -81,7 +81,7 @@ func (f *SessionFixture) save(ctx context.Context) error {
 	)
 	err := row.Scan(
 		&f.entity.ID,
-		&f.entity.UserID,
+		&f.entity.AccountID,
 		&f.entity.IdentityID,
 		&f.entity.Data,
 		&f.entity.ExpiresAt,
@@ -123,14 +123,14 @@ func (f *SessionFixture) Cleanup(tb testing.TB) *SessionFixture {
 func (f *SessionFixture) PullUpdates(tb testing.TB) *SessionFixture {
 	c := f.clone()
 	ctx := context.Background()
-	query := `SELECT "id", "user_id", "identity_id", "data", "expires_at", "created_at" FROM "auth"."session" WHERE id = $1`
+	query := `SELECT "id", "account_id", "identity_id", "data", "expires_at", "created_at" FROM "auth"."session" WHERE id = $1`
 	row := f.db.QueryRow(ctx, query,
 		c.entity.ID,
 	)
 
 	err := row.Scan(
 		&c.entity.ID,
-		&c.entity.UserID,
+		&c.entity.AccountID,
 		&c.entity.IdentityID,
 		&c.entity.Data,
 		&c.entity.ExpiresAt,
@@ -146,7 +146,7 @@ func (f *SessionFixture) PushUpdates(tb testing.TB) *SessionFixture {
 	c := f.clone()
 	query := `
         UPDATE "auth"."session" SET 
-            "user_id" = $2,
+            "account_id" = $2,
             "identity_id" = $3,
             "data" = $4,
             "expires_at" = $5,
@@ -157,7 +157,7 @@ func (f *SessionFixture) PushUpdates(tb testing.TB) *SessionFixture {
 		context.Background(),
 		query,
 		f.entity.ID,
-		f.entity.UserID,
+		f.entity.AccountID,
 		f.entity.IdentityID,
 		f.entity.Data,
 		f.entity.ExpiresAt,

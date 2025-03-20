@@ -91,10 +91,10 @@ func (f *PostFixture) clone() *PostFixture {
 }
 
 func (f *PostFixture) save(ctx context.Context) error {
-	query := `INSERT INTO blog.post
-            (id, title, preview, content, status, created_at, updated_at, published_at, deleted_at, author_id)
+	query := `INSERT INTO "blog"."post"
+            ("id", "title", "preview", "content", "status", "created_at", "updated_at", "published_at", "deleted_at", "author_id")
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-            RETURNING id, title, preview, content, status, created_at, updated_at, published_at, deleted_at, author_id
+            RETURNING "id", "title", "preview", "content", "status", "created_at", "updated_at", "published_at", "deleted_at", "author_id"
         `
 	row := f.db.QueryRow(ctx, query,
 		f.entity.ID,
@@ -142,7 +142,7 @@ func (f *PostFixture) Create(tb testing.TB) *PostFixture {
 func (f *PostFixture) Cleanup(tb testing.TB) *PostFixture {
 	tb.Cleanup(
 		func() {
-			query := `DELETE FROM blog.post WHERE id = $1`
+			query := `DELETE FROM "blog"."post" WHERE id = $1`
 			_, err := f.db.Exec(context.Background(), query, f.entity.ID)
 
 			if err != nil {
@@ -156,7 +156,7 @@ func (f *PostFixture) Cleanup(tb testing.TB) *PostFixture {
 func (f *PostFixture) PullUpdates(tb testing.TB) *PostFixture {
 	c := f.clone()
 	ctx := context.Background()
-	query := `SELECT * FROM blog.post WHERE id = $1`
+	query := `SELECT "id", "title", "preview", "content", "status", "created_at", "updated_at", "published_at", "deleted_at", "author_id" FROM "blog"."post" WHERE id = $1`
 	row := f.db.QueryRow(ctx, query,
 		c.entity.ID,
 	)
@@ -182,17 +182,17 @@ func (f *PostFixture) PullUpdates(tb testing.TB) *PostFixture {
 func (f *PostFixture) PushUpdates(tb testing.TB) *PostFixture {
 	c := f.clone()
 	query := `
-        UPDATE blog.post SET 
-            title = $2,
-            preview = $3,
-            content = $4,
-            status = $5,
-            created_at = $6,
-            updated_at = $7,
-            published_at = $8,
-            deleted_at = $9,
-            author_id = $10
-        WHERE id = $1
+        UPDATE "blog"."post" SET 
+            "title" = $2,
+            "preview" = $3,
+            "content" = $4,
+            "status" = $5,
+            "created_at" = $6,
+            "updated_at" = $7,
+            "published_at" = $8,
+            "deleted_at" = $9,
+            "author_id" = $10
+        WHERE "id" = $1
         `
 	_, err := f.db.Exec(
 		context.Background(),

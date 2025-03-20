@@ -18,6 +18,11 @@ type DefaultTokenRepository struct {
 	hashStrategy hash.TokenHashStrategy
 }
 
+func (r *DefaultTokenRepository) RevokeAccountTokens(ctx context.Context, accountId uuid.UUID) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewDefaultTokenRepository(
 	db *pgxpool.Pool,
 	hashStrategy hash.TokenHashStrategy,
@@ -32,7 +37,6 @@ func (r *DefaultTokenRepository) CreateAccessToken(
 	ctx context.Context,
 	accessToken string,
 	identityId uuid.UUID,
-	userId uuid.UUID,
 	roles []string,
 	sessionId uuid.UUID,
 	data map[string]interface{},
@@ -48,12 +52,19 @@ func (r *DefaultTokenRepository) CreateAccessToken(
 		return repository.AccessToken{}, errtrace.Wrap(errors.WithCause(repository.ErrCannotCreateAccessToken, err))
 	}
 
+	ident, err := r.queries.FindIdentityById(ctx, identityId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return repository.AccessToken{}, errtrace.Wrap(repository.ErrIdentityNotFound)
+		}
+		return repository.AccessToken{}, errtrace.Wrap(err)
+	}
 	storedAccessToken, err := r.queries.CreateAccessToken(
 		ctx,
 		CreateAccessTokenParams{
 			Hash:       accessToken,
 			IdentityID: identityId,
-			UserID:     userId,
+			AccountID:  ident.AccountID,
 			Roles:      roles,
 			SessionID:  sessionId,
 			Data:       dataJson,
@@ -94,7 +105,7 @@ func (r *DefaultTokenRepository) GetRefreshToken(ctx context.Context, refreshTok
 	error,
 ) {
 	refreshToken = r.hashToken(refreshToken)
-	storedRefreshToken, err := r.queries.GetRefreshTokenByHash(ctx, refreshToken)
+	storedRefreshToken, err := r.queries.FindRefreshTokenByHash(ctx, refreshToken)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return repository.RefreshToken{}, errtrace.Wrap(repository.ErrTokenNotExist)
@@ -109,7 +120,7 @@ func (r *DefaultTokenRepository) GetAccessToken(ctx context.Context, accessToken
 	error,
 ) {
 	accessToken = r.hashToken(accessToken)
-	storedAccessToken, err := r.queries.GetAccessTokenByHash(ctx, accessToken)
+	storedAccessToken, err := r.queries.FindAccessTokenByHash(ctx, accessToken)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return repository.AccessToken{}, errtrace.Wrap(repository.ErrTokenNotExist)
@@ -180,8 +191,8 @@ func (r *DefaultTokenRepository) RevokeSessionTokens(ctx context.Context, sessio
 	return nil
 }
 
-func (r *DefaultTokenRepository) RevokeUserTokens(ctx context.Context, userId uuid.UUID) error {
-	sessionIds, err := r.queries.GetUserNotRevokedSessionIds(ctx, userId)
+func (r *DefaultTokenRepository) RevokeUserTokens(ctx context.Context, accountId uuid.UUID) error {
+	sessionIds, err := r.queries.FindAccountNotRevokedSessionIds(ctx, accountId)
 	if err != nil {
 		return errtrace.Wrap(err)
 	}
@@ -189,7 +200,7 @@ func (r *DefaultTokenRepository) RevokeUserTokens(ctx context.Context, userId uu
 	if err != nil {
 		return errtrace.Wrap(err)
 	}
-	err = r.queries.RevokeUserAccessTokens(ctx, userId)
+	err = r.queries.RevokeAccountAccessTokens(ctx, accountId)
 	if err != nil {
 		return errtrace.Wrap(err)
 	}
@@ -204,7 +215,7 @@ func (r *DefaultTokenRepository) transformAccessToken(storedAccessToken AccessTo
 	return repository.AccessToken{
 		Hash:       storedAccessToken.Hash,
 		IdentityID: storedAccessToken.IdentityID,
-		UserID:     storedAccessToken.UserID,
+		AccountID:  storedAccessToken.AccountID,
 		Roles:      storedAccessToken.Roles,
 		SessionID:  storedAccessToken.SessionID,
 		Data:       data,

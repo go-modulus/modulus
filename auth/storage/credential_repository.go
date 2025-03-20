@@ -24,18 +24,18 @@ func NewDefaultCredentialRepository(db *pgxpool.Pool) repository.CredentialRepos
 
 func (r *DefaultCredentialRepository) Create(
 	ctx context.Context,
-	identityID uuid.UUID,
-	credHash string,
-	credType string,
+	accountID uuid.UUID,
+	credentialHash string,
+	credType repository.CredentialType,
 	expiredAt *time.Time,
 ) (repository.Credential, error) {
 	expAt := null.TimeFromPtr(expiredAt)
 	cred, err := r.queries.CreateCredential(
 		ctx, CreateCredentialParams{
-			IdentityID: identityID,
-			Type:       credType,
-			Hash:       credHash,
-			ExpiredAt:  expAt,
+			AccountID: accountID,
+			Type:      string(credType),
+			Hash:      credentialHash,
+			ExpiredAt: expAt,
 		},
 	)
 
@@ -46,24 +46,28 @@ func (r *DefaultCredentialRepository) Create(
 	return r.transform(cred), nil
 }
 
+func (r *DefaultCredentialRepository) RemoveCredentials(ctx context.Context, accountID uuid.UUID) error {
+	return errtrace.Wrap(r.queries.RemoveCredentialsOfAccount(ctx, accountID))
+}
+
 func (r *DefaultCredentialRepository) transform(res Credential) repository.Credential {
 	return repository.Credential{
-		IdentityID: res.IdentityID,
-		Hash:       res.Hash,
-		Type:       res.Type,
-		ExpiredAt:  res.ExpiredAt,
+		AccountID: res.AccountID,
+		Hash:      res.Hash,
+		Type:      repository.CredentialType(res.Type),
+		ExpiredAt: res.ExpiredAt,
 	}
 }
 
 func (r *DefaultCredentialRepository) GetLast(
 	ctx context.Context,
-	identityID uuid.UUID,
+	accountID uuid.UUID,
 	credType string,
 ) (repository.Credential, error) {
 	res, err := r.queries.FindLastCredentialOfType(
 		ctx, FindLastCredentialOfTypeParams{
-			IdentityID: identityID,
-			Type:       credType,
+			AccountID: accountID,
+			Type:      credType,
 		},
 	)
 	if err != nil {

@@ -980,14 +980,31 @@ func NewRegisterUser(
 
 func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (storage.User, error) {
 	...
-	_, err = r.passwordAuth.Register(
+	// register the new account with identity 
+	// it also creates a new identity for this account
+	account, err := r.passwordAuth.Register(
         ctx,
         input.Email,
         input.Password,
-        user.ID,
-		// the authenticated user role that will be used in the future
+        // type of the created identity
+        repository.IdentityTypeEmail,
+        // the authenticated user role that will be used in the future
         []string{"user"},
-        nil, 
+        nil,
+    )
+    if err != nil {
+        return storage.User{}, errtrace.Wrap(err)
+    }
+    user, err := r.userDb.RegisterUser(
+        ctx, storage.RegisterUserParams{
+			// store somewhere the ID of created account. It will be used in the future authentication requests as a Performer.ID field
+			// it is a good idea to store the ID of the account as a primary key of the user table
+			// it will be relation 1:1 between the account and the user
+            ID:    account.ID,
+			// store data or the registered user
+            Email: input.Email,
+            Name:  input.Name,
+        },
     )
     if err != nil {
         return storage.User{}, errtrace.Wrap(err)

@@ -25,11 +25,11 @@ func (f *FixturesFactory) Credential() *CredentialFixture {
 	hash := base64.StdEncoding.EncodeToString(id.Bytes())[:16]
 	return NewCredentialFixture(
 		f.db, storage.Credential{
-			IdentityID: uuid.Must(uuid.NewV6()),
-			Hash:       hash,
-			Type:       string(repository.CredentialTypePassword),
-			ExpiredAt:  null.Time{},
-			CreatedAt:  time.Now(),
+			AccountID: uuid.Must(uuid.NewV6()),
+			Hash:      hash,
+			Type:      string(repository.CredentialTypePassword),
+			ExpiredAt: null.Time{},
+			CreatedAt: time.Now(),
 		},
 	)
 }
@@ -40,12 +40,12 @@ func (f *FixturesFactory) Identity() *IdentityFixture {
 		f.db, storage.Identity{
 			ID:        id,
 			Identity:  "test" + id.String(),
-			UserID:    uuid.Must(uuid.NewV6()),
-			Roles:     []string{},
+			AccountID: uuid.Must(uuid.NewV6()),
 			Status:    storage.IdentityStatusActive,
 			Data:      nil,
 			UpdatedAt: time.Now(),
 			CreatedAt: time.Now(),
+			Type:      "test",
 		},
 	)
 }
@@ -74,7 +74,7 @@ func (f *FixturesFactory) AccessToken() *AccessTokenFixture {
 			Hash:       hash,
 			IdentityID: uuid.Must(uuid.NewV6()),
 			SessionID:  uuid.Must(uuid.NewV6()),
-			UserID:     uuid.Must(uuid.NewV6()),
+			AccountID:  uuid.Must(uuid.NewV6()),
 			Roles:      []string{},
 			Data:       nil,
 			RevokedAt:  null.Time{},
@@ -88,11 +88,23 @@ func (f *FixturesFactory) Session() *SessionFixture {
 	return NewSessionFixture(
 		f.db, storage.Session{
 			ID:         uuid.Must(uuid.NewV6()),
-			UserID:     uuid.Must(uuid.NewV6()),
+			AccountID:  uuid.Must(uuid.NewV6()),
 			IdentityID: uuid.Must(uuid.NewV6()),
 			Data:       nil,
 			ExpiresAt:  time.Now().Add(time.Hour),
 			CreatedAt:  time.Now(),
+		},
+	)
+}
+
+func (f *FixturesFactory) Account() *AccountFixture {
+	return NewAccountFixture(
+		f.db, storage.Account{
+			ID:        uuid.Must(uuid.NewV6()),
+			Status:    "active",
+			Roles:     []string{"test"},
+			UpdatedAt: time.Now(),
+			CreatedAt: time.Now(),
 		},
 	)
 }
