@@ -24,9 +24,9 @@ type StorageConfig struct {
 }
 
 type InstallStorageTmplVars struct {
-	Config      StorageConfig
-	Module      module.ManifestModule
-	StoragePath string
+	Config         StorageConfig
+	Module         module.ManifestModule
+	StoragePackage string
 }
 
 type InstallStorage struct {
@@ -70,9 +70,9 @@ func (c *InstallStorage) Install(ctx context.Context, md module.ManifestModule, 
 	}
 
 	vars := InstallStorageTmplVars{
-		Config:      cfg,
-		Module:      md,
-		StoragePath: storagePath,
+		Config:         cfg,
+		Module:         md,
+		StoragePackage: md.StoragePackage(),
 	}
 	err = c.addFilesOfModule(vars, storagePath, cfg.ProjPath)
 	if err != nil {
@@ -117,7 +117,7 @@ func (c *InstallStorage) addFilesOfModule(
 	}
 	w.Flush()
 
-	err = os.WriteFile(vars.StoragePath+"/sqlc.tmpl.yaml", b.Bytes(), 0644)
+	err = os.WriteFile(storagePath+"/sqlc.tmpl.yaml", b.Bytes(), 0644)
 	if err != nil {
 		fmt.Println(color.RedString("Cannot write a storage tmpl file: %s", err.Error()))
 		return err

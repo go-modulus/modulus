@@ -40,5 +40,17 @@ sqlc-tmpl:
           options:
             <<: *codegen-graphql-options
             default_schema: "schema"
-            package: "/tmp/testproj-storage/mypckg/storage"
+            package: "mypckg/storage"
+        
+        - <<: *codegen-fixture
+          options:
+            <<: *codegen-fixture-options
+            default_schema: "schema"
+            model_import: "mypckg/storage"
+        
+        - <<: *codegen-dataloader
+          options:
+            <<: *codegen-dataloader-options
+            default_schema: "schema"
+            model_import: "mypckg/storage"
         

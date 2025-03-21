@@ -326,9 +326,23 @@ sql:
             default_schema: schema
             emit_all_enum_values: true
             gen_common_parts: false
-            package: /tmp/testproj-storage/mypckg/storage
+            package: mypckg/storage
           out: ../graphql
           plugin: graphql
+        - options:
+            default_schema: schema
+            model_import: mypckg/storage
+            package: fixture
+            sql_package: pgx/v5
+          out: ./
+          plugin: fixture
+        - options:
+            default_schema: schema
+            model_import: mypckg/storage
+            package: dataloader
+            sql_package: pgx/v5
+          out: ./
+          plugin: dataloader
       engine: postgresql
       queries: query
       schema: migration

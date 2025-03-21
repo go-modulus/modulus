@@ -247,7 +247,7 @@ func (c *Create) getFeatures(ctx *cli.Context) (res features) {
 	}
 	if len(items) != 0 && !ctx.Bool("silent") {
 		for _, item := range items {
-			val, err := c.askYesNo("Do you want to install the " + item.name + " feature? " + item.description)
+			val, err := c.askYesNo("Do you want to install the " + item.name + " feature?")
 			if err != nil {
 				return
 			}

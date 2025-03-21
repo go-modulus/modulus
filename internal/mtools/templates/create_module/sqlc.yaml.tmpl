@@ -55,8 +55,20 @@ sqlc-tmpl:
           options:
             <<: *codegen-graphql-options
             default_schema: "{{ .Config.Schema }}"
-            package: "{{ .StoragePath }}"
+            package: "{{ .StoragePackage }}"
         {{ end -}}
-
-
+        {{- if .Config.GenerateFixture }}
+        - <<: *codegen-fixture
+          options:
+            <<: *codegen-fixture-options
+            default_schema: "{{ .Config.Schema }}"
+            model_import: "{{ .StoragePackage }}"
+        {{ end -}}
+        {{- if .Config.GenerateDataloader }}
+        - <<: *codegen-dataloader
+          options:
+            <<: *codegen-dataloader-options
+            default_schema: "{{ .Config.Schema }}"
+            model_import: "{{ .StoragePackage }}"
+        {{ end -}}
 {{ end }}
