@@ -35,13 +35,14 @@ func (r *DefaultIdentityRepository) Create(
 		return repository.Identity{}, errtrace.Wrap(err)
 	}
 	id := uuid.Must(uuid.NewV6())
-	if additionalData == nil {
-		additionalData = make(map[string]interface{})
+	var dataVal []byte
+	if len(additionalData) > 0 {
+		dataVal, err = json.Marshal(additionalData)
+		if err != nil {
+			return repository.Identity{}, errtrace.Wrap(err)
+		}
 	}
-	dataVal, err := json.Marshal(additionalData)
-	if err != nil {
-		return repository.Identity{}, errtrace.Wrap(err)
-	}
+
 	storedIdentity, err := r.queries.CreateIdentity(
 		ctx, CreateIdentityParams{
 			ID:        id,
@@ -109,6 +110,7 @@ func (r *DefaultIdentityRepository) Transform(
 		AccountID: identity.AccountID,
 		Status:    repository.IdentityStatus(identity.Status),
 		Data:      data,
+		Type:      repository.IdentityType(identity.Type),
 	}
 }
 

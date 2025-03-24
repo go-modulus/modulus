@@ -36,11 +36,17 @@ func (r *DefaultAccountRepository) Create(
 		return repository.Account{}, errtrace.Wrap(err)
 	}
 
-	data, err := json.Marshal(userInfo)
-	if err != nil {
-		return repository.Account{}, errtrace.Wrap(errors.WithCause(repository.ErrCannotCreateAccount, err))
+	var data []byte
+	if len(userInfo) > 0 {
+		data, err = json.Marshal(userInfo)
+		if err != nil {
+			return repository.Account{}, errtrace.Wrap(err)
+		}
 	}
 
+	if roles == nil {
+		roles = []string{}
+	}
 	storedAccount, err := r.queries.RegisterAccount(
 		ctx, RegisterAccountParams{
 			ID:    ID,
@@ -118,10 +124,15 @@ func (r *DefaultAccountRepository) BlockAccount(ctx context.Context, ID uuid.UUI
 func (r *DefaultAccountRepository) Transform(
 	account Account,
 ) repository.Account {
+	var data map[string]interface{}
+	if err := json.Unmarshal(account.Data, &data); err != nil {
+		data = make(map[string]interface{})
+	}
 	return repository.Account{
 		ID:     account.ID,
 		Roles:  account.Roles,
 		Status: repository.AccountStatus(account.Status),
+		Data:   data,
 	}
 }
 

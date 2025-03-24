@@ -11,9 +11,10 @@ var ErrAccountNotFound = errors.New("account not found")
 var ErrCannotCreateAccount = errors.New("cannot create account")
 
 type Account struct {
-	ID     uuid.UUID     `db:"id" json:"id"`
-	Roles  []string      `db:"roles" json:"roles"`
-	Status AccountStatus `db:"status" json:"status"`
+	ID     uuid.UUID              `db:"id" json:"id"`
+	Roles  []string               `db:"roles" json:"roles"`
+	Status AccountStatus          `db:"status" json:"status"`
+	Data   map[string]interface{} `db:"data" json:"data"`
 }
 
 func (i Account) IsBlocked() bool {
