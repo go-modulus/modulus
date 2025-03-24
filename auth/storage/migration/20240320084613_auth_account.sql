@@ -21,6 +21,7 @@ CREATE TABLE auth.account
     id         uuid PRIMARY KEY,
     status     auth.account_status NOT NULL DEFAULT 'active'::auth.account_status,
     roles      text[]              NOT NULL DEFAULT '{}',
+    data       jsonb,
     updated_at timestamptz         NOT NULL DEFAULT NOW(),
     created_at timestamptz         NOT NULL DEFAULT NOW()
 );

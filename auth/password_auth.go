@@ -68,7 +68,7 @@ func (a *PasswordAuthenticator) Authenticate(ctx context.Context, identity, pass
 }
 
 // Register registers a new user account with the given identity and password.
-// In the additionalData, you can pass any additional data you want to store (e.g. IP, unregistered user token from frontend, etc.).
+// In the userInfo, you can pass any additional data you want to store (e.g. IP, unregistered user token from frontend, name, date of birth, etc.).
 // It returns the performer of the registered user.
 //
 // Errors:
@@ -82,7 +82,7 @@ func (a *PasswordAuthenticator) Register(
 	password string,
 	identityType repository.IdentityType,
 	roles []string,
-	additionalData map[string]interface{},
+	userInfo map[string]interface{},
 ) (repository.Account, error) {
 	identityObj, err := a.identityRepository.Get(ctx, identity)
 	if err == nil {
@@ -99,12 +99,12 @@ func (a *PasswordAuthenticator) Register(
 		return repository.Account{}, errtrace.Wrap(err)
 	}
 
-	account, err := a.accountRepository.Create(ctx, accountID)
+	account, err := a.accountRepository.Create(ctx, accountID, roles, userInfo)
 	if err != nil {
 		return repository.Account{}, errtrace.Wrap(err)
 	}
 
-	identityObj, err = a.identityRepository.Create(ctx, identity, accountID, identityType, additionalData)
+	identityObj, err = a.identityRepository.Create(ctx, identity, accountID, identityType, nil)
 	if err != nil {
 		return repository.Account{}, errtrace.Wrap(err)
 	}

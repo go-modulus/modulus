@@ -30,18 +30,24 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 			savedIdentity := fixtureFactory.Identity().AccountID(account.ID).PullUpdatesLastAccountIdentity(t).CleanupAllOfAccount(t).GetEntity()
 			fixtureFactory.Credential().AccountID(account.ID).CleanupAllOfAccount(t)
 
+			var data map[string]interface{}
+			errJson := json.Unmarshal(savedAccount.Data, &data)
+
 			t.Log("When the account is registered")
 			t.Log("	Then the account is returned")
 			require.NoError(t, err)
 			require.Equal(t, repository.AccountStatusActive, account.Status)
 
-			t.Log("	And the account is saved")
+			t.Log("	And the identity is saved")
 			require.Equal(t, "user", savedIdentity.Identity)
 			require.Equal(t, storage.IdentityStatusActive, savedIdentity.Status)
+			require.NoError(t, errJson)
+			require.Empty(t, data)
 
 			t.Log("	And the account is created")
 			require.Equal(t, account.ID, savedAccount.ID)
 			require.Equal(t, storage.AccountStatusActive, savedAccount.Status)
+			require.Len(t, savedAccount.Roles, 0)
 		},
 	)
 
@@ -53,7 +59,7 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 				"user1",
 				"password",
 				repository.IdentityTypeNickname,
-				[]string{},
+				[]string{"test-role"},
 				map[string]interface{}{
 					"key": "value",
 				},
@@ -65,7 +71,7 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 			fixtureFactory.Identity().AccountID(account.ID).CleanupAllOfAccount(t)
 
 			var data map[string]interface{}
-			errUnmarshal := json.Unmarshal(savedIdentity.Data, &data)
+			errUnmarshal := json.Unmarshal(savedAccount.Data, &data)
 
 			t.Log("When the account is registered")
 			t.Log("	Then the account is returned")
@@ -81,6 +87,8 @@ func TestPasswordAuthenticator_Register(t *testing.T) {
 			t.Log("	And the account is created")
 			require.Equal(t, account.ID, savedAccount.ID)
 			require.Equal(t, storage.AccountStatusActive, savedAccount.Status)
+			require.Len(t, savedAccount.Roles, 1)
+			require.Equal(t, "test-role", savedAccount.Roles[0])
 		},
 	)
 

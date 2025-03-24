@@ -29,13 +29,17 @@ const (
 
 type AccountRepository interface {
 	// Create creates a single new authorization account for the user.
+	// If the account already exists, it returns github.com/go-modulus/modulus/repository.ErrAccountExists.
+	// userInfo is a map of additional data to store with the account (e.g. name, phone, IP address, etc.).
 	Create(
 		ctx context.Context,
 		ID uuid.UUID,
+		roles []string,
+		userInfo map[string]interface{},
 	) (Account, error)
 
 	// Get returns the account by its ID.
-	// If the identity does not exist, it returns github.com/go-modulus/modulus/auth.ErrAccountNotFound.
+	// If the identity does not exist, it returns github.com/go-modulus/modulus/repository.ErrAccountNotFound.
 	Get(
 		ctx context.Context,
 		ID uuid.UUID,

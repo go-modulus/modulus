@@ -1,6 +1,6 @@
 -- name: RegisterAccount :one
-INSERT INTO auth.account (id)
-VALUES ($1) RETURNING *;
+INSERT INTO auth.account (id, "roles", "data")
+VALUES (@id, @roles::text[], @data) RETURNING *;
 
 -- name: FindAccount :one
 SELECT *

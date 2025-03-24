@@ -40,6 +40,12 @@ func (f *AccountFixture) Roles(roles []string) *AccountFixture {
 	return c
 }
 
+func (f *AccountFixture) Data(data []byte) *AccountFixture {
+	c := f.clone()
+	c.entity.Data = data
+	return c
+}
+
 func (f *AccountFixture) UpdatedAt(updatedAt time.Time) *AccountFixture {
 	c := f.clone()
 	c.entity.UpdatedAt = updatedAt
@@ -61,14 +67,15 @@ func (f *AccountFixture) clone() *AccountFixture {
 
 func (f *AccountFixture) save(ctx context.Context) error {
 	query := `INSERT INTO "auth"."account"
-            ("id", "status", "roles", "updated_at", "created_at")
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING "id", "status", "roles", "updated_at", "created_at"
+            ("id", "status", "roles", "data", "updated_at", "created_at")
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING "id", "status", "roles", "data", "updated_at", "created_at"
         `
 	row := f.db.QueryRow(ctx, query,
 		f.entity.ID,
 		f.entity.Status,
 		f.entity.Roles,
+		f.entity.Data,
 		f.entity.UpdatedAt,
 		f.entity.CreatedAt,
 	)
@@ -76,6 +83,7 @@ func (f *AccountFixture) save(ctx context.Context) error {
 		&f.entity.ID,
 		&f.entity.Status,
 		&f.entity.Roles,
+		&f.entity.Data,
 		&f.entity.UpdatedAt,
 		&f.entity.CreatedAt,
 	)
@@ -115,7 +123,7 @@ func (f *AccountFixture) Cleanup(tb testing.TB) *AccountFixture {
 func (f *AccountFixture) PullUpdates(tb testing.TB) *AccountFixture {
 	c := f.clone()
 	ctx := context.Background()
-	query := `SELECT "id", "status", "roles", "updated_at", "created_at" FROM "auth"."account" WHERE id = $1`
+	query := `SELECT "id", "status", "roles", "data", "updated_at", "created_at" FROM "auth"."account" WHERE id = $1`
 	row := f.db.QueryRow(ctx, query,
 		c.entity.ID,
 	)
@@ -124,6 +132,7 @@ func (f *AccountFixture) PullUpdates(tb testing.TB) *AccountFixture {
 		&c.entity.ID,
 		&c.entity.Status,
 		&c.entity.Roles,
+		&c.entity.Data,
 		&c.entity.UpdatedAt,
 		&c.entity.CreatedAt,
 	)
@@ -139,8 +148,9 @@ func (f *AccountFixture) PushUpdates(tb testing.TB) *AccountFixture {
         UPDATE "auth"."account" SET 
             "status" = $2,
             "roles" = $3,
-            "updated_at" = $4,
-            "created_at" = $5
+            "data" = $4,
+            "updated_at" = $5,
+            "created_at" = $6
         WHERE "id" = $1
         `
 	_, err := f.db.Exec(
@@ -149,6 +159,7 @@ func (f *AccountFixture) PushUpdates(tb testing.TB) *AccountFixture {
 		f.entity.ID,
 		f.entity.Status,
 		f.entity.Roles,
+		f.entity.Data,
 		f.entity.UpdatedAt,
 		f.entity.CreatedAt,
 	)

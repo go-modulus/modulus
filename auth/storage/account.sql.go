@@ -37,7 +37,7 @@ func (q *Queries) BlockAccount(ctx context.Context, id uuid.UUID) error {
 }
 
 const findAccount = `-- name: FindAccount :one
-SELECT id, status, roles, updated_at, created_at
+SELECT id, status, roles, data, updated_at, created_at
 FROM auth.account
 WHERE id = $1`
 
@@ -48,6 +48,7 @@ func (q *Queries) FindAccount(ctx context.Context, id uuid.UUID) (Account, error
 		&i.ID,
 		&i.Status,
 		&i.Roles,
+		&i.Data,
 		&i.UpdatedAt,
 		&i.CreatedAt,
 	)
@@ -55,16 +56,23 @@ func (q *Queries) FindAccount(ctx context.Context, id uuid.UUID) (Account, error
 }
 
 const registerAccount = `-- name: RegisterAccount :one
-INSERT INTO auth.account (id)
-VALUES ($1) RETURNING id, status, roles, updated_at, created_at`
+INSERT INTO auth.account (id, "roles", "data")
+VALUES ($1, $2::text[], $3) RETURNING id, status, roles, data, updated_at, created_at`
 
-func (q *Queries) RegisterAccount(ctx context.Context, id uuid.UUID) (Account, error) {
-	row := q.db.QueryRow(ctx, registerAccount, id)
+type RegisterAccountParams struct {
+	ID    uuid.UUID `db:"id" json:"id"`
+	Roles []string  `db:"roles" json:"roles"`
+	Data  []byte    `db:"data" json:"data"`
+}
+
+func (q *Queries) RegisterAccount(ctx context.Context, arg RegisterAccountParams) (Account, error) {
+	row := q.db.QueryRow(ctx, registerAccount, arg.ID, arg.Roles, arg.Data)
 	var i Account
 	err := row.Scan(
 		&i.ID,
 		&i.Status,
 		&i.Roles,
+		&i.Data,
 		&i.UpdatedAt,
 		&i.CreatedAt,
 	)

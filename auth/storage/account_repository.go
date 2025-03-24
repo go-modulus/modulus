@@ -3,6 +3,7 @@ package storage
 import (
 	"braces.dev/errtrace"
 	"context"
+	"encoding/json"
 	"github.com/go-modulus/modulus/auth/repository"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/gofrs/uuid"
@@ -22,7 +23,12 @@ func NewDefaultAccountRepository(db *pgxpool.Pool) repository.AccountRepository 
 	}
 }
 
-func (r *DefaultAccountRepository) Create(ctx context.Context, ID uuid.UUID) (repository.Account, error) {
+func (r *DefaultAccountRepository) Create(
+	ctx context.Context,
+	ID uuid.UUID,
+	roles []string,
+	userInfo map[string]interface{},
+) (repository.Account, error) {
 	_, err := r.Get(ctx, ID)
 	if err == nil {
 		return repository.Account{}, repository.ErrAccountExists
@@ -30,8 +36,17 @@ func (r *DefaultAccountRepository) Create(ctx context.Context, ID uuid.UUID) (re
 		return repository.Account{}, errtrace.Wrap(err)
 	}
 
+	data, err := json.Marshal(userInfo)
+	if err != nil {
+		return repository.Account{}, errtrace.Wrap(errors.WithCause(repository.ErrCannotCreateAccount, err))
+	}
+
 	storedAccount, err := r.queries.RegisterAccount(
-		ctx, ID,
+		ctx, RegisterAccountParams{
+			ID:    ID,
+			Roles: roles,
+			Data:  data,
+		},
 	)
 
 	if err != nil {

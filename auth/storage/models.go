@@ -129,6 +129,7 @@ type Account struct {
 	ID        uuid.UUID     `db:"id" json:"id"`
 	Status    AccountStatus `db:"status" json:"status"`
 	Roles     []string      `db:"roles" json:"roles"`
+	Data      []byte        `db:"data" json:"data"`
 	UpdatedAt time.Time     `db:"updated_at" json:"updatedAt"`
 	CreatedAt time.Time     `db:"created_at" json:"createdAt"`
 }
