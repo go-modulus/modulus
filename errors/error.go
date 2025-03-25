@@ -53,7 +53,7 @@ func Is(err, target error) bool {
 }
 
 func As(err error, target any) bool {
-	return syserrors.As(err, &target)
+	return syserrors.As(err, target)
 }
 
 func Join(errs ...error) error {

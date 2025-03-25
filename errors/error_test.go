@@ -7,6 +7,14 @@ import (
 	"testing"
 )
 
+type customError struct {
+	code string
+}
+
+func (e customError) Error() string {
+	return e.code
+}
+
 func TestNew(t *testing.T) {
 	t.Run(
 		"New modulus error", func(t *testing.T) {
@@ -45,6 +53,57 @@ func TestIs(t *testing.T) {
 			target := err
 
 			assert.True(t, errors.Is(err, target))
+		},
+	)
+
+	t.Run(
+		"is for custom error", func(t *testing.T) {
+			err := customError{code: "code"}
+			target := err
+
+			assert.True(t, errors.Is(err, target))
+		},
+	)
+}
+
+func TestAs(t *testing.T) {
+	t.Run(
+		"as for modulus error", func(t *testing.T) {
+			err := errors.New("code")
+			var target error
+
+			assert.True(t, errors.As(err, &target))
+			assert.Equal(t, "code", target.Error())
+		},
+	)
+
+	t.Run(
+		"as for system error", func(t *testing.T) {
+			err := syserrors.New("code")
+			var target error
+
+			assert.True(t, errors.As(err, &target))
+			assert.Equal(t, "code", target.Error())
+		},
+	)
+
+	t.Run(
+		"as for custom error", func(t *testing.T) {
+			err := customError{code: "code"}
+			var target error
+
+			assert.True(t, errors.As(err, &target))
+			assert.Equal(t, "code", target.Error())
+		},
+	)
+
+	t.Run(
+		"as for custom error pointer", func(t *testing.T) {
+			err := &customError{code: "code"}
+			var target error
+
+			assert.True(t, errors.As(err, &target))
+			assert.Equal(t, "code", target.Error())
 		},
 	)
 }
