@@ -10,6 +10,7 @@ import (
 	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/go-modulus/modulus/graphql"
 	"github.com/go-modulus/modulus/http"
+	httpMiddleware "github.com/go-modulus/modulus/http/middleware"
 	"github.com/go-modulus/modulus/logger"
 	"github.com/go-modulus/modulus/module"
 	"os"
@@ -40,6 +41,12 @@ func main() {
 			http.NewModule(),
 			"github.com/go-modulus/modulus/http",
 			"HTTP module based on the Chi router.",
+			"1.0.0",
+		),
+		module.NewManifestModule(
+			httpMiddleware.NewModule(),
+			"github.com/go-modulus/modulus/http/middleware",
+			"Various useful middlewares",
 			"1.0.0",
 		),
 		graphql.NewManifestModule(),

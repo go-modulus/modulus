@@ -358,6 +358,21 @@
         ]
       },
       "version": "1.0.0"
+    },
+    {
+      "name": "http middleware",
+      "package": "github.com/go-modulus/modulus/http/middleware",
+      "description": "Various useful middlewares",
+      "install": {
+        "envVars": [
+          {
+            "key": "CORS_HOST",
+            "value": "^https?://(localhost|127.0.0.1)(:[0-9]+)?$",
+            "comment": ""
+          }
+        ]
+      },
+      "version": "1.0.0"
     }
   ]
 }
