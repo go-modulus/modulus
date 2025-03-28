@@ -1,15 +1,13 @@
 package middleware
 
 import (
-	"go.uber.org/fx"
+	"github.com/go-modulus/modulus/module"
 )
 
-func NewModule() fx.Option {
-	return fx.Module(
-		"http/middleware",
-		fx.Provide(
-			NewCorsConfig,
+func NewModule() *module.Module {
+	return module.NewModule("http middleware").
+		AddProviders(
 			NewCors,
-		),
-	)
+		).
+		InitConfig(CorsConfig{})
 }
