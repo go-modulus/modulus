@@ -1,9 +1,6 @@
 package middleware
 
 import (
-	"braces.dev/errtrace"
-	"context"
-	"github.com/sethvargo/go-envconfig"
 	"net/http"
 	"regexp"
 
@@ -14,12 +11,7 @@ type CorsConfig struct {
 	Host string `env:"CORS_HOST, default=^https?://(localhost|127.0.0.1)(:[0-9]+)?$"`
 }
 
-func NewCorsConfig() (*CorsConfig, error) {
-	config := CorsConfig{}
-	return &config, errtrace.Wrap(envconfig.Process(context.Background(), &config))
-}
-
-func NewCors(config *CorsConfig) *cors.Cors {
+func NewCors(config CorsConfig) *cors.Cors {
 	host := config.Host
 	if host == "*" {
 		host = ".+"
