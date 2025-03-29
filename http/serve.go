@@ -39,7 +39,7 @@ type ServeParams struct {
 	Router     chi.Router
 	Registrars []HandlerRegistrar `group:"http.handlerRegistrars"`
 	Routes     []Route            `group:"http.routes"`
-	Pipeline   *Pipeline          `optional:"true"`
+	Pipeline   *Pipeline
 	// @todo: think on placing this in each route to be able to override it for specific routes
 	ErrorPipeline *errhttp.ErrorPipeline
 	Logger        *slog.Logger
