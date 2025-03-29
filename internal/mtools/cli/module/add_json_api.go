@@ -150,7 +150,7 @@ func (a *AddJsonApi) createApiHandlerFile(
 		Method:      method,
 	}
 
-	handlerFile := strcase.ToSnake(uri)
+	handlerFile := strcase.ToSnake(structName)
 
 	err := utils.ProcessTemplate(
 		"api_handler.go.tmpl",
