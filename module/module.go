@@ -219,6 +219,7 @@ func buildFx(
 		for _, dep := range module.dependencies {
 			if _, ok := builtModules[dep.name]; !ok {
 				deps = append(deps, dep)
+				builtModules[dep.name] = struct{}{}
 			}
 		}
 	}
