@@ -5,7 +5,36 @@ import (
 	"fmt"
 	"github.com/go-modulus/modulus/errors"
 	"net/http"
+	"strconv"
 )
+
+const HttpCodeMetaName = "httpCode"
+
+func ErrWithHttpCode(
+	err error,
+	code int,
+) error {
+	return errors.WithAddedMeta(err, HttpCodeMetaName, fmt.Sprintf("%d", code))
+}
+
+func HttpCode(
+	err error,
+) int {
+	status := http.StatusInternalServerError
+	if errors.IsUserError(err) {
+		status = http.StatusBadRequest
+	}
+	meta := errors.Meta(err)
+	if httpCode, ok := meta[HttpCodeMetaName]; ok {
+		tmpStatus, err := strconv.Atoi(httpCode)
+		delete(meta, HttpCodeMetaName)
+		if err == nil {
+			status = tmpStatus
+		}
+	}
+
+	return status
+}
 
 func SendError(
 	w http.ResponseWriter,
@@ -15,15 +44,10 @@ func SendError(
 
 	code := err.Error()
 	message := errors.Hint(err)
-
-	status := http.StatusInternalServerError
-	if errors.IsUserError(err) {
-		status = http.StatusBadRequest
-	}
-
-	w.WriteHeader(status)
-
 	meta := errors.Meta(err)
+	httpCode := HttpCode(err)
+
+	w.WriteHeader(httpCode)
 
 	_ = json.NewEncoder(w).Encode(
 		map[string]interface{}{

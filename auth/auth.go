@@ -2,7 +2,8 @@ package auth
 
 import (
 	"context"
-	"github.com/go-modulus/modulus/errors/errbuilder"
+	"github.com/go-modulus/modulus/errors"
+	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/gofrs/uuid"
 	"github.com/sethvargo/go-envconfig"
 	"net/http"
@@ -12,19 +13,17 @@ import (
 const TagUnauthenticated = "unauthenticated"
 const TagUnauthorized = "unauthorized"
 
-var ErrInvalidToken = errbuilder.New("invalid access token").
-	WithHint("Please provide a valid access token").
-	Build()
+var ErrInvalidToken = erruser.New("invalid access token", "Please provide a valid access token")
 
-var ErrUnauthenticated = errbuilder.New("unauthenticated").
-	WithHint("Please authenticate to get access to this resource").
-	WithTags(TagUnauthenticated).
-	Build()
+var ErrUnauthenticated = errors.WithAddedTags(
+	erruser.New("unauthenticated", "Please authenticate to get access to this resource"),
+	TagUnauthenticated,
+)
 
-var ErrUnauthorized = errbuilder.New("unauthorized").
-	WithHint("You are not authorized to access this resource").
-	WithTags(TagUnauthorized).
-	Build()
+var ErrUnauthorized = errors.WithAddedTags(
+	erruser.New("unauthorized", "You are not authorized to access this resource"),
+	TagUnauthorized,
+)
 
 type Performer struct {
 	ID         uuid.UUID

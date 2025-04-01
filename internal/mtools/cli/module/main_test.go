@@ -13,6 +13,7 @@ import (
 var (
 	installModule *module.Install
 	createModule  *module.Create
+	addJsonApi    *module.AddJsonApi
 )
 
 func TestMain(m *testing.M) {
@@ -28,6 +29,7 @@ func TestMain(m *testing.M) {
 		fx.Populate(
 			&installModule,
 			&createModule,
+			&addJsonApi,
 		),
 	)
 }

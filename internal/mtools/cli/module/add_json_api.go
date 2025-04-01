@@ -110,7 +110,7 @@ func (a *AddJsonApi) Invoke(ctx *cli.Context) error {
 			fmt.Println(color.RedString("The API handler URI is required"))
 			return nil
 		}
-		uri = a.askApiHandlerUri()
+		uri = a.askApiHandlerUri(mod, structName)
 		if uri == "" {
 			return nil
 		}
@@ -218,10 +218,13 @@ func (a *AddJsonApi) askApiHandlerName() string {
 	}
 }
 
-func (a *AddJsonApi) askApiHandlerUri() string {
+func (a *AddJsonApi) askApiHandlerUri(module module.ManifestModule, structName string) string {
+	modName := strcase.ToKebab(module.Name)
+	defUrl := "/" + modName + "/" + strcase.ToKebab(structName)
 	for {
 		prompt := promptui.Prompt{
-			Label: "Enter an Api handler URI. Example: /hello-world",
+			Label:   "Enter an Api handler URI. Example: /hello-world",
+			Default: defUrl,
 		}
 
 		uri, err := prompt.Run()
@@ -245,7 +248,8 @@ func (a *AddJsonApi) askApiHandlerUri() string {
 func (a *AddJsonApi) askApiHandlerMethod() string {
 	for {
 		prompt := promptui.Prompt{
-			Label: "Enter an Api handler method. Example: GET",
+			Label:   "Enter an Api handler method. Example: GET",
+			Default: "GET",
 		}
 
 		method, err := prompt.Run()
