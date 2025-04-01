@@ -49,15 +49,17 @@ func SendError(
 
 	w.WriteHeader(httpCode)
 
+	errMap := map[string]any{
+		"message": message,
+		"extensions": map[string]any{
+			"code": code,
+			"meta": meta,
+		},
+	}
 	_ = json.NewEncoder(w).Encode(
 		map[string]interface{}{
-			"error": map[string]any{
-				"message": message,
-				"extensions": map[string]any{
-					"code": code,
-					"meta": meta,
-				},
-			},
+			"errors": []map[string]any{errMap},
+			"data":   nil,
 		},
 	)
 }
