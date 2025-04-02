@@ -13,10 +13,7 @@ func NewModule() *module.Module {
 		AddProviders(
 			NewGraphqlServer,
 			NewLoadersInitializer,
-			NewHandler,
-			NewPlaygroundHandler,
-			NewHandlerGetRoute,
-			NewHandlerPostRoute,
+			NewHandlerRoute,
 			NewPlaygroundHandlerRoute,
 		).
 		SetOverriddenProvider("graphql.ErrorPresenter", NewErrorPresenter).

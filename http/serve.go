@@ -24,7 +24,6 @@ type ServeConfig struct {
 type Serve struct {
 	runner        *infraCli.Runner
 	router        chi.Router
-	registrars    []HandlerRegistrar `group:"http.handlerRegistrars"`
 	routes        []Route
 	middlewares   []Middleware
 	errorPipeline *errhttp.ErrorPipeline
@@ -35,11 +34,10 @@ type Serve struct {
 type ServeParams struct {
 	fx.In
 
-	Runner     *infraCli.Runner
-	Router     chi.Router
-	Registrars []HandlerRegistrar `group:"http.handlerRegistrars"`
-	Routes     []Route            `group:"http.routes"`
-	Pipeline   *Pipeline
+	Runner   *infraCli.Runner
+	Router   chi.Router
+	Routes   []Route `group:"http.routes"`
+	Pipeline *Pipeline
 	// @todo: think on placing this in each route to be able to override it for specific routes
 	ErrorPipeline *errhttp.ErrorPipeline
 	Logger        *slog.Logger
@@ -54,7 +52,6 @@ func NewServe(params ServeParams) *Serve {
 	return &Serve{
 		runner:        params.Runner,
 		router:        params.Router,
-		registrars:    params.Registrars,
 		routes:        params.Routes,
 		logger:        params.Logger,
 		config:        params.Config,
@@ -88,22 +85,23 @@ func (s *Serve) Invoke(cliCtx *cli.Context) error {
 			s.router.Use(middleware)
 		}
 
-		logger.Info("registering global Middlewares", slog.Int("count", len(s.middlewares)))
+		logger.Info("registering global middlewares", slog.Int("count", len(s.middlewares)))
 	}
 
-	routes := NewRoutes()
-	for _, registrar := range s.registrars {
-		registrar.Register(routes)
-	}
 	for _, route := range s.routes {
 		if route.Handler == nil || route.Path == "" {
 			continue
 		}
-		routes.Add(route)
-	}
-	for _, route := range routes.List() {
-		logger.Info("registering route", slog.String("method", route.Method), slog.String("path", route.Path))
-		s.router.Method(route.Method, route.Path, errhttp.WrapHandler(s.errorPipeline, route.Handler))
+		logger.Info(
+			"registering route",
+			slog.String("method", route.Method),
+			slog.String("path", route.Path),
+		)
+		if route.Handler != nil {
+			s.router.Method(route.Method, route.Path, route.Handler)
+		} else {
+			s.router.Method(route.Method, route.Path, errhttp.WrapHandler(s.errorPipeline, route.ErrHandler))
+		}
 	}
 
 	return s.runner.Run(
