@@ -16,7 +16,7 @@ func New{{.StructName}}() *{{.StructName}} {
 }
 
 func New{{.StructName}}Route(handler *{{.StructName}}) mHttp.RouteProvider {
-	return mHttp.NewRouteProvider(
+	return mHttp.ProvideInputRoute(
 		"{{.Method}}",
 		"{{.Uri}}",
 		handler.Handle,

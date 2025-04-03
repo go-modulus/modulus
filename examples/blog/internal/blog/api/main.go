@@ -14,7 +14,7 @@ func NewMain() *Main {
 }
 
 func NewMainRoute(handler *Main) mHttp.RouteProvider {
-	return mHttp.NewRouteProvider(
+	return mHttp.ProvideInputRoute(
 		"GET",
 		"/",
 		handler.Handle,
