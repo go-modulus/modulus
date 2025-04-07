@@ -45,6 +45,7 @@ type Authenticator interface {
 type contextKey string
 
 var performerKey = contextKey("Performer")
+var errorKey = contextKey("Error")
 
 func WithPerformer(ctx context.Context, performer Performer) context.Context {
 	return context.WithValue(ctx, performerKey, performer)
@@ -68,6 +69,20 @@ func GetPerformerID(ctx context.Context) uuid.UUID {
 		}
 	}
 	return uuid.Nil
+}
+
+func WithError(ctx context.Context, err error) context.Context {
+	return context.WithValue(ctx, errorKey, err)
+}
+
+func GetError(ctx context.Context) error {
+	if value := ctx.Value(errorKey); value != nil {
+		err, ok := value.(error)
+		if ok {
+			return err
+		}
+	}
+	return nil
 }
 
 var refreshTokenKey = contextKey("RefreshToken")
