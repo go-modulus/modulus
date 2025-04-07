@@ -13,6 +13,10 @@ type Route struct {
 	ErrHandler errhttp.Handler
 }
 
+func (r *Route) IsEmpty() bool {
+	return (r.ErrHandler == nil && r.Handler == nil) || r.Path == ""
+}
+
 type RouteProvider struct {
 	fx.Out
 	Route Route `group:"http.routes"`

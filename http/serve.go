@@ -89,7 +89,7 @@ func (s *Serve) Invoke(cliCtx *cli.Context) error {
 	}
 
 	for _, route := range s.routes {
-		if route.Handler == nil || route.Path == "" {
+		if route.IsEmpty() {
 			continue
 		}
 		logger.Info(
