@@ -13,6 +13,7 @@ import (
 	httpMiddleware "github.com/go-modulus/modulus/http/middleware"
 	"github.com/go-modulus/modulus/logger"
 	"github.com/go-modulus/modulus/module"
+	"github.com/go-modulus/modulus/temporal"
 	"os"
 )
 
@@ -52,6 +53,7 @@ func main() {
 		graphql.NewManifestModule(),
 		auth.NewManifestModule(),
 		embedded.NewManifestModule(),
+		temporal.NewManifestModule(),
 	}
 
 	manifest, err := module.LoadLocalManifest("./")

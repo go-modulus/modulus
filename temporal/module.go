@@ -2,10 +2,13 @@ package temporal
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	cli2 "github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/module"
 	"github.com/urfave/cli/v2"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"log/slog"
 
 	"go.temporal.io/sdk/client"
@@ -19,7 +22,9 @@ import (
 )
 
 type Config struct {
-	Address string `env:"TEMPORAL_ADDRESS, default=localhost:7233"`
+	Host      string `env:"TEMPORAL_HOST, default=localhost:7233"`
+	Namespace string `env:"TEMPORAL_NAMESPACE"`
+	ApiKey    string `env:"TEMPORAL_API_KEY"`
 }
 
 type Registerer interface {
@@ -141,7 +146,7 @@ func NewTestingStarter(env *testsuite.TestWorkflowEnvironment) *TestingStarter {
 	return &TestingStarter{env: env}
 }
 
-func ShouldContunueAsNew(ctx workflow.Context) bool {
+func ShouldContinueAsNew(ctx workflow.Context) bool {
 	info := workflow.GetInfo(ctx)
 	return info.GetCurrentHistoryLength() > 10_000
 }
@@ -165,9 +170,43 @@ func NewModule() *module.Module {
 				}
 
 				opts := client.Options{
-					HostPort:     config.Address,
+					HostPort:     config.Host,
 					Logger:       log.NewStructuredLogger(logger),
 					Interceptors: []interceptor.ClientInterceptor{tracingInterceptor},
+				}
+				if config.Namespace != "" {
+					opts.Namespace = config.Namespace
+					if config.ApiKey == "" {
+						return nil, fmt.Errorf(
+							"api key is required for connecting to the namespace %s",
+							config.Namespace,
+						)
+					}
+					opts.ConnectionOptions = client.ConnectionOptions{
+						TLS: &tls.Config{},
+						DialOptions: []grpc.DialOption{
+							grpc.WithUnaryInterceptor(
+								func(
+									ctx context.Context,
+									method string,
+									req any,
+									reply any,
+									cc *grpc.ClientConn,
+									invoker grpc.UnaryInvoker,
+									opts ...grpc.CallOption,
+								) error {
+									return invoker(
+										metadata.AppendToOutgoingContext(ctx, "temporal-namespace", config.Namespace),
+										method,
+										req,
+										reply,
+										cc,
+										opts...,
+									)
+								},
+							),
+						},
+					}
 				}
 
 				return client.NewLazyClient(opts)
@@ -181,5 +220,14 @@ func NewModule() *module.Module {
 				},
 			}
 		},
+	)
+}
+
+func NewManifestModule() module.ManifestModule {
+	return module.NewManifestModule(
+		NewModule(),
+		"temporal",
+		"Temporal module for Modulus framework.",
+		"1.0.0",
 	)
 }

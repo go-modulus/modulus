@@ -373,6 +373,29 @@
         ]
       },
       "version": "1.0.0"
+    },
+    {
+      "name": "github.com/go-modulus/modulus/temporal",
+      "package": "temporal",
+      "description": "Temporal module for Modulus framework.",
+      "install": {
+        "envVars": [
+          {
+            "key": "TEMPORAL_HOST",
+            "value": "localhost:7233",
+            "comment": ""
+          },
+          {
+            "key": "TEMPORAL_NAMESPACE",
+            "value": "",
+            "comment": ""
+          }
+        ],
+        "dependencies": [
+          "urfave cli"
+        ]
+      },
+      "version": "1.0.0"
     }
   ]
 }
