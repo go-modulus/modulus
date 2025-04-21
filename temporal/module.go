@@ -161,7 +161,7 @@ func NewModule() *module.Module {
 			NewWorker,
 
 			func(
-				config *Config,
+				config Config,
 				logger *slog.Logger,
 			) (client.Client, error) {
 				tracingInterceptor, err := opentelemetry.NewTracingInterceptor(opentelemetry.TracerOptions{})
@@ -182,6 +182,8 @@ func NewModule() *module.Module {
 							config.Namespace,
 						)
 					}
+					opts.Credentials = client.NewAPIKeyStaticCredentials(config.ApiKey)
+
 					opts.ConnectionOptions = client.ConnectionOptions{
 						TLS: &tls.Config{},
 						DialOptions: []grpc.DialOption{
@@ -195,6 +197,10 @@ func NewModule() *module.Module {
 									invoker grpc.UnaryInvoker,
 									opts ...grpc.CallOption,
 								) error {
+									if req == nil {
+										return fmt.Errorf("request is nil")
+									}
+
 									return invoker(
 										metadata.AppendToOutgoingContext(ctx, "temporal-namespace", config.Namespace),
 										method,
@@ -224,10 +230,17 @@ func NewModule() *module.Module {
 }
 
 func NewManifestModule() module.ManifestModule {
-	return module.NewManifestModule(
+	temporalModule := module.NewManifestModule(
 		NewModule(),
 		"github.com/go-modulus/modulus/temporal",
 		"Temporal module for Modulus framework.",
 		"1.0.0",
 	)
+	temporalModule.Install.AppendFiles(
+		module.InstalledFile{
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/temporal/install/temporal.mk",
+			DestFile:  "mk/temporal.mk",
+		},
+	)
+	return temporalModule
 }
