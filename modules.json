@@ -375,11 +375,16 @@
       "version": "1.0.0"
     },
     {
-      "name": "github.com/go-modulus/modulus/temporal",
-      "package": "temporal",
+      "name": "temporal",
+      "package": "github.com/go-modulus/modulus/temporal",
       "description": "Temporal module for Modulus framework.",
       "install": {
         "envVars": [
+          {
+            "key": "TEMPORAL_API_KEY",
+            "value": "",
+            "comment": ""
+          },
           {
             "key": "TEMPORAL_HOST",
             "value": "localhost:7233",

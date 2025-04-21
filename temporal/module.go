@@ -153,7 +153,7 @@ func ShouldContinueAsNew(ctx workflow.Context) bool {
 
 func NewModule() *module.Module {
 	config := Config{}
-	return module.NewModule("github.com/go-modulus/modulus/temporal").
+	return module.NewModule("temporal").
 		AddDependencies(cli2.NewModule()).
 		InitConfig(config).
 		AddProviders(
@@ -226,7 +226,7 @@ func NewModule() *module.Module {
 func NewManifestModule() module.ManifestModule {
 	return module.NewManifestModule(
 		NewModule(),
-		"temporal",
+		"github.com/go-modulus/modulus/temporal",
 		"Temporal module for Modulus framework.",
 		"1.0.0",
 	)
