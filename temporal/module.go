@@ -176,12 +176,6 @@ func NewModule() *module.Module {
 				}
 				if config.Namespace != "" {
 					opts.Namespace = config.Namespace
-					if config.ApiKey == "" {
-						return nil, fmt.Errorf(
-							"api key is required for connecting to the namespace %s",
-							config.Namespace,
-						)
-					}
 					opts.Credentials = client.NewAPIKeyStaticCredentials(config.ApiKey)
 
 					opts.ConnectionOptions = client.ConnectionOptions{
