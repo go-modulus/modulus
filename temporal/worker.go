@@ -32,7 +32,7 @@ func NewWorker(params WorkersParams) *Worker {
 	}
 }
 
-func (w *Worker) Command() *cli.Command {
+func WorkerCommand(w *Worker) *cli.Command {
 	return &cli.Command{
 		Name: "worker",
 		Action: func(ctx *cli.Context) error {

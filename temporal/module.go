@@ -27,18 +27,26 @@ type Config struct {
 	ApiKey    string `env:"TEMPORAL_API_KEY"`
 }
 
+type RegisterOption func() interface{}
+
 type Registerer interface {
 	Register(worker.Registry)
 }
 
-func Provide[T Registerer](register interface{}) fx.Option {
-	return fx.Provide(
+func Provide[T Registerer](register interface{}, opts ...RegisterOption) fx.Option {
+	provider := []any{
 		register,
 		fx.Annotate(
 			func(a T) T { return a },
 			fx.As(new(Registerer)),
 			fx.ResultTags(`group:"temporal.registerers"`),
 		),
+	}
+	for _, opt := range opts {
+		provider = append(provider, opt())
+	}
+	return fx.Provide(
+		provider...,
 	)
 }
 
@@ -68,23 +76,23 @@ func NewStarter(client client.Client) Starter {
 	return client
 }
 
-type TestringWorkflowRun struct {
+type TestingWorkflowRun struct {
 	env *testsuite.TestWorkflowEnvironment
 }
 
-func (r *TestringWorkflowRun) GetID() string {
+func (r *TestingWorkflowRun) GetID() string {
 	return ""
 }
 
-func (r *TestringWorkflowRun) GetRunID() string {
+func (r *TestingWorkflowRun) GetRunID() string {
 	return ""
 }
 
-func (r *TestringWorkflowRun) Get(ctx context.Context, valuePtr interface{}) error {
+func (r *TestingWorkflowRun) Get(ctx context.Context, valuePtr interface{}) error {
 	return r.env.GetWorkflowResult(valuePtr)
 }
 
-func (r *TestringWorkflowRun) GetWithOptions(
+func (r *TestingWorkflowRun) GetWithOptions(
 	ctx context.Context,
 	valuePtr interface{},
 	options client.WorkflowRunGetOptions,
@@ -105,7 +113,7 @@ func (s TestingStarter) ExecuteWorkflow(
 	s.env.SetStartWorkflowOptions(options)
 	s.env.ExecuteWorkflow(workflow, args...)
 
-	return &TestringWorkflowRun{env: s.env}, nil
+	return &TestingWorkflowRun{env: s.env}, nil
 }
 
 func (s TestingStarter) SignalWithStartWorkflow(
@@ -129,7 +137,7 @@ func (s TestingStarter) SignalWithStartWorkflow(
 	)
 	s.env.ExecuteWorkflow(workflow, workflowArgs...)
 
-	return &TestringWorkflowRun{env: s.env}, nil
+	return &TestingWorkflowRun{env: s.env}, nil
 }
 
 func (s TestingStarter) SignalWorkflow(
@@ -151,6 +159,18 @@ func ShouldContinueAsNew(ctx workflow.Context) bool {
 	return info.GetCurrentHistoryLength() > 10_000
 }
 
+type Schedule interface {
+	Schedule(queue string) client.ScheduleOptions
+}
+
+func ScheduleAnnotation[T Schedule]() interface{} {
+	return fx.Annotate(
+		func(a T) T { return a },
+		fx.As(new(Schedule)),
+		fx.ResultTags(`group:"temporal.schedules"`),
+	)
+}
+
 func NewModule() *module.Module {
 	config := Config{}
 	return module.NewModule("temporal").
@@ -159,6 +179,7 @@ func NewModule() *module.Module {
 		AddProviders(
 			NewStarter,
 			NewWorker,
+			NewScheduler,
 
 			func(
 				config Config,
@@ -212,11 +233,15 @@ func NewModule() *module.Module {
 				return client.NewLazyClient(opts)
 			},
 		).AddCliCommands(
-		func(worker *Worker) *cli.Command {
+		func(
+			worker *Worker,
+			scheduler *Scheduler,
+		) *cli.Command {
 			return &cli.Command{
 				Name: "temporal",
 				Subcommands: []*cli.Command{
-					worker.Command(),
+					WorkerCommand(worker),
+					SchedulerCommand(scheduler),
 				},
 			}
 		},

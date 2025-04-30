@@ -1,7 +1,9 @@
 package temporal
 
 import (
+	"context"
 	"errors"
+	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/workflow"
 	"time"
 )
@@ -66,9 +68,31 @@ func (c Channel[T]) Close() {
 }
 
 func SideEffect[T any](ctx workflow.Context, f func(ctx workflow.Context) T) (T, error) {
-	encodedT := workflow.SideEffect(ctx, func(ctx workflow.Context) interface{} {
-		return f(ctx)
-	})
+	encodedT := workflow.SideEffect(
+		ctx, func(ctx workflow.Context) interface{} {
+			return f(ctx)
+		},
+	)
 	var t T
 	return t, encodedT.Get(&t)
+}
+
+func ExecuteWorkflow(
+	ctx context.Context,
+	starter Starter,
+	options client.StartWorkflowOptions,
+	workflow interface{},
+	args ...interface{},
+) (client.WorkflowRun, error) {
+	name := getFunctionName(workflow)
+	return starter.ExecuteWorkflow(
+		ctx,
+		options,
+		name,
+		args...,
+	)
+}
+
+func WorkflowName(w interface{}) string {
+	return getFunctionName(w)
 }
