@@ -72,6 +72,8 @@ func NewGraphqlServer(
 	srv.Use(extension.AutomaticPersistedQuery{Cache: lru.New[string](1000)})
 	if config.IntrospectionEnabled {
 		srv.Use(extension.Introspection{})
+	} else {
+		srv.SetDisableSuggestion(true)
 	}
 
 	srv.Use(extension.FixedComplexityLimit(config.ComplexityLimit))
