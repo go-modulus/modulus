@@ -18,11 +18,6 @@ type DefaultTokenRepository struct {
 	hashStrategy hash.TokenHashStrategy
 }
 
-func (r *DefaultTokenRepository) RevokeAccountTokens(ctx context.Context, accountId uuid.UUID) error {
-	//TODO implement me
-	panic("implement me")
-}
-
 func NewDefaultTokenRepository(
 	db *pgxpool.Pool,
 	hashStrategy hash.TokenHashStrategy,
@@ -191,7 +186,7 @@ func (r *DefaultTokenRepository) RevokeSessionTokens(ctx context.Context, sessio
 	return nil
 }
 
-func (r *DefaultTokenRepository) RevokeUserTokens(ctx context.Context, accountId uuid.UUID) error {
+func (r *DefaultTokenRepository) RevokeAccountTokens(ctx context.Context, accountId uuid.UUID) error {
 	sessionIds, err := r.queries.FindAccountNotRevokedSessionIds(ctx, accountId)
 	if err != nil {
 		return errtrace.Wrap(err)
