@@ -101,7 +101,7 @@ func (q *Queries) RevokeSessionRefreshTokens(ctx context.Context, sessionID uuid
 const revokeSessionsRefreshTokens = `-- name: RevokeSessionsRefreshTokens :exec
 UPDATE auth.refresh_token
 SET revoked_at = now()
-WHERE session_id = $1::uuid[] AND revoked_at IS NULL`
+WHERE session_id = ANY($1::uuid[]) AND revoked_at IS NULL`
 
 func (q *Queries) RevokeSessionsRefreshTokens(ctx context.Context, sessionIds []uuid.UUID) error {
 	_, err := q.db.Exec(ctx, revokeSessionsRefreshTokens, sessionIds)

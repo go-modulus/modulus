@@ -16,7 +16,7 @@ WHERE session_id = $1 AND revoked_at IS NULL;
 -- name: RevokeSessionsRefreshTokens :exec
 UPDATE auth.refresh_token
 SET revoked_at = now()
-WHERE session_id = @session_ids::uuid[] AND revoked_at IS NULL;
+WHERE session_id = ANY(@session_ids::uuid[]) AND revoked_at IS NULL;
 
 -- name: FindRefreshTokenByHash :one
 SELECT *
