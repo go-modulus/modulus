@@ -8,7 +8,7 @@ func ExecuteActivity[O any](ctx workflow.Context, activity interface{}, args ...
 		Future: workflow.ExecuteActivity(
 			ctx,
 			name,
-			args,
+			args...,
 		),
 	}
 }
@@ -17,6 +17,15 @@ func WaitActivity[O any](ctx workflow.Context, activity interface{}, input ...an
 	return ExecuteActivity[O](
 		ctx,
 		activity,
-		input,
+		input...,
 	).Get(ctx)
+}
+
+func WaitActivityWithoutResult(ctx workflow.Context, activity interface{}, input ...any) error {
+	name := getFunctionName(activity)
+	return workflow.ExecuteActivity(
+		ctx,
+		name,
+		input...,
+	).Get(ctx, nil)
 }

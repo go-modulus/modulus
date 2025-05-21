@@ -10,6 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"log/slog"
+	"time"
 
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/contrib/opentelemetry"
@@ -171,13 +172,22 @@ func ScheduleAnnotation[T Schedule]() interface{} {
 	)
 }
 
+// Name returns the full name of the workflow or activity function when the function is the method of a struct.
+// This package registers and calls workflows and activities using this method of the function transformation.
+// The native temporal SDK uses the function name only as the name of the workflow or activity.
+// Due to this, if you
+// register several workflows or activities with the same name, the last one will override the previous ones.
+func Name(method interface{}) string {
+	return getFunctionName(method)
+}
+
 func NewModule() *module.Module {
 	config := Config{}
 	return module.NewModule("temporal").
 		AddDependencies(cli2.NewModule()).
 		InitConfig(config).
+		SetOverriddenProvider("temporal.Starter", NewStarter).
 		AddProviders(
-			NewStarter,
 			NewWorker,
 			NewScheduler,
 
@@ -262,4 +272,26 @@ func NewManifestModule() module.ManifestModule {
 		},
 	)
 	return temporalModule
+}
+
+func OverrideStarter[T Starter](temporalModule *module.Module) *module.Module {
+	return temporalModule.SetOverriddenProvider("temporal.Starter", func(impl T) Starter { return impl })
+}
+
+func DecorateStarterForTests(temporalModule *module.Module, timeout time.Duration) *module.Module {
+	return temporalModule.AddFxOptions(
+		fx.Decorate(
+			func(params WorkersParams) Starter {
+				testSuite := &testsuite.WorkflowTestSuite{}
+				env := testSuite.NewTestWorkflowEnvironment()
+				env.SetTestTimeout(timeout)
+
+				for _, r := range params.Registerers {
+					r.Register(env)
+				}
+
+				return NewTestingStarter(env)
+			},
+		),
+	)
 }
