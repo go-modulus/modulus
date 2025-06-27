@@ -4,11 +4,47 @@ import (
 	"context"
 	infraCli "github.com/go-modulus/modulus/cli"
 	"github.com/urfave/cli/v2"
+	"go.temporal.io/sdk/activity"
+	"go.temporal.io/sdk/workflow"
+	"sync"
 
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 	"go.uber.org/fx"
 )
+
+type localWorker struct {
+	worker.Worker
+	registeredActivities sync.Map
+	registeredWorkflows  sync.Map
+}
+
+func (lw *localWorker) RegisterActivity(a interface{}) {
+	name := getFunctionName(a)
+
+	if _, loaded := lw.registeredActivities.LoadOrStore(name, struct{}{}); loaded {
+		// Activity already registered, skip registration
+		return
+	}
+	lw.Worker.RegisterActivityWithOptions(
+		a, activity.RegisterOptions{
+			Name: name,
+		},
+	)
+}
+
+func (lw *localWorker) RegisterWorkflow(w interface{}) {
+	name := getFunctionName(w)
+	if _, loaded := lw.registeredWorkflows.LoadOrStore(name, struct{}{}); loaded {
+		// Workflow already registered, skip registration
+		return
+	}
+	lw.Worker.RegisterWorkflowWithOptions(
+		w, workflow.RegisterOptions{
+			Name: name,
+		},
+	)
+}
 
 type Worker struct {
 	runner      *infraCli.Runner
@@ -64,12 +100,15 @@ func (w *Worker) Invoke(cliCtx *cli.Context, queue string, enableSessionWorker b
 					EnableSessionWorker: enableSessionWorker,
 				},
 			)
-
-			for _, r := range w.registerers {
-				r.Register(tw)
+			lw := &localWorker{
+				Worker: tw,
 			}
 
-			return tw.Run(w.interruptCh(ctx))
+			for _, r := range w.registerers {
+				r.Register(lw)
+			}
+
+			return lw.Run(w.interruptCh(ctx))
 		},
 	)
 }

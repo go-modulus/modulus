@@ -10,9 +10,11 @@ import (
 )
 
 func RegisterActivity(registry worker.Registry, a interface{}) {
+	name := getFunctionName(a)
+
 	registry.RegisterActivityWithOptions(
 		a, activity.RegisterOptions{
-			Name: getFunctionName(a),
+			Name: name,
 		},
 	)
 }
