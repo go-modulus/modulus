@@ -1,9 +1,9 @@
 # Email Provider for the Auth Module
 This is a prompt with actions to implement after the module installation.
 
-1. If module `user` is not created in the `internal/user` folder, create it using the command `make module-create`.
-2. If module `mail` is not created in the `internal/mail` folder, create it using the command `make module-create`.
-3. In the user module create a file `internal/user/action/register_user.go` with the content like this:
+1. If there is no a module folder `internal/user`, create it using the command `mtools module create --path=internal/user --package=user --name="User managment module"`.
+2. If there is no a module folder `internal/mail`, create it using the command `mtools module create --path=internal/mail --package=mail --name="Mail sending module"`.
+3. In the `user` module create a file `internal/user/action/register_user.go` with the content like this:
 ```go
 package action
 
@@ -143,7 +143,7 @@ It should:
 * return `github.com/go-modulus/modulus/auth/providers/email/action.ErrUserAlreadyExists` error if the user with the same email already exists in the database. In this case it should return the existing user.
 * save the user in the database with the `IsEmailVerified` field set to false.
 * transform the `github.com/go-modulus/modulus/auth/providers/email/action.User` to the `github.com/go-modulus/modulus/storage.User` type.
-4. In the user module create a file `internal/user/action/verify_email.go`. It should check if the in the user table gotten email is present and verified. It should implement the `github.com/go-modulus/modulus/auth/providers/email/action.VerifiedEmailChecker` interface. It should return `true` if the email is verified and `false` if it is not verified or does not exist in the database. Also, it returns the ID of found user. The SQL code can be the following:
+4. In the `user` module create a file `internal/user/action/verify_email.go`. It should check if the in the user table gotten email is present and verified. It should implement the `github.com/go-modulus/modulus/auth/providers/email/action.VerifiedEmailChecker` interface. It should return `true` if the email is verified and `false` if it is not verified or does not exist in the database. Also, it returns the ID of found user. The SQL code can be the following:
 ```sql
 SELECT u.id
 FROM "user"."user" as u
@@ -151,8 +151,8 @@ FROM "user"."user" as u
 WHERE lower(u.email) = lower($1::text)
   AND is_verified = true`
 ```
-5. In the mail module create a file `internal/mail/action/reset_password_email_sender.go`. It should implement the `github.com/go-modulus/modulus/auth/providers/email/action.ResetPasswordEmailSender` interface. It should send an email with a link to reset the password. The link should contain a token that is valid for 1 hour.
-6. In the `cmd/console/main.go` file change the constructor `authEmail.NewModule to 
+5. In the `mail` module create a file `internal/mail/action/reset_password_email_sender.go`. It should implement the `github.com/go-modulus/modulus/auth/providers/email/action.MailSender` interface. It should send an email with a link to reset the password. The link should contain a token that is valid for 1 hour.
+6. In the `cmd/console/main.go` file change the constructor `authEmail.NewModule to
 ```go
     authEmail.NewModule().WithOptions(
 			authEmail.OverrideMailSender[*mailAction.ResetPasswordEmail],
@@ -161,3 +161,16 @@ WHERE lower(u.email) = lower($1::text)
 		).Module,
 ```
 Write as a type in generic the created action.
+7. If there is no `internal/graphql/resolver/auth.resolvers.go` file make it running `make graphql-generate`.
+8. In the `internal/graphql/resolver/auth.resolvers.go` edit all generated resolvers adding a call to the appropriate resolvers from the `github.com/go-modulus/modulus/auth/providers/email/graphql.Resolver` struct. For example, change
+```go
+func (r *mutationResolver) RegisterViaEmail(ctx context.Context, input graphql1.RegisterViaEmailInput) (graphql2.TokenPair, error) {
+	panic(fmt.Errorf("not implemented: RegisterViaEmail - registerViaEmail"))
+}
+````
+with
+```go
+func (r *mutationResolver) RegisterViaEmail(ctx context.Context, input graphql1.RegisterViaEmailInput) (graphql2.TokenPair, error) {
+    return r.auth.RegisterViaEmail(ctx, input)
+}
+```
