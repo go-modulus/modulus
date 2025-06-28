@@ -115,6 +115,11 @@
       "install": {
         "envVars": [
           {
+            "key": "HTTP_HOST",
+            "value": "localhost:8001",
+            "comment": ""
+          },
+          {
             "key": "HTTP_SYSTEM_ERROR_LOG_LEVEL",
             "value": "error",
             "comment": "Log level for the system errors: dont_log, error, warn, info, debug"
@@ -123,6 +128,16 @@
             "key": "HTTP_USER_ERROR_LOG_LEVEL",
             "value": "dont_log",
             "comment": "Log level for the user errors: dont_log, error, warn, info, debug"
+          },
+          {
+            "key": "ROUTER_REQUEST_SIZE_LIMIT",
+            "value": "5MB",
+            "comment": ""
+          },
+          {
+            "key": "ROUTER_TTL",
+            "value": "15s",
+            "comment": ""
           }
         ]
       },
@@ -260,6 +275,16 @@
             "key": "AUTH_REFRESH_TOKEN_TTL",
             "value": "720h0m0s",
             "comment": ""
+          },
+          {
+            "key": "AUTH_RESET_PASSWORD_LIFE",
+            "value": "1h0m0s",
+            "comment": ""
+          },
+          {
+            "key": "AUTH_RESET_PASSWORD_RESEND_COOLDOWN",
+            "value": "5m0s",
+            "comment": ""
           }
         ],
         "dependencies": [
@@ -273,6 +298,10 @@
           {
             "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/storage/migration/20240320084613_auth_account.sql",
             "destFile": "internal/auth/storage/migration/20240320084613_auth_account.sql"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/storage/migration/20250508110252_add_reset_password_request_table.sql",
+            "destFile": "internal/auth/storage/migration/20250508110252_add_reset_password_request_table.sql"
           },
           {
             "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/install/module.go.tmpl",
@@ -398,9 +427,81 @@
         ],
         "dependencies": [
           "urfave cli"
+        ],
+        "files": [
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/temporal/install/temporal.mk",
+            "destFile": "mk/temporal.mk"
+          }
         ]
       },
       "version": "1.0.0"
+    },
+    {
+      "name": "captcha",
+      "package": "github.com/go-modulus/modulus/captcha",
+      "description": "Captcha processor that have to be integrated in auth queries to protect against bots registrations.",
+      "install": {
+        "envVars": [
+          {
+            "key": "RECAPTCHA_ENABLED",
+            "value": "false",
+            "comment": ""
+          },
+          {
+            "key": "RECAPTCHA_V2_SECRET",
+            "value": "",
+            "comment": ""
+          },
+          {
+            "key": "RECAPTCHA_V3_SECRET",
+            "value": "",
+            "comment": ""
+          },
+          {
+            "key": "RECAPTCHA_V3_THRESHOLD",
+            "value": "0.5",
+            "comment": ""
+          }
+        ],
+        "files": [
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/captcha/install/graphql/captcha.graphql",
+            "destFile": "internal/captcha/graphql/captcha.graphql"
+          }
+        ]
+      },
+      "version": "1.0.0"
+    },
+    {
+      "name": "auth email provider",
+      "package": "github.com/go-modulus/modulus/auth/providers/email",
+      "description": "Captcha processor that have to be integrated in auth queries to protect against bots registrations.",
+      "install": {
+        "envVars": [
+          {
+            "key": "FRONTEND_HOST",
+            "value": "",
+            "comment": ""
+          }
+        ],
+        "dependencies": [
+          "modulus auth",
+          "captcha"
+        ],
+        "files": [
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/providers/email/graphql/auth.graphql",
+            "destFile": "internal/auth/providers/email/graphql/auth.graphql"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/providers/email/prompt.md",
+            "destFile": "internal/auth/providers/email/prompt.md"
+          }
+        ]
+      },
+      "version": "1.0.0",
+      "localPath": "internal/auth/providers/email"
     }
   ]
 }

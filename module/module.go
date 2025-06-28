@@ -176,16 +176,14 @@ func (m *Module) InitConfig(config any) *Module {
 	m.configs[name] = filledConfig
 
 	vars := getVariables(config, false)
-	var envVars []ConfigEnvVariable
 	for _, value := range vars {
-		envVars = append(envVars, value)
+		m.envVars = append(m.envVars, value)
 	}
 	sort.Slice(
-		envVars, func(i, j int) bool {
-			return envVars[i].Key < envVars[j].Key
+		m.envVars, func(i, j int) bool {
+			return m.envVars[i].Key < m.envVars[j].Key
 		},
 	)
-	m.envVars = envVars
 	return m
 }
 

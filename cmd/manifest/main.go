@@ -54,10 +54,10 @@ func main() {
 		),
 		graphql.NewManifestModule(),
 		auth.NewManifestModule(),
+		email.NewManifestModule(),
 		embedded.NewManifestModule(),
 		temporal.NewManifestModule(),
 		captcha.NewManifestModule(),
-		email.NewManifestModule(),
 	}
 
 	manifest, err := module.LoadLocalManifest("./")
