@@ -1,0 +1,9 @@
+with-expecter: True
+packages:
+  github.com/go-modulus/modulus/auth/providers/email/action:
+    # place your package-specific config here
+    config:
+      dir: "mocks"
+      outpkg: mocks
+    interfaces:
+      UserCreator:

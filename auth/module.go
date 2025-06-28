@@ -2,6 +2,7 @@ package auth
 
 import (
 	"github.com/go-modulus/modulus/auth/hash"
+	"github.com/go-modulus/modulus/auth/repository"
 	"github.com/go-modulus/modulus/auth/storage"
 	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/go-modulus/modulus/module"
@@ -28,55 +29,80 @@ func NewModule() *module.Module {
 			NewPasswordAuthenticator,
 			NewPlainTokenAuthenticator,
 		).
-		SetOverriddenProvider("CredentialRepository", storage.NewDefaultCredentialRepository).
-		SetOverriddenProvider("IdentityRepository", storage.NewDefaultIdentityRepository).
-		SetOverriddenProvider("TokenRepository", storage.NewDefaultTokenRepository).
-		SetOverriddenProvider("AccountRepository", storage.NewDefaultAccountRepository).
-		SetOverriddenProvider("TokenHashStrategy", hash.NewSha1).
+		SetOverriddenProvider("auth.CredentialRepository", storage.NewDefaultCredentialRepository).
+		SetOverriddenProvider("auth.IdentityRepository", storage.NewDefaultIdentityRepository).
+		SetOverriddenProvider("auth.TokenRepository", storage.NewDefaultTokenRepository).
+		SetOverriddenProvider("auth.AccountRepository", storage.NewDefaultAccountRepository).
+		SetOverriddenProvider("auth.ResetPasswordRequestRepository", storage.NewDefaultResetPasswordRequestRepository).
+		SetOverriddenProvider("auth.TokenHashStrategy", hash.NewSha1).
 		SetOverriddenProvider(
-			"MiddlewareAuthenticator", func(auth *PlainTokenAuthenticator) Authenticator {
+			"auth.MiddlewareAuthenticator", func(auth *PlainTokenAuthenticator) Authenticator {
 				return auth
 			},
 		).
-		InitConfig(&ModuleConfig{})
+		InitConfig(&ModuleConfig{}).
+		InitConfig(&storage.ResetPasswordConfig{})
 }
 
 // OverrideIdentityRepository overrides the default identity storage implementation with the custom one.
 // repository should be a constructor returning the implementation of the IdentityRepository interface.
-func OverrideIdentityRepository(authModule *module.Module, repository interface{}) *module.Module {
-	return authModule.SetOverriddenProvider("IdentityRepository", repository)
+func OverrideIdentityRepository[T repository.IdentityRepository](authModule *module.Module) *module.Module {
+	return authModule.SetOverriddenProvider(
+		"auth.IdentityRepository",
+		func(impl T) repository.IdentityRepository { return impl },
+	)
 }
 
 // OverrideCredentialRepository overrides the default credential storage implementation with the custom one.
 // repository should be a constructor returning the implementation of the CredentialRepository interface.
-func OverrideCredentialRepository(authModule *module.Module, repository interface{}) *module.Module {
-	return authModule.SetOverriddenProvider("CredentialRepository", repository)
+func OverrideCredentialRepository[T repository.CredentialRepository](authModule *module.Module) *module.Module {
+	return authModule.SetOverriddenProvider(
+		"auth.CredentialRepository",
+		func(impl T) repository.CredentialRepository { return impl },
+	)
 }
 
 // OverrideTokenRepository overrides the default token storage implementation with the custom one.
 // repository should be a constructor returning the implementation of the TokenRepository interface.
-func OverrideTokenRepository(authModule *module.Module, repository interface{}) *module.Module {
-	return authModule.SetOverriddenProvider("TokenRepository", repository)
+func OverrideTokenRepository[T repository.TokenRepository](authModule *module.Module) *module.Module {
+	return authModule.SetOverriddenProvider(
+		"auth.TokenRepository",
+		func(impl T) repository.TokenRepository { return impl },
+	)
 }
 
 // OverrideAccountRepository overrides the default account storage implementation with the custom one.
 // repository should be a constructor returning the implementation of the AccountRepository interface.
-func OverrideAccountRepository(authModule *module.Module, repository interface{}) *module.Module {
-	return authModule.SetOverriddenProvider("AccountRepository", repository)
+func OverrideAccountRepository[T repository.AccountRepository](authModule *module.Module) *module.Module {
+	return authModule.SetOverriddenProvider(
+		"auth.AccountRepository",
+		func(impl T) repository.AccountRepository { return impl },
+	)
 }
 
 // OverrideTokenHashStrategy overrides the default token hash strategy with the custom one.
 // strategy should be a constructor returning the implementation of the hash.TokenHashStrategy interface.
 // by default, the sha1 hash strategy is used.
-// if you don't want to hash tokens, you can set the strategy to none, like this auth.OverrideTokenHashStrategy(authModule, hash.NewNone)
-func OverrideTokenHashStrategy(authModule *module.Module, strategy interface{}) *module.Module {
-	return authModule.SetOverriddenProvider("TokenHashStrategy", strategy)
+// if you don't want to hash tokens, you can set the strategy to none, like this auth.OverrideTokenHashStrategy[*hash.None](authModule)
+func OverrideTokenHashStrategy[T hash.TokenHashStrategy](authModule *module.Module) *module.Module {
+	return authModule.SetOverriddenProvider(
+		"auth.TokenHashStrategy",
+		func(impl T) hash.TokenHashStrategy { return impl },
+	)
 }
 
 // OverrideMiddlewareAuthenticator overrides the default middleware authenticator with the custom one.
 // authenticator should be a constructor returning the implementation of the Authenticator interface.
-func OverrideMiddlewareAuthenticator(authModule *module.Module, authenticator interface{}) *module.Module {
-	return authModule.SetOverriddenProvider("MiddlewareAuthenticator", authenticator)
+func OverrideMiddlewareAuthenticator[T Authenticator](authModule *module.Module) *module.Module {
+	return authModule.SetOverriddenProvider("auth.MiddlewareAuthenticator", func(impl T) Authenticator { return impl })
+}
+
+// OverrideResetPasswordRequestRepository overrides the default reset password request storage implementation with the custom one.
+func OverrideResetPasswordRequestRepository[T repository.ResetPasswordRequestRepository](authModule *module.Module) *module.Module {
+	return authModule.SetOverriddenProvider(
+		"auth.ResetPasswordRequestRepository",
+		func(impl T) repository.ResetPasswordRequestRepository { return impl },
+	)
 }
 
 func NewManifestModule() module.ManifestModule {
@@ -94,6 +120,10 @@ func NewManifestModule() module.ManifestModule {
 		module.InstalledFile{
 			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/storage/migration/20240320084613_auth_account.sql",
 			DestFile:  "internal/auth/storage/migration/20240320084613_auth_account.sql",
+		},
+		module.InstalledFile{
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/storage/migration/20250508110252_add_reset_password_request_table.sql",
+			DestFile:  "internal/auth/storage/migration/20250508110252_add_reset_password_request_table.sql",
 		},
 		module.InstalledFile{
 			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/auth/install/module.go.tmpl",

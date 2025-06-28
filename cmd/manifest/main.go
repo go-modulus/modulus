@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/go-modulus/modulus/auth"
+	"github.com/go-modulus/modulus/auth/providers/email"
+	"github.com/go-modulus/modulus/captcha"
 	"github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/db/embedded"
 	"github.com/go-modulus/modulus/db/migrator"
@@ -54,6 +56,8 @@ func main() {
 		auth.NewManifestModule(),
 		embedded.NewManifestModule(),
 		temporal.NewManifestModule(),
+		captcha.NewManifestModule(),
+		email.NewManifestModule(),
 	}
 
 	manifest, err := module.LoadLocalManifest("./")
