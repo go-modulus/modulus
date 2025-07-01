@@ -174,3 +174,34 @@ func (r *mutationResolver) RegisterViaEmail(ctx context.Context, input graphql1.
     return r.auth.RegisterViaEmail(ctx, input)
 }
 ```
+9. In the `cmd/console/main.go` file change the constructor `http.NewModule` to
+```go
+http.OverrideErrorPipeline(
+			http.OverrideMiddlewarePipeline(
+				http.NewModule(),
+				func(
+					logger *slog.Logger,
+					authMd *auth.Middleware,
+				) *http.Pipeline {
+					return &http.Pipeline{
+						Middlewares: []http.Middleware{
+							middleware.RequestID,
+							middleware.IP,
+							middleware.UserAgent,
+							middleware.NewLogger(logger),
+							authMd.HttpMiddleware(),
+						},
+					}
+				},
+			),
+			func(
+				logger *slog.Logger,
+				loggerConfig errhttp.ErrorLoggerConfig,
+			) *errhttp.ErrorPipeline {
+				defPipeline := errhttp.NewDefaultErrorPipeline(logger, loggerConfig)
+				defPipeline.Processors = append(defPipeline.Processors, auth.AddHttpCode())
+				return defPipeline
+			},
+		),
+```
+It will add the authentication middleware to the HTTP server. After that it will be possible to use the authentication GraphQL resolvers calling `performerID := auth.GetPerformerID(ctx)`.

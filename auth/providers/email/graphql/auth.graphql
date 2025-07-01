@@ -1,26 +1,19 @@
-"""
-Any JSON object that can be used to store user information.
-For example, it can be used to store the user's name, profile picture URL, etc.
-"""
-scalar UserInfo
-
 extend type Mutation {
     registerViaEmail(input: RegisterViaEmailInput!): TokenPair!
     loginViaEmail(input: LoginViaEmailInput!): TokenPair!
     requestResetPassword(email: String!): Void!
     confirmResetPassword(input: ConfirmResetPasswordInput!): Void!
 
-    changePassword(input: ChangePasswordInput!): User!
+    changePassword(input: ChangePasswordInput!): Void!
 }
 
 input RegisterViaEmailInput @goModel(model: "github.com/go-modulus/modulus/auth/providers/email/graphql.RegisterViaEmailInput") {
     email: String!
     password: String!
-    userInfo: UserInfo
     captcha: CaptchaToken
 }
 
-input LoginViaEmailInput {
+input LoginViaEmailInput @goModel(model: "github.com/go-modulus/modulus/auth/providers/email/graphql.LoginViaEmailInput") {
     email: String!
     password: String!
     captcha: CaptchaToken
