@@ -1,0 +1,13 @@
+extend type Mutation {
+    registerViaGoogle(input: RegisterViaGoogleInput!): TokenPair!
+}
+
+input RegisterViaGoogleInput @goModel(model: "github.com/go-modulus/modulus/auth/providers/email/graphql.RegisterViaGoogleInput") {
+    code: String!
+    verifier: String!
+    """
+    The URL that has been used for creation the temporary code.
+    If not provided, the default redirect URL from configs is used.
+    """
+    redirectUrl: String
+}

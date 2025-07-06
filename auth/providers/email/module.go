@@ -47,7 +47,7 @@ func NewManifestModule() module.ManifestModule {
 	emailModule := module.NewManifestModule(
 		NewModule().Module,
 		"github.com/go-modulus/modulus/auth/providers/email",
-		"Captcha processor that have to be integrated in auth queries to protect against bots registrations.",
+		"A provider for auth module to organize authentication via the email/password pair.",
 		"1.0.0",
 	)
 	emailModule.Install.AppendFiles(
