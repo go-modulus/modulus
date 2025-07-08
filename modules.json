@@ -504,7 +504,7 @@
       "localPath": "internal/auth/providers/email"
     },
     {
-      "name": "google auth",
+      "name": "auth google provider",
       "package": "github.com/go-modulus/modulus/auth/providers/google",
       "description": "Authentication provider for the auth module that helps auth using Google.",
       "install": {
