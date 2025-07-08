@@ -3,6 +3,7 @@ package action_test
 import (
 	"context"
 	"encoding/json"
+	"github.com/go-modulus/modulus/auth/install/graphql"
 	"strings"
 	"testing"
 
@@ -68,7 +69,7 @@ func TestRegisterUser_Execute(t *testing.T) {
 
 			t.Log("   And account has default role")
 			require.Len(t, account.Roles, 1)
-			require.Equal(t, action.DefaultUserRole, account.Roles[0])
+			require.Equal(t, graphql.DefaultUserRole, account.Roles[0])
 
 			t.Log("   And the tokens are created")
 			require.Equal(t, pair.AccessToken.AccountID.String(), identity.AccountID.String())

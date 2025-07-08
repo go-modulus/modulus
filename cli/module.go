@@ -11,9 +11,10 @@ import (
 )
 
 type ModuleConfig struct {
-	Version     string
-	Usage       string
-	GlobalFlags []cli.Flag
+	Version        string
+	Usage          string
+	DefaultCommand string
+	GlobalFlags    []cli.Flag
 }
 
 type StartCliParams struct {
@@ -34,11 +35,12 @@ func NewApp(params StartCliParams) *cli.App {
 	addGlobalFlagsToAllSubcommands(commands, params.Config.GlobalFlags)
 	app := &cli.App{
 		Usage:                usage,
+		Version:              params.Config.Version,
+		DefaultCommand:       params.Config.DefaultCommand,
 		Commands:             commands,
+		Flags:                params.Config.GlobalFlags,
 		EnableBashCompletion: true,
 		Suggest:              true,
-		Version:              params.Config.Version,
-		Flags:                params.Config.GlobalFlags,
 	}
 
 	sort.Sort(cli.FlagsByName(app.Flags))
