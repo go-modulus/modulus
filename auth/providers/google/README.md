@@ -53,8 +53,8 @@ getCodeBtn.addEventListener('click', async () => {
     localStorage.setItem("code_verifier", codeVerifier);
 
     const params = new URLSearchParams({
-        client_id: '{{.ClientID}}',
-        redirect_uri: '{{.FrontedHost}}/auth/google/callback',
+        client_id: '{{ClientID}}',
+        redirect_uri: '{{FrontedHost}}/auth/google/callback',
         response_type: 'code',
         scope: 'openid profile email',
         code_challenge: codeChallenge,
@@ -74,7 +74,7 @@ const verifier = localStorage.getItem("code_verifier");
 
 async function getAccessToken(code) {
 
-    const response = await fetch('{{.BackendHost}}/graphql', {
+    const response = await fetch('{{BackendHost}}/graphql', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
