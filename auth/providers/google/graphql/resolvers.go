@@ -5,7 +5,7 @@ import (
 	"context"
 	"github.com/go-modulus/modulus/auth"
 	"github.com/go-modulus/modulus/auth/graphql"
-	action2 "github.com/go-modulus/modulus/auth/providers/email/action"
+	graphql2 "github.com/go-modulus/modulus/auth/install/graphql"
 	"github.com/go-modulus/modulus/auth/providers/google/action"
 )
 
@@ -30,7 +30,7 @@ func (r *Resolver) RegisterViaGoogle(ctx context.Context, input RegisterViaGoogl
 			Code:        input.Code,
 			Verifier:    input.Verifier,
 			RedirectUrl: url,
-			Roles:       []string{action2.DefaultUserRole},
+			Roles:       []string{graphql2.DefaultUserRole},
 			UserInfo:    nil,
 		},
 	)

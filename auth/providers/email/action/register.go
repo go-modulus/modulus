@@ -3,6 +3,7 @@ package action
 import (
 	"context"
 	"fmt"
+	"github.com/go-modulus/modulus/auth/install/graphql"
 	"strings"
 
 	"braces.dev/errtrace"
@@ -15,8 +16,6 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/gofrs/uuid"
 )
-
-const DefaultUserRole = "user"
 
 var ErrEmailAlreadyExists = erruser.New(
 	"email already exists",
@@ -104,7 +103,7 @@ func (r *Register) Execute(ctx context.Context, input RegisterInput) (auth.Token
 	identityStr := input.Email
 
 	if len(input.Roles) == 0 {
-		input.Roles = []string{DefaultUserRole}
+		input.Roles = []string{graphql.DefaultUserRole}
 	}
 
 	// Register new account with the email as identity

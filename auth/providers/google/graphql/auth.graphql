@@ -2,7 +2,7 @@ extend type Mutation {
     registerViaGoogle(input: RegisterViaGoogleInput!): TokenPair!
 }
 
-input RegisterViaGoogleInput @goModel(model: "github.com/go-modulus/modulus/auth/providers/email/graphql.RegisterViaGoogleInput") {
+input RegisterViaGoogleInput @goModel(model: "github.com/go-modulus/modulus/auth/providers/google/graphql.RegisterViaGoogleInput") {
     code: String!
     verifier: String!
     """

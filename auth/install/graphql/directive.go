@@ -7,6 +7,8 @@ import (
 	"github.com/gofrs/uuid"
 )
 
+const DefaultUserRole = "user"
+
 func AuthGuard(
 	ctx context.Context,
 	_ any,
