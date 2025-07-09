@@ -104,20 +104,21 @@ func (m *Module) buildFx() fx.Option {
 			providers = append(providers, m.provideCommand(constructor))
 		}
 	}
-	if len(m.providers) > 0 {
-		opts = append(opts, fx.Provide(providers...))
-	}
+
 	if len(m.taggedProviders) > 0 {
 		for tag, taggedProviders := range m.taggedProviders {
 			if _, ok := m.hiddenTags[tag]; !ok {
-				opts = append(opts, fx.Provide(taggedProviders...))
+				providers = append(providers, taggedProviders...)
 			}
 		}
 	}
 	if len(m.overriddenProviders) > 0 {
 		for _, provider := range m.overriddenProviders {
-			opts = append(opts, fx.Provide(provider))
+			providers = append(providers, provider)
 		}
+	}
+	if len(providers) > 0 {
+		opts = append(opts, fx.Provide(providers...))
 	}
 	if len(m.configs) > 0 {
 		supplies := make([]interface{}, 0, len(m.configs))
