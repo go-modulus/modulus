@@ -2,11 +2,8 @@ package errors
 
 import (
 	"errors"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
+	"github.com/vorlif/spreak/localize"
 )
-
-var ht = message.NewPrinter(language.English)
 
 type withHint struct {
 	hint string
@@ -39,12 +36,10 @@ func Hint(err error) string {
 	return ""
 }
 
-func WithHint(err error, hint string) error {
+func WithHint(err error, hint localize.Singular) error {
 	if err == nil {
 		return err
 	}
-	// it is a hack to mark the error for extracting to the translation file
-	_ = ht.Sprintf(hint)
 
 	return withHint{hint: hint, err: err}
 }

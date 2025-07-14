@@ -2,6 +2,7 @@ package auth
 
 import (
 	"github.com/go-modulus/modulus/auth/hash"
+	"github.com/go-modulus/modulus/auth/locales"
 	"github.com/go-modulus/modulus/auth/repository"
 	"github.com/go-modulus/modulus/auth/storage"
 	"github.com/go-modulus/modulus/db/pgx"
@@ -28,6 +29,7 @@ func NewModule() *module.Module {
 			NewMiddleware,
 			NewPasswordAuthenticator,
 			NewPlainTokenAuthenticator,
+			locales.ProvideLocalesFs(),
 		).
 		SetOverriddenProvider("auth.CredentialRepository", storage.NewDefaultCredentialRepository).
 		SetOverriddenProvider("auth.IdentityRepository", storage.NewDefaultIdentityRepository).

@@ -196,6 +196,15 @@ func (m *Module) getConfigName(config any) string {
 	return pckgPath + "." + nameOfType
 }
 
+type Option func(*Module) *Module
+
+func (m *Module) WithOptions(opts ...Option) *Module {
+	for _, opt := range opts {
+		*m = *opt(m)
+	}
+	return m
+}
+
 func BuildFx(modules ...*Module) fx.Option {
 	var builtModules = make(map[string]struct{})
 	return buildFx(modules, builtModules, 0)

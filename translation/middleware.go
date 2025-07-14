@@ -20,8 +20,7 @@ func (a *Middleware) Middleware(next http.Handler) http.Handler {
 			ctx := r.Context()
 
 			locale := r.Header.Get("Accept-Language")
-			ctx = WithLocale(ctx, locale)
-			ctx = WithTranslator(ctx, a.translator)
+			ctx = WithLocalizer(ctx, a.translator.NewLocalizer(locale))
 
 			r = r.WithContext(ctx)
 			next.ServeHTTP(w, r)
