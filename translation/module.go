@@ -3,7 +3,6 @@ package translation
 import (
 	"errors"
 	"github.com/go-modulus/modulus/module"
-	"github.com/spf13/afero"
 	"github.com/vorlif/spreak"
 	"go.uber.org/fx"
 	"golang.org/x/text/language"
@@ -97,45 +96,6 @@ func NewModule() *module.Module {
 		},
 	).InitConfig(ModuleConfig{})
 
-}
-
-func mergePoFilesystems(fsList []fs.FS) (fs.FS, error) {
-	if len(fsList) == 0 {
-		return nil, errors.New("no filesystems provided to merge")
-	}
-	mem := afero.NewMemMapFs()
-
-	filesContent := make(map[string]string)
-	for _, f := range fsList {
-		err := fs.WalkDir(
-			f, ".", func(path string, d fs.DirEntry, err error) error {
-				if err != nil {
-					return err
-				}
-				if d.IsDir() || !d.Type().IsRegular() {
-					return nil // Skip directories and non-regular files
-				}
-				content, err := fs.ReadFile(f, path)
-				if err != nil {
-					return err
-				}
-				// Store content in a map to merge later
-				filesContent[path] += string(content) // Concatenate content if same file exists in multiple FS
-				return nil
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	for path, content := range filesContent {
-		// Write merged content to the in-memory filesystem
-		if err := afero.WriteFile(mem, path, []byte(content), 0644); err != nil {
-			return nil, err
-		}
-	}
-	return afero.NewIOFS(mem), nil
 }
 
 func ProvideLocalesFs(
