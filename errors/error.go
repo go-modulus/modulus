@@ -23,31 +23,6 @@ func NewWithCause(code string, cause error) error {
 	return WithCause(New(code), cause)
 }
 
-//func Message(t *message.Printer, err error) string {
-//	hint := Hint(err)
-//	if hint != "" {
-//		return t.Sprint(hint)
-//	}
-//
-//	type withMessage interface {
-//		Message() string
-//	}
-//	var wm withMessage
-//	if syserrors.As(err, &wm) {
-//		return wm.Message()
-//	}
-//
-//	type withMessagePrinter interface {
-//		Message(*message.Printer) string
-//	}
-//	var wmp withMessagePrinter
-//	if syserrors.As(err, &wmp) {
-//		return wmp.Message(t)
-//	}
-//
-//	return t.Sprintf("Something went wrong on our side")
-//}
-
 func Is(err, target error) bool {
 	return syserrors.Is(err, target)
 }

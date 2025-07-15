@@ -2,10 +2,13 @@ package auth
 
 import (
 	"context"
+	"github.com/go-modulus/modulus/auth/locales"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/errors/erruser"
+	"github.com/go-modulus/modulus/translation"
 	"github.com/gofrs/uuid"
 	"github.com/sethvargo/go-envconfig"
+	"github.com/vorlif/spreak/localize"
 	"net/http"
 	"time"
 )
@@ -13,16 +16,24 @@ import (
 const TagUnauthenticated = "unauthenticated"
 const TagUnauthorized = "unauthorized"
 
-var ErrInvalidToken = erruser.New("invalid access token", "Please provide a valid access token")
-
-var ErrUnauthenticated = errors.WithAddedTags(
-	erruser.New("unauthenticated", "Please authenticate to get access to this resource"),
-	TagUnauthenticated,
+var ErrInvalidToken = translation.WithDomain(
+	erruser.New("invalid access token", "Please provide a valid access token"),
+	locales.Domain,
 )
 
-var ErrUnauthorized = errors.WithAddedTags(
-	erruser.New("unauthorized", "You are not authorized to access this resource"),
-	TagUnauthorized,
+var ErrUnauthenticated = translation.WithDomain(
+	errors.WithAddedTags(
+		erruser.New("unauthenticated", localize.Singular("Please authenticate to get access to this resource")),
+		TagUnauthenticated,
+	), locales.Domain,
+)
+
+var ErrUnauthorized = translation.WithDomain(
+	errors.WithAddedTags(
+		erruser.New("unauthorized", "You are not authorized to access this resource"),
+		TagUnauthorized,
+	),
+	locales.Domain,
 )
 
 type Performer struct {

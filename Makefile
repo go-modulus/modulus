@@ -64,3 +64,8 @@ db-migrate: ## Run migrations in test database
 db-rollback: ## Rollback the last migration in test database
 	$(MAKE) install
 	APP_ENV=test ./bin/mtools db rollback --local-manifest=modules-test.json
+
+.PHONY: translation-extract
+translation-extract: ## Extract translations from source code
+	@echo "Extracting translations..."
+	go run github.com/vorlif/xspreak@latest -D ./auth -p ./auth/locales -d auth

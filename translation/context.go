@@ -2,8 +2,8 @@ package translation
 
 import (
 	"context"
+	"github.com/vorlif/spreak"
 	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 )
 
 type contextKey string
@@ -23,26 +23,28 @@ func GetLocale(ctx context.Context) string {
 	return locale
 }
 
-func WithTranslator(ctx context.Context, translator *Translator) context.Context {
-	return context.WithValue(ctx, contextKey("Translator"), translator)
+func WithLocalizer(ctx context.Context, localizer *spreak.Localizer) context.Context {
+	return context.WithValue(ctx, contextKey("Localizer"), localizer)
 }
 
-func GetTranslator(ctx context.Context) *Translator {
-	if value := ctx.Value(contextKey("Translator")); value != nil {
-		return value.(*Translator)
+func GetLocalizer(ctx context.Context) (*spreak.Localizer, error) {
+	if value := ctx.Value(contextKey("Localizer")); value != nil {
+		return value.(*spreak.Localizer), nil
 	}
 
-	return nil
-}
-
-func GetPrinter(ctx context.Context) *message.Printer {
-	locale := GetLocale(ctx)
-	t := GetTranslator(ctx)
-	if t == nil {
-		return message.NewPrinter(language.English)
+	// default localizer that uses English language and returns the same text
+	opts := []spreak.BundleOption{
+		spreak.WithSourceLanguage(language.English),
+		spreak.WithLanguage(language.English),
 	}
-	tag := t.GetSupportedLocale(locale)
 
-	return message.NewPrinter(tag)
-
+	bundle, err := spreak.NewBundle(
+		opts...,
+	)
+	if err != nil {
+		// If we cannot create a default localizer, return nil
+		return nil, err
+	}
+	localizer := spreak.NewLocalizer(bundle, language.English)
+	return localizer, nil
 }
