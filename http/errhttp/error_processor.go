@@ -7,6 +7,7 @@ import (
 	"github.com/go-modulus/modulus/errors/errsys"
 	context2 "github.com/go-modulus/modulus/http/context"
 	"log/slog"
+	"sort"
 )
 
 const InternalErrorCode = "unhandled internal error"
@@ -14,14 +15,45 @@ const InternalErrorCode = "unhandled internal error"
 type ErrorProcessor func(ctx context.Context, err error) error
 
 type ErrorPipeline struct {
-	Processors []ErrorProcessor
+	// processors is a map of ranked ErrorProcessor functions that will be executed in order, according to their rank.
+	processors map[int][]ErrorProcessor
 }
 
 func (p *ErrorPipeline) Process(ctx context.Context, err error) error {
-	for _, processor := range p.Processors {
-		err = processor(ctx, err)
+	if p.processors == nil {
+		p.processors = make(map[int][]ErrorProcessor)
+	}
+	if len(p.processors) == 0 {
+		return err
+	}
+	if err == nil {
+		return nil
+	}
+
+	// get all keys (ranks) from the processors map
+	var ranks []int
+	for rank := range p.processors {
+		ranks = append(ranks, rank)
+	}
+
+	// sort ranks in ascending order
+	sort.Ints(ranks)
+
+	// iterate over all ranks and call all processors in each rank
+	for _, rank := range ranks {
+		processors := p.processors[rank]
+		for _, processor := range processors {
+			err = processor(ctx, err)
+		}
 	}
 	return err
+}
+
+func (p *ErrorPipeline) SetProcessor(rank int, processor ErrorProcessor) {
+	if p.processors == nil {
+		p.processors = make(map[int][]ErrorProcessor)
+	}
+	p.processors[rank] = append(p.processors[rank], processor)
 }
 
 type ErrorLoggerConfig struct {
@@ -34,11 +66,19 @@ func NewDefaultErrorPipeline(
 	loggerConfig ErrorLoggerConfig,
 ) *ErrorPipeline {
 	return &ErrorPipeline{
-		Processors: []ErrorProcessor{
-			SaveMultiErrorsToMeta(),
-			LogError(logger, loggerConfig),
-			HideInternalError(),
-			AddRequestID(),
+		processors: map[int][]ErrorProcessor{
+			0: {
+				SaveMultiErrorsToMeta(),
+			},
+			100: {
+				LogError(logger, loggerConfig),
+			},
+			200: {
+				HideInternalError(),
+			},
+			300: {
+				AddRequestID(),
+			},
 		},
 	}
 }

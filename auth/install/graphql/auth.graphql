@@ -1,2 +1,7 @@
 
 directive @authGuard(allowedRoles: [String!]!) on FIELD_DEFINITION | MUTATION | QUERY | SUBSCRIPTION
+
+type TokenPair @goModel(model: "github.com/go-modulus/modulus/auth/graphql.TokenPair") {
+    accessToken: String!
+    refreshToken: String!
+}

@@ -1,0 +1,10 @@
+input CaptchaToken @goModel(model: "github.com/go-modulus/modulus/captcha/action.CaptchaToken") {
+    version: CaptchaVersion!
+    token: String!
+    action: String!
+}
+
+enum CaptchaVersion @goModel(model: "github.com/go-modulus/modulus/captcha/action.CaptchaVersion") {
+    v2
+    v3
+}

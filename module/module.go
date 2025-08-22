@@ -104,20 +104,21 @@ func (m *Module) buildFx() fx.Option {
 			providers = append(providers, m.provideCommand(constructor))
 		}
 	}
-	if len(m.providers) > 0 {
-		opts = append(opts, fx.Provide(providers...))
-	}
+
 	if len(m.taggedProviders) > 0 {
 		for tag, taggedProviders := range m.taggedProviders {
 			if _, ok := m.hiddenTags[tag]; !ok {
-				opts = append(opts, fx.Provide(taggedProviders...))
+				providers = append(providers, taggedProviders...)
 			}
 		}
 	}
 	if len(m.overriddenProviders) > 0 {
 		for _, provider := range m.overriddenProviders {
-			opts = append(opts, fx.Provide(provider))
+			providers = append(providers, provider)
 		}
+	}
+	if len(providers) > 0 {
+		opts = append(opts, fx.Provide(providers...))
 	}
 	if len(m.configs) > 0 {
 		supplies := make([]interface{}, 0, len(m.configs))
@@ -176,16 +177,14 @@ func (m *Module) InitConfig(config any) *Module {
 	m.configs[name] = filledConfig
 
 	vars := getVariables(config, false)
-	var envVars []ConfigEnvVariable
 	for _, value := range vars {
-		envVars = append(envVars, value)
+		m.envVars = append(m.envVars, value)
 	}
 	sort.Slice(
-		envVars, func(i, j int) bool {
-			return envVars[i].Key < envVars[j].Key
+		m.envVars, func(i, j int) bool {
+			return m.envVars[i].Key < m.envVars[j].Key
 		},
 	)
-	m.envVars = envVars
 	return m
 }
 
@@ -195,6 +194,15 @@ func (m *Module) getConfigName(config any) string {
 	nameOfType := t.Name()
 
 	return pckgPath + "." + nameOfType
+}
+
+type Option func(*Module) *Module
+
+func (m *Module) WithOptions(opts ...Option) *Module {
+	for _, opt := range opts {
+		*m = *opt(m)
+	}
+	return m
 }
 
 func BuildFx(modules ...*Module) fx.Option {

@@ -108,3 +108,20 @@ func (f *FixturesFactory) Account() *AccountFixture {
 		},
 	)
 }
+
+func (f *FixturesFactory) ResetPasswordRequest() *ResetPasswordRequestFixture {
+	bytes := make([]byte, 32)
+	_, _ = rand.Read(bytes)
+	token := base64.StdEncoding.EncodeToString(bytes)[:32]
+	return NewResetPasswordRequestFixture(
+		f.db, storage.ResetPasswordRequest{
+			ID:         uuid.Must(uuid.NewV6()),
+			AccountID:  uuid.Must(uuid.NewV6()),
+			Status:     storage.ResetPasswordStatusActive,
+			Token:      token,
+			LastSendAt: null.Time{},
+			UsedAt:     null.Time{},
+			CreatedAt:  time.Now(),
+		},
+	)
+}

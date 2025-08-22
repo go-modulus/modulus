@@ -1,14 +1,17 @@
 package erruser
 
-import "github.com/go-modulus/modulus/errors"
+import (
+	"github.com/go-modulus/modulus/errors"
+	"github.com/vorlif/spreak/localize"
+)
 
 // New creates a new user error with the given code and hint
-func New(code string, hint string) error {
+func New(code string, hint localize.Singular) error {
 	return errors.WithAddedTags(errors.WithHint(errors.New(code), hint), errors.UserErrorTag)
 }
 
 // NewWithCause creates a new user error with the given code, hint and cause
-func NewWithCause(code, hint string, cause error) error {
+func NewWithCause(code, hint localize.Singular, cause error) error {
 	return errors.WithCause(New(code, hint), cause)
 }
 

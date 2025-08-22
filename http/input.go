@@ -61,13 +61,17 @@ func WrapInputHandler[B any](handle InputHandler[B]) errhttp.Handler {
 		if err != nil {
 			var fErr *httpinCore.InvalidFieldError
 			if errors.As(err, &fErr) {
-				t := translationContext.GetPrinter(r.Context())
-				msg := t.Sprintf("Invalid value")
+				t, err := translationContext.GetLocalizer(r.Context())
+				if err != nil {
+					return errtrace.Wrap(err)
+				}
+
+				msg := t.Get("Invalid value")
 				switch fErr.Directive {
 				case "required":
-					msg = t.Sprintf("Required")
+					msg = t.Get("Required")
 				case "nonzero":
-					msg = t.Sprintf("Required to be non-zero value")
+					msg = t.Get("Required to be non-zero value")
 				}
 				return erruser.NewValidationError(erruser.New(fErr.Key, msg))
 			}

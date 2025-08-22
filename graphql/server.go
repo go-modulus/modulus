@@ -119,9 +119,7 @@ func NewErrorPresenter(params ErrorPresenterParams) graphql.ErrorPresenterFunc {
 		config := params.Config
 
 		if params.ErrorPipeline != nil {
-			for _, converter := range params.ErrorPipeline.Processors {
-				err = converter(ctx, err)
-			}
+			err = params.ErrorPipeline.Process(ctx, err)
 		}
 
 		code := err.Error()
