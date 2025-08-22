@@ -68,4 +68,4 @@ db-rollback: ## Rollback the last migration in test database
 .PHONY: translation-extract
 translation-extract: ## Extract translations from source code
 	@echo "Extracting translations..."
-	go run github.com/vorlif/xspreak@latest -D ./auth -p ./auth/locales -d auth
+	go run github.com/go-modulus/xspreak@latest -D ./auth -p ./auth/locales -d auth
