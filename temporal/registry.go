@@ -1,12 +1,13 @@
 package temporal
 
 import (
-	"go.temporal.io/sdk/activity"
-	"go.temporal.io/sdk/worker"
-	"go.temporal.io/sdk/workflow"
 	"reflect"
 	"runtime"
 	"strings"
+
+	"go.temporal.io/sdk/activity"
+	"go.temporal.io/sdk/worker"
+	"go.temporal.io/sdk/workflow"
 )
 
 func RegisterActivity(registry worker.Registry, a interface{}) {
@@ -14,7 +15,8 @@ func RegisterActivity(registry worker.Registry, a interface{}) {
 
 	registry.RegisterActivityWithOptions(
 		a, activity.RegisterOptions{
-			Name: name,
+			Name:                          name,
+			DisableAlreadyRegisteredCheck: true,
 		},
 	)
 }

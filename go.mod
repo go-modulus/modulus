@@ -1,6 +1,8 @@
 module github.com/go-modulus/modulus
 
-go 1.24.0
+go 1.25
+
+toolchain go1.25.0
 
 replace github.com/vorlif/xspreak => github.com/go-modulus/xspreak v0.6.0
 
