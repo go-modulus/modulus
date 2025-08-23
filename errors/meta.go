@@ -5,12 +5,7 @@ import (
 	"strings"
 )
 
-type withMeta struct {
-	meta string
-	err  error
-}
-
-func (m withMeta) Meta() map[string]string {
+func (m mError) Meta() map[string]string {
 	parts := strings.Split(m.meta, ";")
 	meta := make(map[string]string)
 	for _, part := range parts {
@@ -23,31 +18,12 @@ func (m withMeta) Meta() map[string]string {
 	return meta
 }
 
-func (m withMeta) Error() string {
-	return m.err.Error()
-}
-
-func (m withMeta) Unwrap() error {
-	return m.err
-}
-
-func (m withMeta) Is(target error) bool {
-	var we withMeta
-	if !errors.As(target, &we) {
-		return false
-	}
-
-	return m.err.Error() == we.err.Error()
-}
-
 func Meta(err error) map[string]string {
-	type wm interface {
-		Meta() map[string]string
+	var e mError
+	if errors.As(err, &e) {
+		return e.Meta()
 	}
-	var we wm
-	if errors.As(err, &we) {
-		return we.Meta()
-	}
+
 	return nil
 }
 
@@ -68,7 +44,14 @@ func WithMeta(err error, kv ...string) error {
 	for key, value := range metaMap {
 		parts = append(parts, key+"="+value)
 	}
-	return withMeta{meta: strings.Join(parts, ";"), err: err}
+	var e mError
+	if errors.As(err, &e) {
+		e.meta = strings.Join(parts, ";")
+		return e
+	}
+	e = new(err.Error())
+	e.meta = strings.Join(parts, ";")
+	return e
 }
 
 func WithAddedMeta(err error, kv ...string) error {
