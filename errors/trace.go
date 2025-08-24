@@ -15,25 +15,52 @@ func Trace(err error) []string {
 	if err == nil {
 		return nil
 	}
+	allCauses := make([]error, 0)
+	allCauses = append(allCauses, err)
+	for cause := errors.Unwrap(err); cause != nil; cause = errors.Unwrap(cause) {
+		allCauses = append(allCauses, cause)
+	}
+	trace := make([]string, 0)
+	for i := len(allCauses) - 1; i >= 0; i-- {
+		cause := allCauses[i]
+		items := getErrTraceTrace(cause)
 
-	// make a trace saved by errtrace.Wrap
+		items = append(items, getMErrorTrace(cause)...)
+
+		if len(items) == 0 {
+			continue
+		}
+		trace = append(trace, items...)
+	}
+
+	// remove duplicates
+	seen := make(map[string]bool)
+	unique := make([]string, 0)
+	for _, item := range trace {
+		if !seen[item] {
+			seen[item] = true
+			unique = append(unique, item)
+		}
+	}
+
+	return unique
+}
+
+func getErrTraceTrace(err error) []string {
 	message := errtrace.FormatString(err)
 	msgParts := strings.Split(message, "\n")
 	var trace []string
 	for i, part := range msgParts {
+		// remove
 		if i == 0 || part == "" {
 			continue
 		}
 		trace = append(trace, part)
 	}
-
-	// append trace saved by WithTrace
-	trace = append(trace, getTrace(err)...)
-
 	return trace
 }
 
-func getTrace(err error) []string {
+func getMErrorTrace(err error) []string {
 	result := make([]string, 0)
 	if err == nil {
 		return result
@@ -43,7 +70,6 @@ func getTrace(err error) []string {
 		if e.trace != "" {
 			result = strings.Split(e.trace, "\n")
 		}
-		result = append(result, getTrace(e.cause)...)
 		return result
 	}
 	return result
@@ -56,15 +82,17 @@ func WithTrace(err error) error {
 		traceItem = fmt.Sprintf("%s:%d", file, line)
 	}
 
-	var e mError
-	if errors.As(err, &e) {
+	e := new(err.Error())
+	errors.As(err, &e)
+
+	copy := e
+	if _, ok := err.(mError); ok {
 		if e.trace != "" {
 			traceItem = e.trace + "\n" + traceItem
 		}
-		e.trace = traceItem
-		return e
+	} else {
+		copy.cause = err
 	}
-	e = new(err.Error())
-	e.trace = traceItem
-	return e
+	copy.trace = traceItem
+	return copy
 }

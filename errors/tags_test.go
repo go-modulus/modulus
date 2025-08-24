@@ -4,6 +4,7 @@ import (
 	syserrors "errors"
 	"testing"
 
+	"braces.dev/errtrace"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/stretchr/testify/assert"
 )
@@ -49,6 +50,21 @@ func TestTags(t *testing.T) {
 			tags := errors.Tags(err)
 			expected := []string{errors.SystemErrorTag, ""}
 			assert.Equal(t, expected, tags)
+		},
+	)
+
+	t.Run(
+		"Tags returns multiple tags when error is wrapped", func(t *testing.T) {
+			baseErr := errors.New("code")
+			err := errors.WithAddedTags(baseErr, errors.UserErrorTag, errors.ValidationErrorTag)
+			err = errtrace.Wrap(err)
+			err = errors.WithAddedTags(err, "test")
+			tags := errors.Tags(err)
+			trace := errors.Trace(err)
+			expected := []string{errors.SystemErrorTag, errors.UserErrorTag, errors.ValidationErrorTag, "test"}
+			assert.Equal(t, expected, tags)
+			assert.True(t, errors.Is(err, baseErr))
+			assert.Equal(t, 2, len(trace))
 		},
 	)
 }
@@ -166,12 +182,12 @@ func TestWithAddedTags(t *testing.T) {
 	)
 
 	t.Run(
-		"WithAddedTags allows duplicate tags", func(t *testing.T) {
+		"WithAddedTags shows only unique tags", func(t *testing.T) {
 			err := errors.New("code")
 			errWithDuplicates := errors.WithAddedTags(err, errors.SystemErrorTag, errors.UserErrorTag)
 
 			tags := errors.Tags(errWithDuplicates)
-			expected := []string{errors.SystemErrorTag, errors.SystemErrorTag, errors.UserErrorTag}
+			expected := []string{errors.SystemErrorTag, errors.UserErrorTag}
 			assert.Equal(t, expected, tags)
 		},
 	)

@@ -6,7 +6,18 @@ import (
 )
 
 func (m mError) Tags() []string {
-	return strings.Split(m.tags, ",")
+	tags := strings.Split(m.tags, ",")
+	unique := make(map[string]struct{})
+
+	var result []string
+	for _, tag := range tags {
+		if _, ok := unique[tag]; ok {
+			continue
+		}
+		result = append(result, tag)
+		unique[tag] = struct{}{}
+	}
+	return result
 }
 func (m mError) HasTag(tag string) bool {
 	for _, t := range m.Tags() {
@@ -46,12 +57,14 @@ func WithAddedTags(err error, tags ...string) error {
 	oldTags := Tags(err)
 	tags = append(oldTags, tags...)
 
-	var e mError
-	if errors.As(err, &e) {
-		e.tags = strings.Join(tags, ",")
-		return e
+	e := new(err.Error())
+	errors.As(err, &e)
+
+	copy := e
+	if _, ok := err.(mError); !ok {
+		copy.cause = err
 	}
-	e = new(err.Error())
-	e.tags = strings.Join(tags, ",")
-	return e
+	copy.tags = strings.Join(tags, ",")
+	return copy
+
 }

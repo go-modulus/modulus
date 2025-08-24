@@ -21,13 +21,14 @@ func WithHint(err error, hint localize.Singular) error {
 	if err == nil {
 		return err
 	}
-	var e mError
-	if errors.As(err, &e) {
-		e.hint = hint
-		return e
+
+	e := new(err.Error())
+	errors.As(err, &e)
+
+	copy := e
+	if _, ok := err.(mError); !ok {
+		copy.cause = err
 	}
-	e = new(err.Error())
-	e.cause = err
-	e.hint = hint
-	return e
+	copy.hint = hint
+	return copy
 }

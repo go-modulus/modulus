@@ -200,6 +200,48 @@ func TestTraceIntegration(t *testing.T) {
 			assert.True(t, errors.Is(level3, err))
 		},
 	)
+
+	t.Run(
+		"Mix Trace and Wrap", func(t *testing.T) {
+			err := errors.New("code")
+
+			// Simulate multiple levels of WithTrace calls
+			level1 := errors.WithTrace(err)
+			level2 := errtrace.Wrap(level1)
+			level3 := errtrace.Wrap(level2)
+			level4 := errors.WithTrace(level3)
+
+			trace := errors.Trace(level4)
+
+			assert.Equal(t, "code", level4.Error())
+			assert.True(t, errors.Is(level3, err))
+			assert.True(t, errors.Is(level3, level1))
+			assert.True(t, errors.Is(level3, level2))
+			assert.True(t, errors.Is(level3, level4))
+			assert.NotEmpty(t, trace)
+			assert.True(t, strings.Contains(trace[0], "trace_test.go"))
+		},
+	)
+
+	t.Run(
+		"Call Wrap after Trace", func(t *testing.T) {
+			err := errors.New("code")
+
+			// Simulate multiple levels of WithTrace calls
+			level1 := errors.WithTrace(err)
+			level2 := errtrace.Wrap(level1)
+			level3 := errtrace.Wrap(level2)
+
+			trace := errors.Trace(level3)
+
+			assert.Equal(t, "code", level3.Error())
+			assert.True(t, errors.Is(level3, err))
+			assert.True(t, errors.Is(level3, level1))
+			assert.True(t, errors.Is(level3, level2))
+			assert.NotEmpty(t, trace)
+			assert.True(t, strings.Contains(trace[0], "trace_test.go"))
+		},
+	)
 }
 
 func helperFunctionForTraceTest() error {

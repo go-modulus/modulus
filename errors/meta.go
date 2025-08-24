@@ -44,14 +44,16 @@ func WithMeta(err error, kv ...string) error {
 	for key, value := range metaMap {
 		parts = append(parts, key+"="+value)
 	}
-	var e mError
-	if errors.As(err, &e) {
-		e.meta = strings.Join(parts, ";")
-		return e
+
+	e := new(err.Error())
+	errors.As(err, &e)
+
+	copy := e
+	if _, ok := err.(mError); !ok {
+		copy.cause = err
 	}
-	e = new(err.Error())
-	e.meta = strings.Join(parts, ";")
-	return e
+	copy.meta = strings.Join(parts, ";")
+	return copy
 }
 
 func WithAddedMeta(err error, kv ...string) error {
