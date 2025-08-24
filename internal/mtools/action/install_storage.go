@@ -5,14 +5,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
+	"text/template"
+
 	"github.com/fatih/color"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/internal/mtools/templates"
 	"github.com/go-modulus/modulus/internal/mtools/utils"
 	"github.com/go-modulus/modulus/module"
-	"os"
-	"os/exec"
-	"text/template"
 )
 
 type StorageConfig struct {
@@ -115,7 +116,10 @@ func (c *InstallStorage) addFilesOfModule(
 	if err != nil {
 		return err
 	}
-	w.Flush()
+	err = w.Flush()
+	if err != nil {
+		return err
+	}
 
 	err = os.WriteFile(storagePath+"/sqlc.tmpl.yaml", b.Bytes(), 0644)
 	if err != nil {

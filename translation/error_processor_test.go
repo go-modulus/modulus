@@ -3,9 +3,10 @@ package translation
 import (
 	"context"
 	"errors"
+	"testing"
+
 	errors2 "github.com/go-modulus/modulus/errors"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestLocalizeErrorHint(t *testing.T) {

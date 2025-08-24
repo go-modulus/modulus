@@ -49,7 +49,7 @@ func (a *appErrWrapActivityInbound) Init(outbound temporalInterceptor.ActivityOu
 func (a *appErrWrapActivityInbound) ExecuteActivity(
 	ctx context.Context, in *temporalInterceptor.ExecuteActivityInput,
 ) (any, error) {
-	res, err := a.ActivityInboundInterceptorBase.Next.ExecuteActivity(ctx, in)
+	res, err := a.Next.ExecuteActivity(ctx, in)
 	if err == nil {
 		return res, nil
 	}

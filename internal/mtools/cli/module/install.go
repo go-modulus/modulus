@@ -5,6 +5,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/exec"
+	"path"
+	"strings"
+	"text/template"
+	"time"
+
 	"github.com/fatih/color"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/errors/errbuilder"
@@ -14,14 +23,6 @@ import (
 	"github.com/go-modulus/modulus/module"
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
-	"log/slog"
-	"net/http"
-	"os"
-	"os/exec"
-	"path"
-	"strings"
-	"text/template"
-	"time"
 )
 
 var ErrPackageIsEmpty = errbuilder.New("package is empty").
@@ -378,7 +379,10 @@ func (c *Install) copyRemoteFile(
 	if err != nil {
 		return err
 	}
-	w.Flush()
+	err = w.Flush()
+	if err != nil {
+		return err
+	}
 
 	dir := path.Dir(file.DestFile)
 	if dir != "." && dir != "" && dir != "/" {
@@ -498,9 +502,9 @@ func (c *Install) askModulesFromManifest(
 
 	searcher := func(input string, index int) bool {
 		curModule := availableModulesManifest.Modules[index-1]
-		name := strings.Replace(strings.ToLower(curModule.Name), " ", "", -1)
-		descr := strings.Replace(strings.ToLower(curModule.Description), " ", "", -1)
-		input = strings.Replace(strings.ToLower(input), " ", "", -1)
+		name := strings.ReplaceAll(strings.ToLower(curModule.Name), " ", "")
+		descr := strings.ReplaceAll(strings.ToLower(curModule.Description), " ", "")
+		input = strings.ReplaceAll(strings.ToLower(input), " ", "")
 
 		return strings.Contains(name, input) || strings.Contains(descr, input)
 	}

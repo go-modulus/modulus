@@ -4,6 +4,12 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"html/template"
+	"log/slog"
+	"os"
+	"regexp"
+	"slices"
+
 	"github.com/fatih/color"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/internal/mtools/action"
@@ -13,11 +19,6 @@ import (
 	"github.com/go-modulus/modulus/module"
 	"github.com/manifoldco/promptui"
 	"github.com/urfave/cli/v2"
-	"html/template"
-	"log/slog"
-	"os"
-	"regexp"
-	"slices"
 )
 
 var moduleNameRegexp = regexp.MustCompile(`module\s+([a-zA-Z0-9_\-\/]+)+`)
@@ -277,11 +278,8 @@ func (c *Create) askYesNo(label string) (bool, error) {
 		fmt.Println(color.RedString("Cannot ask a question: %s", err.Error()))
 		return false, err
 	}
-	val := false
-	if result == "Yes" {
-		val = true
-	}
-	return val, nil
+
+	return result == "Yes", nil
 }
 
 func (c *Create) addModuleFile(
@@ -307,7 +305,10 @@ func (c *Create) addModuleFile(
 	if err != nil {
 		return err
 	}
-	w.Flush()
+	err = w.Flush()
+	if err != nil {
+		return err
+	}
 
 	err = os.WriteFile(md.ModulePath(projPath)+"/module.go", b.Bytes(), 0644)
 	if err != nil {

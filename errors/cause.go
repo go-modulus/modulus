@@ -34,6 +34,6 @@ func WithCause(err error, cause error) error {
 		return e
 	}
 	e = new(err.Error())
-	e.cause = err
+	e.cause = cause
 	return e
 }

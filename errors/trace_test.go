@@ -239,7 +239,10 @@ func TestTraceIntegration(t *testing.T) {
 			assert.True(t, errors.Is(level3, level1))
 			assert.True(t, errors.Is(level3, level2))
 			assert.NotEmpty(t, trace)
-			assert.True(t, strings.Contains(trace[0], "trace_test.go"))
+			assert.True(t, strings.Contains(trace[0], "trace_test.go:231"))
+			assert.True(t, strings.Contains(trace[1], "github.com/go-modulus/modulus/errors_test.TestTraceIntegration"))
+			assert.True(t, strings.Contains(trace[2], "trace_test.go:232"))
+			assert.True(t, strings.Contains(trace[3], "trace_test.go:233"))
 		},
 	)
 }

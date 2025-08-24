@@ -2,9 +2,13 @@ package errors
 
 import (
 	syserrors "errors"
+	"fmt"
+	"runtime"
 
 	"github.com/vorlif/spreak/localize"
 )
+
+const InternalErrorCode = "internal-error"
 
 const (
 	SystemErrorTag     = "system-error"
@@ -54,7 +58,29 @@ func new(code string) mError {
 		tags:  SystemErrorTag,
 		cause: nil,
 		meta:  "",
+		trace: "",
 	}
+}
+
+func copyErr(err error) mError {
+	e := new(InternalErrorCode)
+	syserrors.As(err, &e)
+
+	// add cause if the top wrapper is not mError
+	if _, ok := err.(mError); !ok {
+		e.cause = err
+	}
+	// add trace if there is no mError in the chain (we are transforming the Golang error to our mError)
+	if e.code == InternalErrorCode {
+		traceItem := ""
+		_, file, line, ok := runtime.Caller(2)
+		if ok {
+			traceItem = fmt.Sprintf("%s:%d", file, line)
+		}
+		e.trace = traceItem
+	}
+
+	return e
 }
 
 func NewWithCause(code string, cause error) error {

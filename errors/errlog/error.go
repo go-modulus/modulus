@@ -1,13 +1,12 @@
 package errlog
 
 import (
-	"braces.dev/errtrace"
+	"log/slog"
+	"reflect"
+
 	"github.com/go-modulus/modulus/errors"
 	slogformatter "github.com/samber/slog-formatter"
 	_ "golang.org/x/text/message"
-	"log/slog"
-	"reflect"
-	"strings"
 )
 
 func Error(err error) slog.Attr {
@@ -30,18 +29,10 @@ func Formatter() slogformatter.Formatter {
 }
 
 func getErrorAttrs(err error) []slog.Attr {
-	message := errtrace.FormatString(err)
-	msgParts := strings.Split(message, "\n")
-	message = msgParts[0]
-	var trace []string
-	for i, part := range msgParts {
-		if i == 0 || part == "" {
-			continue
-		}
-		trace = append(trace, part)
-	}
-
-	meta := Meta(err)
+	message := err.Error()
+	meta := errors.Meta(err)
+	trace := errors.Trace(err)
+	hint := errors.Hint(err)
 	metaValues := make([]any, 0, len(meta))
 	for k, v := range meta {
 		metaValues = append(metaValues, slog.String(k, v))
@@ -49,6 +40,7 @@ func getErrorAttrs(err error) []slog.Attr {
 	values := []slog.Attr{
 		slog.String("type", reflect.TypeOf(err).String()),
 		slog.String("message", message),
+		slog.String("hint", hint),
 		slog.Any("trace", trace),
 		slog.Group("meta", metaValues...),
 	}

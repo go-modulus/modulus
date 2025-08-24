@@ -73,7 +73,7 @@ func TestWithMeta(t *testing.T) {
 			err := errors.New("code")
 			assert.Panics(
 				t, func() {
-					errors.WithMeta(err, "key")
+					_ = errors.WithMeta(err, "key") //nolint:staticcheck
 				},
 			)
 		},
@@ -104,7 +104,7 @@ func TestWithMeta(t *testing.T) {
 				"key": "value",
 			}
 			assert.Equal(t, expected, meta)
-			assert.Equal(t, "system error", errWithMeta.Error())
+			assert.Equal(t, errors.InternalErrorCode, errWithMeta.Error())
 		},
 	)
 
@@ -147,7 +147,7 @@ func TestWithAddedMeta(t *testing.T) {
 			err := errors.New("code")
 			assert.Panics(
 				t, func() {
-					errors.WithAddedMeta(err, "key")
+					_ = errors.WithAddedMeta(err, "key") //nolint:staticcheck
 				},
 			)
 		},
@@ -204,7 +204,7 @@ func TestWithAddedMeta(t *testing.T) {
 				"key": "value",
 			}
 			assert.Equal(t, expected, meta)
-			assert.Equal(t, "system error", errWithMeta.Error())
+			assert.Equal(t, errors.InternalErrorCode, errWithMeta.Error())
 		},
 	)
 

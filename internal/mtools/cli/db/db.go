@@ -1,9 +1,13 @@
 package db
 
 import (
-	"braces.dev/errtrace"
 	"context"
 	"fmt"
+	"io/fs"
+	"net/url"
+	"os"
+
+	"braces.dev/errtrace"
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
 	"github.com/fatih/color"
 	"github.com/go-modulus/modulus/config"
@@ -12,9 +16,6 @@ import (
 	"github.com/laher/mergefs"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/urfave/cli/v2"
-	"io/fs"
-	"net/url"
-	"os"
 )
 
 func newDBMate(
@@ -33,7 +34,7 @@ func newDBMate(
 }
 
 func newPgxConfig(projPath string) (pgx.ModuleConfig, error) {
-	os.Setenv("CONFIG_DIR", projPath)
+	_ = os.Setenv("CONFIG_DIR", projPath)
 	config.LoadDefaultEnv()
 
 	cfg := pgx.ModuleConfig{}

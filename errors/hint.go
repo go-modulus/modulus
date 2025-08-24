@@ -22,13 +22,8 @@ func WithHint(err error, hint localize.Singular) error {
 		return err
 	}
 
-	e := new(err.Error())
-	errors.As(err, &e)
+	e := copyErr(err)
+	e.hint = hint
 
-	copy := e
-	if _, ok := err.(mError); !ok {
-		copy.cause = err
-	}
-	copy.hint = hint
-	return copy
+	return e
 }

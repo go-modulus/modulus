@@ -74,25 +74,21 @@ func getMErrorTrace(err error) []string {
 	}
 	return result
 }
-
 func WithTrace(err error) error {
+	return WithTraceSkip(err, 2)
+}
+func WithTraceSkip(err error, skipFrames int) error {
 	traceItem := ""
-	_, file, line, ok := runtime.Caller(1)
+	_, file, line, ok := runtime.Caller(skipFrames)
 	if ok {
 		traceItem = fmt.Sprintf("%s:%d", file, line)
 	}
 
-	e := new(err.Error())
-	errors.As(err, &e)
+	e := copyErr(err)
 
-	copy := e
-	if _, ok := err.(mError); ok {
-		if e.trace != "" {
-			traceItem = e.trace + "\n" + traceItem
-		}
-	} else {
-		copy.cause = err
+	if e.trace != "" {
+		traceItem = e.trace + "\n" + traceItem
 	}
-	copy.trace = traceItem
-	return copy
+	e.trace = traceItem
+	return e
 }

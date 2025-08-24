@@ -45,15 +45,9 @@ func WithMeta(err error, kv ...string) error {
 		parts = append(parts, key+"="+value)
 	}
 
-	e := new(err.Error())
-	errors.As(err, &e)
-
-	copy := e
-	if _, ok := err.(mError); !ok {
-		copy.cause = err
-	}
-	copy.meta = strings.Join(parts, ";")
-	return copy
+	e := copyErr(err)
+	e.meta = strings.Join(parts, ";")
+	return e
 }
 
 func WithAddedMeta(err error, kv ...string) error {

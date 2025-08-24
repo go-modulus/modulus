@@ -57,14 +57,8 @@ func WithAddedTags(err error, tags ...string) error {
 	oldTags := Tags(err)
 	tags = append(oldTags, tags...)
 
-	e := new(err.Error())
-	errors.As(err, &e)
-
-	copy := e
-	if _, ok := err.(mError); !ok {
-		copy.cause = err
-	}
-	copy.tags = strings.Join(tags, ",")
-	return copy
+	e := copyErr(err)
+	e.tags = strings.Join(tags, ",")
+	return e
 
 }

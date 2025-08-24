@@ -166,7 +166,7 @@ func TestWithAddedTags(t *testing.T) {
 			tags := errors.Tags(errWithTag)
 			expected := []string{errors.UserErrorTag}
 			assert.Equal(t, expected, tags)
-			assert.Equal(t, "system error", errWithTag.Error())
+			assert.Equal(t, errors.InternalErrorCode, errWithTag.Error())
 		},
 	)
 

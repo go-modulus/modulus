@@ -2,9 +2,10 @@ package errors_test
 
 import (
 	syserrors "errors"
+	"testing"
+
 	"github.com/go-modulus/modulus/errors"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 type customError struct {
