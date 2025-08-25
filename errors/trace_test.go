@@ -97,7 +97,9 @@ func TestWithTrace(t *testing.T) {
 			err := syserrors.New("system error")
 			errWithTrace := errors.WithTrace(err)
 
-			assert.Equal(t, "system error", errWithTrace.Error())
+			assert.Equal(t, errors.InternalErrorCode, errWithTrace.Error())
+			assert.True(t, errors.IsSystemError(errWithTrace))
+			assert.True(t, errors.Is(errWithTrace, err))
 		},
 	)
 
@@ -172,7 +174,7 @@ func TestTraceIntegration(t *testing.T) {
 
 			trace := errors.Trace(wrappedErr)
 			assert.NotEmpty(t, trace)
-			assert.True(t, strings.Contains(trace[1], "trace_test.go"))
+			assert.True(t, strings.Contains(trace[0], "trace_test.go"))
 		},
 	)
 
@@ -239,10 +241,10 @@ func TestTraceIntegration(t *testing.T) {
 			assert.True(t, errors.Is(level3, level1))
 			assert.True(t, errors.Is(level3, level2))
 			assert.NotEmpty(t, trace)
-			assert.True(t, strings.Contains(trace[0], "trace_test.go:231"))
+			assert.True(t, strings.Contains(trace[0], "trace_test.go:233"))
 			assert.True(t, strings.Contains(trace[1], "github.com/go-modulus/modulus/errors_test.TestTraceIntegration"))
-			assert.True(t, strings.Contains(trace[2], "trace_test.go:232"))
-			assert.True(t, strings.Contains(trace[3], "trace_test.go:233"))
+			assert.True(t, strings.Contains(trace[2], "trace_test.go:234"))
+			assert.True(t, strings.Contains(trace[3], "trace_test.go:235"))
 		},
 	)
 }

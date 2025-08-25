@@ -2,13 +2,13 @@ package action_test
 
 import (
 	"context"
-	"github.com/go-modulus/modulus/auth/storage"
 	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/go-modulus/modulus/auth"
 	"github.com/go-modulus/modulus/auth/providers/email/action"
+	"github.com/go-modulus/modulus/auth/storage"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -119,7 +119,7 @@ func TestLogin_Execute(t *testing.T) {
 			t.Log("When login")
 			t.Log("   Then validation error is returned")
 			require.Error(t, err)
-			assert.Contains(t, err.Error(), "LoginInput.email")
+			assert.Contains(t, err.Error(), "invalid input")
 		},
 	)
 
