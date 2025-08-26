@@ -3,10 +3,11 @@ package module_test
 import (
 	"flag"
 	"fmt"
-	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"github.com/urfave/cli/v2"
 )
 
 const localModulesJson = `{
@@ -187,7 +188,7 @@ func initProject(t *testing.T, projDir string) func() {
 	}
 
 	return func() {
-		os.RemoveAll(projDir)
+		_ = os.RemoveAll(projDir)
 	}
 }
 

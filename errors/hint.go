@@ -2,36 +2,17 @@ package errors
 
 import (
 	"errors"
+
 	"github.com/vorlif/spreak/localize"
 )
-
-type withHint struct {
-	hint string
-	err  error
-}
-
-func (m withHint) Hint() string {
-	return m.hint
-}
-
-func (m withHint) Error() string {
-	return m.err.Error()
-}
-
-func (m withHint) Unwrap() error {
-	return m.err
-}
 
 func Hint(err error) string {
 	if err == nil {
 		return ""
 	}
-	type withHint interface {
-		Hint() string
-	}
-	var we withHint
-	if errors.As(err, &we) {
-		return we.Hint()
+	var e mError
+	if errors.As(err, &e) {
+		return e.hint
 	}
 	return ""
 }
@@ -41,5 +22,8 @@ func WithHint(err error, hint localize.Singular) error {
 		return err
 	}
 
-	return withHint{hint: hint, err: err}
+	e := copyErr(err)
+	e.hint = hint
+
+	return e
 }

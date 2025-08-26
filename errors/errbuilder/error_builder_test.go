@@ -2,10 +2,11 @@ package errbuilder_test
 
 import (
 	syserrors "errors"
+	"testing"
+
 	"github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/errors/errbuilder"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestBuilder_Build(t *testing.T) {
@@ -16,10 +17,10 @@ func TestBuilder_Build(t *testing.T) {
 			err := b.Build()
 
 			t.Log("When create a new error from a string")
-			t.Log("	Should return a new error with the error as input")
+			t.Log("	Should return a new error with default code")
 			assert.Equal(t, "test error", err.Error())
-			t.Log("	Should not have any additional fields")
-			assert.Nil(t, errors.Tags(err))
+			t.Log("	Should have system error tag")
+			assert.Equal(t, []string{errors.SystemErrorTag}, errors.Tags(err))
 			t.Log("	Should return the input as message if there is no translation")
 			assert.Equal(t, "test error", errors.Hint(err))
 		},
@@ -74,7 +75,7 @@ func TestBuilder_Build(t *testing.T) {
 			t.Log("When create a new error with tags")
 			t.Log("  and add more tags")
 			t.Log("	Should return both initial and added tags")
-			assert.Len(t, errors.Tags(err), 3)
+			assert.Len(t, errors.Tags(err), 4)
 			assert.Contains(t, errors.Tags(err), "tag1")
 			assert.Contains(t, errors.Tags(err), "tag2")
 			assert.Contains(t, errors.Tags(err), "tag3")
@@ -94,7 +95,7 @@ func TestBuilder_Build(t *testing.T) {
 			assert.Len(t, errors.Tags(err), 1)
 			assert.Contains(t, errors.Tags(err), "tag3")
 
-			assert.Equal(t, "test error", err.Error())
+			assert.Equal(t, errors.InternalErrorCode, err.Error())
 		},
 	)
 
@@ -111,7 +112,7 @@ func TestBuilder_Build(t *testing.T) {
 			assert.Equal(t, "custom error", err.Error())
 			t.Log("	Should have the cause as the cause")
 			assert.Equal(t, "test error", errors.Cause(err).Error())
-			assert.False(t, errors.Is(err, cause))
+			assert.True(t, errors.Is(err, cause))
 		},
 	)
 
@@ -129,8 +130,8 @@ func TestBuilder_Build(t *testing.T) {
 			t.Log("	Should have custom error as the main error")
 			assert.Equal(t, "custom error", err.Error())
 			t.Log("	Should have the cause as the cause")
-			assert.Equal(t, "test error", errors.Cause(err).Error())
-			assert.False(t, errors.Is(err, cause))
+			assert.Equal(t, errors.InternalErrorCode, errors.Cause(err).Error())
+			assert.True(t, errors.Is(err, cause))
 			assert.Len(t, errors.Tags(errors.Cause(err)), 1)
 			assert.Contains(t, errors.Tags(errors.Cause(err)), "tag3")
 

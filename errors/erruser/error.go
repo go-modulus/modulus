@@ -27,7 +27,8 @@ func NewValidationError(validationErrors ...error) error {
 	}
 	hint := errors.Hint(validationErrors[0])
 	mainErr := New("invalid input", hint)
-	res := errors.Join(append([]error{mainErr}, validationErrors...)...)
+
+	cause := errors.Join(validationErrors...)
 	meta := make(map[string]string, len(validationErrors))
 	for _, err := range validationErrors {
 		meta[err.Error()] = errors.Hint(err)
@@ -38,8 +39,9 @@ func NewValidationError(validationErrors ...error) error {
 		metaList = append(metaList, k, v)
 	}
 
-	res = errors.WithAddedMeta(res, metaList...)
-	res = errors.WithAddedTags(res, errors.ValidationErrorTag, errors.UserErrorTag)
+	mainErr = errors.WithAddedMeta(mainErr, metaList...)
+	mainErr = errors.WithAddedTags(mainErr, errors.ValidationErrorTag, errors.UserErrorTag)
+	mainErr = errors.WithCause(mainErr, cause)
 
-	return res
+	return mainErr
 }

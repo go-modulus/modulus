@@ -3,16 +3,17 @@ package types
 import (
 	"context"
 	"fmt"
-	"github.com/99designs/gqlgen/graphql"
-	"github.com/go-modulus/modulus/errors/erruser"
 	"io"
 	"time"
+
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/go-modulus/modulus/errors/erruser"
 )
 
 func MarshalTime(value time.Time) graphql.ContextMarshaler {
 	return graphql.ContextWriterFunc(
 		func(_ context.Context, w io.Writer) error {
-			_, _ = w.Write([]byte(fmt.Sprintf("%q", value.Format(time.RFC3339))))
+			_, _ = fmt.Fprintf(w, "%q", value.Format(time.RFC3339))
 			return nil
 		},
 	)

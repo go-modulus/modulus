@@ -3,9 +3,10 @@ package utils
 import (
 	"bufio"
 	"bytes"
-	"github.com/go-modulus/modulus/internal/mtools/templates"
 	"html/template"
 	"os"
+
+	"github.com/go-modulus/modulus/internal/mtools/templates"
 )
 
 func FileExists(filename string) bool {
@@ -78,7 +79,10 @@ func ProcessTemplate(
 	if err != nil {
 		return err
 	}
-	w.Flush()
+	err = w.Flush()
+	if err != nil {
+		return err
+	}
 
 	err = os.WriteFile(dest, b.Bytes(), 0644)
 	if err != nil {

@@ -1,7 +1,6 @@
 package errbuilder
 
 import (
-	"errors"
 	errors2 "github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/errors/errlog"
 )
@@ -13,7 +12,7 @@ type Builder struct {
 func New(err string) *Builder {
 	// it is a hack to mark the error for extracting to the translation file
 	//_ = ht.Sprintf(err)
-	return &Builder{err: errors2.WithHint(errors.New(err), err)}
+	return &Builder{err: errors2.WithHint(errors2.New(err), err)}
 }
 
 func NewE(err error) *Builder {

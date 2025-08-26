@@ -4,13 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"log/slog"
+	"time"
+
 	cli2 "github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/module"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"log/slog"
-	"time"
 
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/contrib/opentelemetry"

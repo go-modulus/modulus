@@ -2,10 +2,11 @@ package test
 
 import (
 	"context"
-	"github.com/go-modulus/modulus/config"
 	"os"
 	"sync"
 	"testing"
+
+	"github.com/go-modulus/modulus/config"
 
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
@@ -25,8 +26,8 @@ func LoadEnv(envFileDir string) {
 		func() {
 			// force UTC timezone, otherwise it will use local timezone
 			// on unmarshalling/marshalling time from/to postgres
-			os.Setenv("TZ", "UTC")
-			os.Setenv("APP_ENV", "test")
+			_ = os.Setenv("TZ", "UTC")
+			_ = os.Setenv("APP_ENV", "test")
 
 			config.LoadEnv(envFileDir, "", false)
 			config.LoadEnv(envFileDir, "test", true)

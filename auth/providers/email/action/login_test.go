@@ -2,13 +2,14 @@ package action_test
 
 import (
 	"context"
-	"github.com/go-modulus/modulus/auth/storage"
 	"strings"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/go-modulus/modulus/auth"
 	"github.com/go-modulus/modulus/auth/providers/email/action"
+	"github.com/go-modulus/modulus/auth/storage"
+	"github.com/go-modulus/modulus/errors"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -119,7 +120,7 @@ func TestLogin_Execute(t *testing.T) {
 			t.Log("When login")
 			t.Log("   Then validation error is returned")
 			require.Error(t, err)
-			assert.Contains(t, err.Error(), "LoginInput.email")
+			assert.Contains(t, err.Error(), "invalid input")
 		},
 	)
 
@@ -242,7 +243,7 @@ func TestLoginInput_Validate(t *testing.T) {
 
 			err := input.Validate(ctx)
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "LoginInput.email")
+			assert.Contains(t, errors.Hint(err), "Email is not valid")
 		},
 	)
 
@@ -256,7 +257,7 @@ func TestLoginInput_Validate(t *testing.T) {
 
 			err := input.Validate(ctx)
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "LoginInput.email")
+			assert.Contains(t, errors.Hint(err), "Email is required")
 		},
 	)
 
@@ -270,7 +271,7 @@ func TestLoginInput_Validate(t *testing.T) {
 
 			err := input.Validate(ctx)
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "LoginInput.password")
+			assert.Contains(t, errors.Hint(err), "Password is required")
 		},
 	)
 
@@ -284,7 +285,7 @@ func TestLoginInput_Validate(t *testing.T) {
 
 			err := input.Validate(ctx)
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "LoginInput.password")
+			assert.Contains(t, errors.Hint(err), "Password must be between 6 and 20 characters")
 		},
 	)
 
@@ -298,7 +299,7 @@ func TestLoginInput_Validate(t *testing.T) {
 
 			err := input.Validate(ctx)
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "LoginInput.password")
+			assert.Contains(t, errors.Hint(err), "Password must be between 6 and 20 characters")
 		},
 	)
 }

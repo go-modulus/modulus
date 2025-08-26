@@ -2,10 +2,12 @@ package temporal
 
 import (
 	"context"
-	infraCli "github.com/go-modulus/modulus/cli"
-	"github.com/urfave/cli/v2"
 
+	infraCli "github.com/go-modulus/modulus/cli"
+	"github.com/go-modulus/modulus/temporal/errors"
+	"github.com/urfave/cli/v2"
 	"go.temporal.io/sdk/client"
+	interceptor2 "go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
 	"go.uber.org/fx"
 )
@@ -59,9 +61,11 @@ func (w *Worker) Invoke(cliCtx *cli.Context, queue string, enableSessionWorker b
 	return w.runner.Run(
 		cliCtx.Context,
 		func(ctx context.Context) error {
+			errorInterceptor := &errors.AppErrWrapWorkerInterceptor{}
 			tw := worker.New(
 				w.temporal, queue, worker.Options{
 					EnableSessionWorker: enableSessionWorker,
+					Interceptors:        []interceptor2.WorkerInterceptor{errorInterceptor},
 				},
 			)
 

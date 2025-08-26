@@ -11,5 +11,5 @@ import "os"
 // Simply import this package in your main_test.go file before temporal importing, because
 // Temporal works with envs only in its init function.
 func init() {
-	os.Setenv("TEMPORAL_DEBUG", "1")
+	_ = os.Setenv("TEMPORAL_DEBUG", "1")
 }

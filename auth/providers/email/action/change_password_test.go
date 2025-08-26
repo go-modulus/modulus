@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-modulus/modulus/auth/providers/email/action"
 	"github.com/go-modulus/modulus/auth/repository"
+	"github.com/go-modulus/modulus/errors"
 	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -167,7 +168,7 @@ func TestChangePasswordInput_Validate(t *testing.T) {
 
 			err := input.Validate(ctx)
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "ChangePasswordInput.oldpassword")
+			assert.Contains(t, errors.Hint(err), "Old password is required")
 		},
 	)
 
@@ -181,7 +182,7 @@ func TestChangePasswordInput_Validate(t *testing.T) {
 
 			err := input.Validate(ctx)
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "ChangePasswordInput.newpassword")
+			assert.Contains(t, errors.Hint(err), "Password is required")
 		},
 	)
 
@@ -195,7 +196,7 @@ func TestChangePasswordInput_Validate(t *testing.T) {
 
 			err := input.Validate(ctx)
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "ChangePasswordInput.newpassword")
+			assert.Contains(t, errors.Hint(err), "Password must be between 6 and 20 characters")
 		},
 	)
 
@@ -209,7 +210,7 @@ func TestChangePasswordInput_Validate(t *testing.T) {
 
 			err := input.Validate(ctx)
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "ChangePasswordInput.newpassword")
+			assert.Contains(t, errors.Hint(err), "Password must be between 6 and 20 characters")
 		},
 	)
 }

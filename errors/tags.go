@@ -5,44 +5,49 @@ import (
 	"strings"
 )
 
-type withTags struct {
-	tags string
-	err  error
-}
+func (m mError) Tags() []string {
+	tags := strings.Split(m.tags, ",")
+	unique := make(map[string]struct{})
 
-func (m withTags) Tags() []string {
-	return strings.Split(m.tags, ",")
-}
-
-func (m withTags) Error() string {
-	return m.err.Error()
-}
-
-func (m withTags) Unwrap() error {
-	return m.err
-}
-
-func (m withTags) Is(target error) bool {
-	var we withTags
-	if !errors.As(target, &we) {
-		return false
+	var result []string
+	for _, tag := range tags {
+		if _, ok := unique[tag]; ok {
+			continue
+		}
+		result = append(result, tag)
+		unique[tag] = struct{}{}
 	}
-
-	return m.err.Error() == we.err.Error()
+	return result
+}
+func (m mError) HasTag(tag string) bool {
+	for _, t := range m.Tags() {
+		if t == tag {
+			return true
+		}
+	}
+	return false
 }
 
 func Tags(err error) []string {
 	if err == nil {
 		return nil
 	}
-	type wt interface {
-		Tags() []string
-	}
-	var we wt
-	if errors.As(err, &we) {
-		return we.Tags()
+	var e mError
+	if errors.As(err, &e) {
+		return e.Tags()
 	}
 	return nil
+}
+
+func HasTag(err error, tag string) bool {
+	if err == nil {
+		return false
+	}
+	var e mError
+	if errors.As(err, &e) {
+		return e.HasTag(tag)
+	}
+	return false
 }
 
 func WithAddedTags(err error, tags ...string) error {
@@ -52,5 +57,8 @@ func WithAddedTags(err error, tags ...string) error {
 	oldTags := Tags(err)
 	tags = append(oldTags, tags...)
 
-	return withTags{tags: strings.Join(tags, ","), err: err}
+	e := copyErr(err)
+	e.tags = strings.Join(tags, ",")
+	return e
+
 }

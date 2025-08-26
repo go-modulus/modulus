@@ -3,16 +3,17 @@ package types
 import (
 	"context"
 	"fmt"
+	"io"
+
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/gofrs/uuid"
-	"io"
 )
 
 func MarshalUuid(id uuid.UUID) graphql.ContextMarshaler {
 	return graphql.ContextWriterFunc(
 		func(_ context.Context, w io.Writer) error {
-			_, _ = w.Write([]byte(fmt.Sprintf("%q", id.String())))
+			_, _ = fmt.Fprintf(w, "%q", id.String())
 			return nil
 		},
 	)
