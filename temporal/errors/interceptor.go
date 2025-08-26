@@ -20,7 +20,6 @@ type ErrDetails struct {
 	Meta       map[string]string `json:"meta"`
 }
 
-// Наш воркер-интерсептор
 type AppErrWrapWorkerInterceptor struct {
 	temporalInterceptor.WorkerInterceptorBase
 }
