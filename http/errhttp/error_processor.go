@@ -2,12 +2,13 @@ package errhttp
 
 import (
 	"context"
+	"log/slog"
+	"sort"
+
 	"github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/errors/errlog"
 	"github.com/go-modulus/modulus/errors/errsys"
 	context2 "github.com/go-modulus/modulus/http/context"
-	"log/slog"
-	"sort"
 )
 
 const InternalErrorCode = "unhandled internal error"
@@ -67,9 +68,6 @@ func NewDefaultErrorPipeline(
 ) *ErrorPipeline {
 	return &ErrorPipeline{
 		processors: map[int][]ErrorProcessor{
-			0: {
-				SaveMultiErrorsToMeta(),
-			},
 			100: {
 				LogError(logger, loggerConfig),
 			},
