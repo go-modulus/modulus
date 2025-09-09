@@ -4,7 +4,6 @@ go 1.25
 
 toolchain go1.25.0
 
-replace github.com/vorlif/xspreak => github.com/go-modulus/xspreak v0.6.0
 
 require (
 	braces.dev/errtrace v0.4.0
