@@ -2,9 +2,11 @@ package middleware
 
 import (
 	"context"
-	"github.com/go-modulus/modulus/logger"
 	"net"
 	"net/http"
+	"strings"
+
+	"github.com/go-modulus/modulus/logger"
 )
 
 type ctxKeyIP string
@@ -24,7 +26,7 @@ func GetIP(ctx context.Context) string {
 func IP(next http.Handler) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			ip, _, _ := net.SplitHostPort(r.RemoteAddr)
+			ip := realIP(r)
 			if ip == "" {
 				ip = r.RemoteAddr
 			}
@@ -34,4 +36,24 @@ func IP(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r.WithContext(ctx))
 		},
 	)
+}
+
+func realIP(r *http.Request) string {
+	// Digital Ocean specific header
+	if ip := r.Header.Get("do-connecting-ip"); ip != "" {
+		return ip
+	}
+	// Get the real IP from the X-Forwarded-For header.
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		if i := strings.Index(xff, ","); i >= 0 {
+			return strings.TrimSpace(xff[:i])
+		}
+		return strings.TrimSpace(xff)
+	}
+	// Fall back to the remote address.
+	host, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err == nil {
+		return host
+	}
+	return r.RemoteAddr
 }
