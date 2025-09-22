@@ -568,7 +568,7 @@
         "envVars": [
           {
             "key": "TRANSLATION_LOCALES",
-            "value": "[en-US uk-UA]",
+            "value": "[]",
             "comment": "List of supported locales for translation. Example: TRANSLATION_LOCALES=en-US,uk-UA"
           }
         ],

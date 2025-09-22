@@ -11,7 +11,7 @@ import (
 )
 
 type ModuleConfig struct {
-	Locales []string `env:"TRANSLATION_LOCALES, default=en-US,uk-UA" comment:"List of supported locales for translation. Example: TRANSLATION_LOCALES=en-US,uk-UA"`
+	Locales []string `env:"TRANSLATION_LOCALES" comment:"List of supported locales for translation. Example: TRANSLATION_LOCALES=en-US,uk-UA"`
 }
 
 type BundleParams struct {
