@@ -578,7 +578,7 @@
             "destFile": "mk/translation.mk"
           },
           {
-            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/locales.go",
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/translation/install/locales.go",
             "destFile": "locales/locales.go"
           }
         ]
