@@ -2,16 +2,16 @@ package translation
 
 import (
 	"errors"
+	"io/fs"
+
 	"github.com/go-modulus/modulus/module"
 	"github.com/vorlif/spreak"
 	"go.uber.org/fx"
 	"golang.org/x/text/language"
-	"io/fs"
 )
 
 type ModuleConfig struct {
-	Locales     []string `env:"TRANSLATION_LOCALES, default=en-US,uk-UA" comment:"List of supported locales for translation. Example: TRANSLATION_LOCALES=en-US,uk-UA"`
-	LocalesPath string   `env:"TRANSLATION_LOCALES_PATH"`
+	Locales []string `env:"TRANSLATION_LOCALES, default=en-US,uk-UA" comment:"List of supported locales for translation. Example: TRANSLATION_LOCALES=en-US,uk-UA"`
 }
 
 type BundleParams struct {
@@ -26,7 +26,7 @@ type LocalesFolder struct {
 }
 
 func NewModule() *module.Module {
-	return module.NewModule("modulus/translation").
+	return module.NewModule("translation").
 		AddProviders(
 			func(cfg ModuleConfig) language.Matcher {
 				tags := make([]language.Tag, 0, len(cfg.Locales))
@@ -96,6 +96,27 @@ func NewModule() *module.Module {
 		},
 	).InitConfig(ModuleConfig{})
 
+}
+
+func NewManifestModule() module.ManifestModule {
+	graphqlModule := module.NewManifestModule(
+		NewModule(),
+		"github.com/go-modulus/modulus/translation",
+		"Provides translation services using Spreak library",
+		"1.0.0",
+	)
+	graphqlModule.Install.AppendFiles(
+		module.InstalledFile{
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/translation/install/translation.mk",
+			DestFile:  "mk/translation.mk",
+		},
+		module.InstalledFile{
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/locales.go",
+			DestFile:  "locales/locales.go",
+		},
+	)
+
+	return graphqlModule
 }
 
 func ProvideLocalesFs(

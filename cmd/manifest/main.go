@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+
 	"github.com/fatih/color"
 	"github.com/go-modulus/modulus/auth"
 	"github.com/go-modulus/modulus/auth/providers/email"
@@ -17,6 +18,8 @@ import (
 	"github.com/go-modulus/modulus/logger"
 	"github.com/go-modulus/modulus/module"
 	"github.com/go-modulus/modulus/temporal"
+	"github.com/go-modulus/modulus/translation"
+
 	"os"
 )
 
@@ -60,6 +63,7 @@ func main() {
 		temporal.NewManifestModule(),
 		captcha.NewManifestModule(),
 		google.NewManifestModule(),
+		translation.NewManifestModule(),
 	}
 
 	manifest, err := module.LoadLocalManifest("./")

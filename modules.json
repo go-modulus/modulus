@@ -559,6 +559,31 @@
       },
       "version": "1.0.0",
       "localPath": "internal/auth/providers/google"
+    },
+    {
+      "name": "translation",
+      "package": "github.com/go-modulus/modulus/translation",
+      "description": "Provides translation services using Spreak library",
+      "install": {
+        "envVars": [
+          {
+            "key": "TRANSLATION_LOCALES",
+            "value": "[en-US uk-UA]",
+            "comment": "List of supported locales for translation. Example: TRANSLATION_LOCALES=en-US,uk-UA"
+          }
+        ],
+        "files": [
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/translation/install/translation.mk",
+            "destFile": "mk/translation.mk"
+          },
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/locales.go",
+            "destFile": "locales/locales.go"
+          }
+        ]
+      },
+      "version": "1.0.0"
     }
   ]
 }
