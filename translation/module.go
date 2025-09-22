@@ -111,7 +111,7 @@ func NewManifestModule() module.ManifestModule {
 			DestFile:  "mk/translation.mk",
 		},
 		module.InstalledFile{
-			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/locales.go",
+			SourceUrl: "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/translation/install/locales.go",
 			DestFile:  "locales/locales.go",
 		},
 	)
