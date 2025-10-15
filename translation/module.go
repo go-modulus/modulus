@@ -116,6 +116,8 @@ func NewManifestModule() module.ManifestModule {
 		},
 	)
 
+	graphqlModule.LocalPath = "internal/translation"
+
 	return graphqlModule
 }
 

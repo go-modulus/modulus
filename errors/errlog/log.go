@@ -2,8 +2,9 @@ package errlog
 
 import (
 	"context"
-	"github.com/go-modulus/modulus/errors"
 	"log/slog"
+
+	"github.com/go-modulus/modulus/errors"
 )
 
 const LogAsError = "log_as_error"
