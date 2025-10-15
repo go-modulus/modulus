@@ -3,10 +3,11 @@ package module_test
 import (
 	"flag"
 	"fmt"
-	"github.com/stretchr/testify/require"
-	"github.com/urfave/cli/v2"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/require"
+	"github.com/urfave/cli/v2"
 )
 
 func createModuleInTmpDir(projDir string) error {
@@ -25,7 +26,7 @@ func TestAddJsonApi_Invoke(t *testing.T) {
 	t.Run(
 		"create json api", func(t *testing.T) {
 			projDir := "/tmp/testproj"
-			rb := initProject(t, projDir)
+			rb := initProject(t, projDir, goModFile)
 			defer rb()
 
 			err := createModuleInTmpDir(projDir)

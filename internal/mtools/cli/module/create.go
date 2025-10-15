@@ -21,7 +21,7 @@ import (
 	"github.com/urfave/cli/v2"
 )
 
-var moduleNameRegexp = regexp.MustCompile(`module\s+([a-zA-Z0-9_\-\/]+)+`)
+var moduleNameRegexp = regexp.MustCompile(`module\s+([a-zA-Z0-9_\-\/\.]+)+`)
 var pckgNameRegexp = regexp.MustCompile(`^[a-z]+[a-z0-9]+`)
 
 type features struct {

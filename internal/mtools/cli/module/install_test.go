@@ -82,6 +82,22 @@ const availableModulesJson = ` {
         ]
       },
       "version": "1.0.0"
+    },
+	{
+      "name": "gqlgen",
+      "package": "github.com/go-modulus/modulus/graphql",
+      "description": "Graphql server and generator. It is based on the gqlgen library. It also provides a playground for the graphql server.",
+      "install": {
+        "envVars": [
+          {
+            "key": "GQL_API_URL",
+            "value": "/graphql",
+            "comment": ""
+          }
+        ]
+      },
+      "version": "1.0.0",
+      "localPath": "internal/graphql"
     }
   ]
 }`
@@ -151,6 +167,15 @@ require (
 )
 `
 
+const goModFullPathFile = `module github.com/test/testproj
+
+go 1.23.1
+
+require (
+	github.com/go-modulus/modulus v0.0.4
+)
+`
+
 func createFile(t *testing.T, projDir, filename, content string) {
 	fn := fmt.Sprintf("%s/%s", projDir, filename)
 	err := os.WriteFile(fn, []byte(content), 0644)
@@ -159,7 +184,7 @@ func createFile(t *testing.T, projDir, filename, content string) {
 	}
 }
 
-func initProject(t *testing.T, projDir string) func() {
+func initProject(t *testing.T, projDir string, goModFile string) func() {
 	if _, err := os.Stat(projDir); os.IsNotExist(err) {
 		err = os.Mkdir(projDir, 0755)
 		if err != nil {
@@ -196,7 +221,7 @@ func TestInstall_Invoke(t *testing.T) {
 	t.Run(
 		"install module without dependencies", func(t *testing.T) {
 			projDir := "/tmp/testproj"
-			rb := initProject(t, projDir)
+			rb := initProject(t, projDir, goModFile)
 			defer rb()
 
 			err := os.Chdir(projDir)
@@ -242,7 +267,7 @@ func TestInstall_Invoke(t *testing.T) {
 	t.Run(
 		"install module with dependencies", func(t *testing.T) {
 			projDir := "/tmp/testproj"
-			rb := initProject(t, projDir)
+			rb := initProject(t, projDir, goModFullPathFile)
 			defer rb()
 
 			err := os.Chdir(projDir)
@@ -279,6 +304,34 @@ func TestInstall_Invoke(t *testing.T) {
 			require.NoError(t, errCont4)
 			require.Contains(t, string(modulesContent), "github.com/go-modulus/modulus/db/pgx")
 			require.Contains(t, string(modulesContent), "github.com/go-modulus/modulus/db/migrator")
+		},
+	)
+
+	t.Run(
+		"install module with local path", func(t *testing.T) {
+			projDir := "/tmp/testproj"
+			rb := initProject(t, projDir, goModFullPathFile)
+			defer rb()
+
+			err := os.Chdir(projDir)
+			require.NoError(t, err)
+			app := cli.NewApp()
+			set := flag.NewFlagSet("test", 0)
+			set.Var(cli.NewStringSlice("gqlgen"), "modules", "doc")
+			set.String("manifest", projDir+"/manifest/modules.json", "doc")
+			ctx := cli.NewContext(app, set, nil)
+			err = installModule.Invoke(ctx)
+
+			entrypointFileContent, errCont2 := os.ReadFile(fmt.Sprintf("%s/cmd/console/main.go", projDir))
+
+			t.Log("Given the tools.go file in the root of the project")
+			t.Log("When install a graphql module that has local path of module")
+			t.Log("	The error should be nil")
+			require.NoError(t, err)
+			t.Log("	The entrypoint file should be updated with local module package")
+			require.NoError(t, errCont2)
+			require.Contains(t, string(entrypointFileContent), "github.com/test/testproj/internal/graphql")
+			require.Contains(t, string(entrypointFileContent), "graphql.NewModule()")
 		},
 	)
 }

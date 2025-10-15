@@ -3,18 +3,19 @@ package module_test
 import (
 	"flag"
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/go-modulus/modulus/module"
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
-	"os"
-	"testing"
 )
 
 func TestCreateModule_Invoke(t *testing.T) {
 	t.Run(
 		"create module", func(t *testing.T) {
 			projDir := "/tmp/testproj"
-			rb := initProject(t, projDir)
+			rb := initProject(t, projDir, goModFile)
 			defer rb()
 
 			app := cli.NewApp()
