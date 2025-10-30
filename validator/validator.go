@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-modulus/modulus/errors/erruser"
 	"strings"
+
+	"github.com/go-modulus/modulus/errors/erruser"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
@@ -40,6 +41,13 @@ func convertOzzoError(err error, structName string) error {
 	return erruser.NewValidationError(errs...)
 }
 
+func makeField(path, key string) string {
+	if path == "" {
+		return key
+	}
+	return path + "." + strings.ToLower(key)
+}
+
 func goFieldsRecursive(err error, path string) []invalidField {
 	fields := make([]invalidField, 0)
 	if err == nil {
@@ -52,12 +60,12 @@ func goFieldsRecursive(err error, path string) []invalidField {
 	for key, fieldErr := range fieldErrors {
 		innerErr, ok := fieldErr.(validation.ErrorObject)
 		if ok {
-			field := path + "." + strings.ToLower(key)
+			field := makeField(path, key)
 			fields = append(fields, newInvalidFieldFromOzzo(field, innerErr))
 		}
 		innerErrs, ok2 := fieldErr.(validation.Errors)
 		if ok2 {
-			fields = append(fields, goFieldsRecursive(innerErrs, path+"."+key)...)
+			fields = append(fields, goFieldsRecursive(innerErrs, makeField(path, key))...)
 		}
 	}
 	return fields
@@ -81,6 +89,18 @@ func ValidateStructWithContext(ctx context.Context, structPtr interface{}, field
 	if err != nil {
 		structName := strings.Split(fmt.Sprintf("%T", structPtr), ".")[1]
 		return convertOzzoError(err, structName)
+	}
+	return nil
+}
+
+func ValidateWithContext(ctx context.Context, valuePtr interface{}, valueName string, rules ...validation.Rule) error {
+	err := validation.ValidateWithContext(
+		ctx,
+		valuePtr,
+		rules...,
+	)
+	if err != nil {
+		return convertOzzoError(err, valueName)
 	}
 	return nil
 }
