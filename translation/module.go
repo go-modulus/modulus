@@ -1,11 +1,14 @@
 package translation
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"io/fs"
 
 	"github.com/go-modulus/modulus/module"
 	"github.com/vorlif/spreak"
+	"github.com/vorlif/spreak/localize"
 	"go.uber.org/fx"
 	"golang.org/x/text/language"
 )
@@ -134,4 +137,20 @@ func ProvideLocalesFs(
 		},
 		fx.ResultTags(`group:"translation.locales-fs"`),
 	)
+}
+
+func Get(ctx context.Context, str localize.Singular, args ...interface{}) string {
+	localizer, err := GetLocalizer(ctx)
+	if err != nil || localizer == nil {
+		return fmt.Sprintf(str, args...)
+	}
+	return localizer.Getf(str, args...)
+}
+
+func NGet(ctx context.Context, str localize.Singular, plural localize.Plural, n any, args ...interface{}) string {
+	localizer, err := GetLocalizer(ctx)
+	if err != nil || localizer == nil {
+		return fmt.Sprintf(str, args...)
+	}
+	return localizer.NGetf(str, plural, n, args...)
 }
