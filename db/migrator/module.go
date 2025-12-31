@@ -1,6 +1,11 @@
 package migrator
 
 import (
+	"io/fs"
+	"net/url"
+	"slices"
+
+	"braces.dev/errtrace"
 	"github.com/amacneil/dbmate/v2/pkg/dbmate"
 	infraCli "github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/db/pgx"
@@ -8,8 +13,6 @@ import (
 	"github.com/laher/mergefs"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/fx"
-	"io/fs"
-	"net/url"
 )
 
 type ModuleConfig struct {
@@ -23,7 +26,29 @@ type CreateCommandParams struct {
 }
 
 func newDBMate(params CreateCommandParams) (*dbmate.DB, error) {
-	u, _ := url.Parse(params.Pgx.Dsn())
+	u, err := url.Parse(params.Pgx.Dsn())
+	if err != nil {
+		return nil, errtrace.Wrap(err)
+	}
+
+	q := url.Values{}
+	supportedQueryParams := []string{
+		"sslmode",
+		"connect_timeout",
+		"sslcert",
+		"sslkey",
+		"sslrootcert",
+	}
+	for key, values := range u.Query() {
+		if slices.Contains(supportedQueryParams, key) {
+			q.Set(key, values[0])
+			for _, value := range values[1:] {
+				q.Add(key, value)
+			}
+		}
+	}
+	u.RawQuery = q.Encode()
+
 	db := dbmate.New(u)
 	db.FS = mergefs.Merge(params.Fs...)
 	db.AutoDumpSchema = false
