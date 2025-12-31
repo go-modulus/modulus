@@ -169,7 +169,7 @@ func (c *Install) Invoke(
 		localModulesMap[md.Package] = struct{}{}
 	}
 	for _, md := range modules {
-		err = c.installModule(ctx.Context, md, entrypoints)
+		err = c.installModule(ctx.Context, md, entrypoints, projPath)
 		if err != nil {
 			fmt.Println(color.RedString("Cannot install the module %s: %s", md.Name, err.Error()))
 			if errors.Hint(err) != "" {
@@ -221,6 +221,7 @@ func (c *Install) installModule(
 	ctx context.Context,
 	md module.ManifestModule,
 	entrypoints []entripoint,
+	projPath string,
 ) error {
 
 	if md.Package == "" {
@@ -289,21 +290,29 @@ func (c *Install) installModule(
 			return err
 		}
 		localModulePackage := projPackage + "/" + md.LocalPath
-		for _, entrypoint := range entrypoints {
-			fmt.Printf("Adding module initialization to the entrypoint %s ...\n", color.BlueString(entrypoint.name))
-			err = files.AddModuleToEntrypoint(localModulePackage, entrypoint.path)
+		if !utils.FileExists(md.ModulePath(projPath)) {
+			err = os.MkdirAll(md.ModulePath(projPath), 0755)
 			if err != nil {
-				fmt.Println(
-					color.RedString(
-						"Cannot add the module %s to the entrypoint %s: %s. Try to type initialization code manually",
-						color.BlueString(md.Name),
-						color.BlueString(entrypoint.path),
-						err.Error(),
-					),
-				)
-				continue
+				fmt.Println("Cannot create the module directory:", color.RedString(err.Error()))
 			}
-			fmt.Printf("File %s is updated\n", color.BlueString(entrypoint.path))
+		}
+		if utils.FileExists(md.ModulePath(projPath) + "/module.go") {
+			for _, entrypoint := range entrypoints {
+				fmt.Printf("Adding module initialization to the entrypoint %s ...\n", color.BlueString(entrypoint.name))
+				err = files.AddModuleToEntrypoint(localModulePackage, entrypoint.path)
+				if err != nil {
+					fmt.Println(
+						color.RedString(
+							"Cannot add the module %s to the entrypoint %s: %s. Try to type initialization code manually",
+							color.BlueString(md.Name),
+							color.BlueString(entrypoint.path),
+							err.Error(),
+						),
+					)
+					continue
+				}
+				fmt.Printf("File %s is updated\n", color.BlueString(entrypoint.path))
+			}
 		}
 	}
 	if len(md.Install.PostInstallCommands) != 0 {

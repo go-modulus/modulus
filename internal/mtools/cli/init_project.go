@@ -3,14 +3,15 @@ package cli
 import (
 	"context"
 	"fmt"
-	"github.com/fatih/color"
-	"github.com/go-modulus/modulus/internal/mtools/utils"
-	"github.com/manifoldco/promptui"
-	"github.com/urfave/cli/v2"
 	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/fatih/color"
+	"github.com/go-modulus/modulus/internal/mtools/utils"
+	"github.com/manifoldco/promptui"
+	"github.com/urfave/cli/v2"
 )
 
 type InitProject struct {
@@ -79,7 +80,7 @@ func (c *InitProject) Invoke(
 	fmt.Println(
 		"Congratulations! Your project has been initialized. Please, add your first module.",
 	)
-	fmt.Println("To add a module, run the command: " + color.CyanString("mtools module install"))
+	fmt.Println("To add a module, run the command: " + color.CyanString("make module-install"))
 
 	return nil
 }
