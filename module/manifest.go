@@ -3,11 +3,12 @@ package module
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/go-modulus/modulus/errors"
-	"github.com/go-modulus/modulus/internal/mtools/utils"
 	"io/fs"
 	"os"
 	"strings"
+
+	"github.com/go-modulus/modulus/errors"
+	"github.com/go-modulus/modulus/internal/mtools/utils"
 )
 
 var ErrCannotReadEntries = fmt.Errorf("cannot read entries")
@@ -197,6 +198,9 @@ func (m ManifestModule) StoragePath(projPath string) string {
 }
 
 func (m ManifestModule) ModulePath(projPath string) string {
+	if projPath == "" {
+		return m.LocalPath
+	}
 	return projPath + "/" + m.LocalPath
 }
 

@@ -1,4 +1,10 @@
-quiet: False
-all: True
-keeptree: True
-dir: ./internal
+all: false
+recursive: true
+packages:
+#  testproj/internal/testpckg:
+#    # place your package-specific config here
+#    config:
+#      dir: "{{.InterfaceDir}}/mocks"
+#      outpkg: mocks
+#    interfaces:
+#      TestInterface:

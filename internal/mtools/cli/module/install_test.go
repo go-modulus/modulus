@@ -94,7 +94,13 @@ const availableModulesJson = ` {
             "value": "/graphql",
             "comment": ""
           }
-        ]
+        ],
+		"files": [
+          {
+            "sourceUrl": "https://raw.githubusercontent.com/go-modulus/modulus/refs/heads/main/graphql/install/module.go.tmpl",
+            "destFile": "internal/graphql/module.go"
+          }
+		]
       },
       "version": "1.0.0",
       "localPath": "internal/graphql"
@@ -331,7 +337,7 @@ func TestInstall_Invoke(t *testing.T) {
 			t.Log("	The entrypoint file should be updated with local module package")
 			require.NoError(t, errCont2)
 			require.Contains(t, string(entrypointFileContent), "github.com/test/testproj/internal/graphql")
-			require.Contains(t, string(entrypointFileContent), "graphql.NewModule()")
+			require.Contains(t, string(entrypointFileContent), "graphql2.NewModule()")
 		},
 	)
 }
