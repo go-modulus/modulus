@@ -1,14 +1,14 @@
 package http
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/go-modulus/modulus/auth"
 	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/go-modulus/modulus/errors/errwrap"
 	"github.com/go-modulus/modulus/http/errhttp"
 	"github.com/go-modulus/modulus/module"
-	"net/http"
 )
 
 var (
@@ -60,7 +60,7 @@ func NewModule() *module.Module {
 		).
 		SetOverriddenProvider("http.ErrorPipeline", errhttp.NewDefaultErrorPipeline).
 		SetOverriddenProvider(
-			"http.MiddlewarePipeline", func(authMd *auth.Middleware) *Pipeline {
+			"http.MiddlewarePipeline", func() *Pipeline {
 				return &Pipeline{
 					Middlewares: []Middleware{},
 				}
