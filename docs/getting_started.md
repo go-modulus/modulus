@@ -6,7 +6,7 @@ This is a guide to help you get started with the project. It will walk you throu
 First, you need to install the Modulus CLI tool. You can do this by running the following command:
 
 ```bash
-go install github.com/go-modulus/modulus/cmd/mtools@latest
+go install github.com/go-modulus/mtools/cmd/mtools@latest
 ```
 
 Next, you need to initialize a new project. You can do this by running the following command:
@@ -41,9 +41,10 @@ mtools module install
 
 if you want to install the modules in the current directory.
 
-By default, module installer is using the manifest with available modules burned into its binary.
-See it here [manifest](https://github.com/go-modulus/modulus/blob/main/modules.json) for your version of mtools.
-In a case if you have the own manifest with your favorite modules, you can specify the path to the local manifest file with the `--manifest` flag.
+By default, module installer is using the manifest with available modules in the go modulus repository.
+See it here [manifest](https://github.com/go-modulus/modulus/blob/main/modules.json).
+In a case if you have the own manifest with your favorite modules, you can specify the path to the local or remote manifest file with the `--manifest` flag. If you want to use the local manifest, you can use the absolute or relative path `./my-folder/manifest.json`.
+If you want to use the remote manifest, you should pass the valid URL started with the `https://` prefix.
 
 For example:
 

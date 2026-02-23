@@ -10,7 +10,7 @@ Read the [Getting Started](./getting_started.md) guide to create a new project w
 If you don't want to read this and follow all the steps from the article, please use the following commands to create a new project:
 
 ```bash
-	go install github.com/go-modulus/modulus/cmd/mtools@latest
+	go install github.com/go-modulus/mtools/cmd/mtools@latest
 	mkdir blog
     cd blog
 	mtools init --name=blog

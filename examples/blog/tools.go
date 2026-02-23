@@ -11,10 +11,10 @@ import (
 	_ "github.com/go-modulus/modulus"
 
 	_ "github.com/go-modulus/modulus/auth"
-	_ "github.com/go-modulus/modulus/cmd/mtools"
 	_ "github.com/go-modulus/modulus/db/migrator"
 	_ "github.com/go-modulus/modulus/db/pgx"
 	_ "github.com/go-modulus/modulus/graphql"
 	_ "github.com/go-modulus/modulus/http"
 	_ "github.com/go-modulus/modulus/logger"
+	_ "github.com/go-modulus/mtools/cmd/mtools"
 )

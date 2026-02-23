@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/go-modulus/modulus/errors"
-	"github.com/go-modulus/modulus/internal/mtools/utils"
 )
 
 var ErrCannotReadEntries = fmt.Errorf("cannot read entries")
@@ -123,7 +122,7 @@ func LoadLocalManifest(projPath string) (Manifest, error) {
 		Description: "List of installed modules for the Modulus framework",
 		Entries:     entries,
 	}
-	if utils.FileExists(projPath + "/modules.json") {
+	if fileExists(projPath + "/modules.json") {
 		projFs := os.DirFS(projPath)
 		manifest, err := NewFromFs(projFs, "modules.json")
 		if err != nil {
@@ -132,6 +131,14 @@ func LoadLocalManifest(projPath string) (Manifest, error) {
 		return *manifest, nil
 	}
 	return res, nil
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
 
 func readEntries(projPath string) (entries []Entrypoint, err error) {

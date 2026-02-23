@@ -30,7 +30,7 @@ The module's code is divided to packages. The structure of packages can be diffe
 ## Installation
 1. Install the Modulus CLI tool
 ```bash
-go install github.com/go-modulus/modulus/cmd/mtools@latest
+go install github.com/go-modulus/mtools/cmd/mtools@latest
 ```
 2. Init a project
 ```bash

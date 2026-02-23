@@ -1,13 +1,14 @@
 package auth
 
 import (
+	"time"
+
 	"github.com/go-modulus/modulus/auth/hash"
 	"github.com/go-modulus/modulus/auth/locales"
 	"github.com/go-modulus/modulus/auth/repository"
 	"github.com/go-modulus/modulus/auth/storage"
 	"github.com/go-modulus/modulus/db/pgx"
 	"github.com/go-modulus/modulus/module"
-	"time"
 )
 
 type ModuleConfig struct {
@@ -141,7 +142,7 @@ func NewManifestModule() module.ManifestModule {
 		},
 	).AppendPostInstallCommands(
 		module.PostInstallCommand{
-			CmdPackage: "github.com/go-modulus/modulus/cmd/mtools",
+			CmdPackage: "github.com/go-modulus/mtools/cmd/mtools@latest",
 			Params:     []string{"db", "migrate"},
 		},
 	)

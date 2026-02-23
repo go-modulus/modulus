@@ -337,7 +337,7 @@
         ],
         "postInstallCommands": [
           {
-            "cmdPackage": "github.com/go-modulus/modulus/cmd/mtools",
+            "cmdPackage": "github.com/go-modulus/mtools/cmd/mtools",
             "params": [
               "db",
               "migrate"

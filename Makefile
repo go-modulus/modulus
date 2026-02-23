@@ -19,9 +19,6 @@ test: ## Run tests
 analyze: ## Run static analyzer
 	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:v2.10.1 golangci-lint run -v
 
-install: ## Make a binary to ./bin folder
-	go build -o ./bin/mtools  ./cmd/mtools/main.go
-
 update-manifest: ## Update the manifest file
 	go run ./cmd/manifest/main.go
 
