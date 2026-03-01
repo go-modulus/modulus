@@ -3,10 +3,11 @@ package module
 import (
 	"context"
 	"fmt"
-	"github.com/sethvargo/go-envconfig"
-	"go.uber.org/fx"
 	"reflect"
 	"sort"
+
+	"github.com/sethvargo/go-envconfig"
+	"go.uber.org/fx"
 )
 
 type Module struct {
@@ -178,13 +179,19 @@ func (m *Module) InitConfig(config any) *Module {
 
 	vars := getVariables(config, false)
 	for _, value := range vars {
+		if value.Key == "" {
+			continue
+		}
 		m.envVars = append(m.envVars, value)
 	}
-	sort.Slice(
-		m.envVars, func(i, j int) bool {
-			return m.envVars[i].Key < m.envVars[j].Key
-		},
-	)
+	if len(m.envVars) > 0 {
+		sort.Slice(
+			m.envVars, func(i, j int) bool {
+				return m.envVars[i].Key < m.envVars[j].Key
+			},
+		)
+	}
+
 	return m
 }
 

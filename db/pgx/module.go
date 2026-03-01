@@ -110,8 +110,8 @@ func NewModule() *module.Module {
 		InitConfig(ModuleConfig{})
 }
 
-func NewManifestModule() module.ManifestModule {
-	return module.NewManifestModule(
+func NewManifesto() module.Manifesto {
+	return module.NewManifesto(
 		NewModule(),
 		"github.com/go-modulus/modulus/db/pgx",
 		"A wrapper for the pgx package to integrate it into the Modulus framework.",

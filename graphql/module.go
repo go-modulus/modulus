@@ -27,8 +27,8 @@ func OverrideErrorPresenter(gqlModule *module.Module, presenter interface{}) *mo
 }
 
 // NewManifestModule creates a new graphql module with the manifest module.
-func NewManifestModule() module.ManifestModule {
-	graphqlModule := module.NewManifestModule(
+func NewManifesto() module.Manifesto {
+	graphqlModule := module.NewManifesto(
 		NewModule(),
 		"github.com/go-modulus/modulus/graphql",
 		"Graphql server and generator. It is based on the gqlgen library. It also provides a playground for the graphql server. You need to install the `chi http` module to use this module.",

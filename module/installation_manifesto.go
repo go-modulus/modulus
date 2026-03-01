@@ -10,29 +10,29 @@ type PostInstallCommand struct {
 	Params     []string `json:"params"`
 }
 
-type InstallManifest struct {
+type InstallationManifesto struct {
 	EnvVars             []ConfigEnvVariable  `json:"envVars,omitempty"`
 	Dependencies        []string             `json:"dependencies,omitempty"`
 	Files               []InstalledFile      `json:"files,omitempty"`
 	PostInstallCommands []PostInstallCommand `json:"postInstallCommands,omitempty"`
 }
 
-func (m *InstallManifest) AppendEnvVars(vars ...ConfigEnvVariable) *InstallManifest {
+func (m *InstallationManifesto) AppendEnvVars(vars ...ConfigEnvVariable) *InstallationManifesto {
 	m.EnvVars = append(m.EnvVars, vars...)
 	return m
 }
 
-func (m *InstallManifest) AppendDependencies(dependencies ...string) *InstallManifest {
+func (m *InstallationManifesto) AppendDependencies(dependencies ...string) *InstallationManifesto {
 	m.Dependencies = append(m.Dependencies, dependencies...)
 	return m
 }
 
-func (m *InstallManifest) AppendFiles(files ...InstalledFile) *InstallManifest {
+func (m *InstallationManifesto) AppendFiles(files ...InstalledFile) *InstallationManifesto {
 	m.Files = append(m.Files, files...)
 	return m
 }
 
-func (m *InstallManifest) AppendPostInstallCommands(commands ...PostInstallCommand) *InstallManifest {
+func (m *InstallationManifesto) AppendPostInstallCommands(commands ...PostInstallCommand) *InstallationManifesto {
 	m.PostInstallCommands = append(m.PostInstallCommands, commands...)
 	return m
 }

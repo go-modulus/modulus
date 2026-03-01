@@ -259,8 +259,8 @@ func NewModule() *module.Module {
 	)
 }
 
-func NewManifestModule() module.ManifestModule {
-	temporalModule := module.NewManifestModule(
+func NewManifesto() module.Manifesto {
+	temporalModule := module.NewManifesto(
 		NewModule(),
 		"github.com/go-modulus/modulus/temporal",
 		"Temporal module for Modulus framework.",

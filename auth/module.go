@@ -108,8 +108,8 @@ func OverrideResetPasswordRequestRepository[T repository.ResetPasswordRequestRep
 	)
 }
 
-func NewManifestModule() module.ManifestModule {
-	graphqlModule := module.NewManifestModule(
+func NewManifesto() module.Manifesto {
+	graphqlModule := module.NewManifesto(
 		NewModule(),
 		"github.com/go-modulus/modulus/auth",
 		"Authentication module. Helps protect HTTP routes with tokens and sessions. If you want to use default storage for identities and tokens, please install pgx module first.",

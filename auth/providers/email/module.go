@@ -43,8 +43,8 @@ func NewModule() *AuthEmailProviderModule {
 	}
 }
 
-func NewManifestModule() module.ManifestModule {
-	emailModule := module.NewManifestModule(
+func NewManifesto() module.Manifesto {
+	emailModule := module.NewManifesto(
 		NewModule().Module,
 		"github.com/go-modulus/modulus/auth/providers/email",
 		"A provider for auth module to organize authentication via the email/password pair.",

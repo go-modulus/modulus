@@ -101,8 +101,8 @@ func NewModule() *module.Module {
 
 }
 
-func NewManifestModule() module.ManifestModule {
-	graphqlModule := module.NewManifestModule(
+func NewManifesto() module.Manifesto {
+	graphqlModule := module.NewManifesto(
 		NewModule(),
 		"github.com/go-modulus/modulus/translation",
 		"Provides translation services using Spreak library",

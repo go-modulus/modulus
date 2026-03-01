@@ -32,8 +32,8 @@ func OverrideUserCreator[T action.UserCreator](authModule *module.Module) *modul
 	return authModule.SetOverriddenProvider("auth.google.UserCreator", func(impl T) action.UserCreator { return impl })
 }
 
-func NewManifestModule() module.ManifestModule {
-	googleModule := module.NewManifestModule(
+func NewManifesto() module.Manifesto {
+	googleModule := module.NewManifesto(
 		NewModule(),
 		"github.com/go-modulus/modulus/auth/providers/google",
 		"Authentication provider for the auth module that helps auth using Google.",

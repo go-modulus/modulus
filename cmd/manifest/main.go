@@ -24,33 +24,33 @@ import (
 )
 
 func main() {
-	modules := []module.ManifestModule{
-		module.NewManifestModule(
+	modules := []module.Manifesto{
+		module.NewManifesto(
 			cli.NewModule(),
 			"github.com/go-modulus/modulus/cli",
 			"Adds ability to create cli applications in the Modulus framework.",
 			"1.0.0",
 		),
 		pgx.NewManifestModule(),
-		module.NewManifestModule(
+		module.NewManifesto(
 			logger.NewModule(),
 			"github.com/go-modulus/modulus/logger",
 			"Adds a slog logger with a zap backend to the Modulus framework.",
 			"1.0.0",
 		),
-		module.NewManifestModule(
+		module.NewManifesto(
 			migrator.NewModule(),
 			"github.com/go-modulus/modulus/db/migrator",
 			"Several CLI commands to use DBMate (https://github.com/amacneil/dbmate) migration tool inside your application.",
 			"1.0.0",
 		),
-		module.NewManifestModule(
+		module.NewManifesto(
 			http.NewModule(),
 			"github.com/go-modulus/modulus/http",
 			"HTTP module based on the Chi router.",
 			"1.0.0",
 		),
-		module.NewManifestModule(
+		module.NewManifesto(
 			httpMiddleware.NewModule(),
 			"github.com/go-modulus/modulus/http/middleware",
 			"Various useful middlewares",

@@ -175,8 +175,8 @@ func NewModule() *module.Module {
 		InitConfig(&ModuleConfig{})
 }
 
-func NewManifestModule() module.ManifestModule {
-	return module.NewManifestModule(
+func NewManifesto() module.Manifesto {
+	return module.NewManifesto(
 		NewModule(),
 		"github.com/go-modulus/modulus/db/embedded",
 		"A wrapper for the github.com/fergusstrange/embedded-postgres package to integrate it into the Modulus framework. This package starts the embedded postgres database and creates the user and the database mentioned in PG_* vars. It works together with the github.com/go-modulus/modulus/db/pgx and migration packages.",
