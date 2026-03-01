@@ -14,39 +14,10 @@ help: ## show this help message
 
 .PHONY: test
 test: ## Run tests
-	go run github.com/rakyll/gotest -v -failfast  ./...
+	go run github.com/rakyll/gotest@latest -v -failfast  ./...
 
 analyze: ## Run static analyzer
 	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:v2.10.1 golangci-lint run -v
-
-update-manifest: ## Update the manifest file
-	go run ./cmd/manifest/main.go
-
-build-testproject: ## Build the example of a project
-	$(MAKE) install
-	./bin/mtools init --path=./testproj --name=testproj
-	./bin/mtools module install --proj-path=./testproj -m "pgx"
-	./bin/mtools module create --proj-path=./testproj --silent --path=internal --package=example
-	./bin/mtools db add --proj-path=./testproj --module=example --name=create_table
-	echo "-- migrate:up" > ./testproj/internal/example/storage/migration/20241228085104_create_table.sql
-	echo "CREATE TABLE example (" >> ./testproj/internal/example/storage/migration/20241228085104_create_table.sql
-	echo "	id SERIAL PRIMARY KEY," >> ./testproj/internal/example/storage/migration/20241228085104_create_table.sql
-	echo "	name TEXT NOT NULL" >> ./testproj/internal/example/storage/migration/20241228085104_create_table.sql
-	echo ");" >> ./testproj/internal/example/storage/migration/20241228085104_create_table.sql
-	echo "-- migrate:down" >> ./testproj/internal/example/storage/migration/20241228085104_create_table.sql
-	echo "DROP TABLE example;" >> ./testproj/internal/example/storage/migration/20241228085104_create_table.sql
-	echo "-- name: FindExamples :many" > ./testproj/internal/example/storage/query/example.sql
-	echo "SELECT * FROM example;" >> ./testproj/internal/example/storage/query/example.sql
-	./bin/mtools db update-sqlc-config --proj-path=./testproj
-	./bin/mtools db generate --proj-path=./testproj
-	./bin/mtools db migrate --proj-path=./testproj
-	./bin/mtools module install --proj-path=./testproj -m "dbmate migrator"
-	cd ./testproj && go run cmd/console/main.go migrator migrate
-	./bin/mtools module add-cli --proj-path=./testproj --module=example --name=hello-world
-	cd ./testproj && go run cmd/console/main.go hello-world
-	./bin/mtools module install --proj-path=./testproj --manifest="modules.json" -m "chi http"
-	./bin/mtools module add-json-api --proj-path=./testproj --module=example --uri=/hello-world --name=HelloWorld --method=GET --silent
-	./bin/mtools module install --proj-path=./testproj --manifest="modules.json" -m "gqlgen"
 
 .PHONY: db-sqlc-generate
 db-sqlc-generate: ## Generate sqlc files in all modules
