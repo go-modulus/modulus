@@ -3,14 +3,14 @@ package http
 import (
 	"context"
 	"fmt"
-	"github.com/c2h5oh/datasize"
-	"github.com/go-chi/chi/v5"
-	infraCli "github.com/go-modulus/modulus/cli"
-	"github.com/go-modulus/modulus/http/errhttp"
-	"github.com/urfave/cli/v2"
 	"log/slog"
 	netHttp "net/http"
 	"time"
+
+	"github.com/c2h5oh/datasize"
+	infraCli "github.com/go-modulus/modulus/cli"
+	"github.com/go-modulus/modulus/http/errhttp"
+	"github.com/urfave/cli/v2"
 
 	"go.uber.org/fx"
 )
@@ -23,7 +23,7 @@ type ServeConfig struct {
 
 type Serve struct {
 	runner        *infraCli.Runner
-	router        chi.Router
+	router        Router
 	routes        []Route
 	middlewares   []Middleware
 	errorPipeline *errhttp.ErrorPipeline
@@ -35,7 +35,7 @@ type ServeParams struct {
 	fx.In
 
 	Runner   *infraCli.Runner
-	Router   chi.Router
+	Router   Router
 	Routes   []Route `group:"http.routes"`
 	Pipeline *Pipeline
 	// @todo: think on placing this in each route to be able to override it for specific routes
@@ -47,7 +47,7 @@ type ServeParams struct {
 func NewServe(params ServeParams) *Serve {
 	middlewares := make([]Middleware, 0)
 	if params.Pipeline != nil {
-		middlewares = params.Pipeline.Middlewares
+		middlewares = params.Pipeline.GetMiddlewares()
 	}
 	return &Serve{
 		runner:        params.Runner,

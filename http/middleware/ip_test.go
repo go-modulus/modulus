@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-modulus/modulus/http/middleware"
+	"github.com/go-modulus/http/middleware"
 	"github.com/stretchr/testify/require"
 )
 

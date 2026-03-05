@@ -1,11 +1,12 @@
 package middleware
 
 import (
-	"braces.dev/errtrace"
 	"bytes"
-	"github.com/go-modulus/modulus/http/errhttp"
 	"io"
 	"net/http"
+
+	"github.com/go-modulus/modulus/errors/errtrace"
+	"github.com/go-modulus/modulus/http/errhttp"
 )
 
 type RequestBody struct {

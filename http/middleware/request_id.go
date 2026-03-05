@@ -1,10 +1,11 @@
 package middleware
 
 import (
-	"github.com/go-modulus/modulus/http/context"
+	"net/http"
+
+	"github.com/go-modulus/http/context"
 	"github.com/go-modulus/modulus/logger"
 	"github.com/rs/xid"
-	"net/http"
 )
 
 const (

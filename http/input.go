@@ -1,20 +1,21 @@
 package http
 
 import (
-	"braces.dev/errtrace"
 	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+
+	"braces.dev/errtrace"
 	"github.com/ggicci/httpin"
 	httpinCore "github.com/ggicci/httpin/core"
 	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/go-modulus/modulus/http/errhttp"
 	translationContext "github.com/go-modulus/modulus/translation"
 	"github.com/go-modulus/modulus/validator"
-	"io"
-	"net/http"
 )
 
 func ReadBody(req *http.Request) ([]byte, error) {
@@ -120,6 +121,12 @@ func (b *JSONBody) Encode(src any) (io.Reader, error) {
 	return &buf, nil
 }
 
+var registered = false
+
 func init() {
+	if registered {
+		return
+	}
+	registered = true
 	httpinCore.RegisterBodyFormat("optionalJson", &JSONBody{})
 }

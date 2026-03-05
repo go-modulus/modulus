@@ -2,10 +2,12 @@ package module
 
 import (
 	"context"
+	"testing"
+
+	"github.com/go-modulus/modulus/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/fx"
-	"testing"
 )
 
 func TestModule_InitConfig(t *testing.T) {
@@ -150,5 +152,120 @@ func TestModule_AddDependencies(t *testing.T) {
 			err := app.Start(context.Background())
 			require.NoError(t, err)
 		},
+	)
+}
+
+func TestModule_WithOptions(t *testing.T) {
+	t.Parallel()
+	t.Run(
+		"set overridden provider without overriding", func(t *testing.T) {
+			t.Parallel()
+			mod := NewModule("test").
+				SetOverriddenProvider("InterfaceA", NewA)
+
+			var intA InterfaceA
+			err := test.Invoke(
+				BuildFx(mod),
+				fx.Populate(&intA),
+			)
+			require.NoError(t, err)
+			require.Equal(t, "A", intA.MethodA())
+		},
+	)
+
+	t.Run(
+		"set overridden provider with overriding interface", func(t *testing.T) {
+			t.Parallel()
+			mod := NewModule("test").
+				SetOverriddenProvider("InterfaceA", NewA).
+				AddProviders(NewOverrideA).
+				WithOptions(OverrideAInterfaceOption[*OverrideA])
+
+			var intA InterfaceA
+			err := test.Invoke(
+				BuildFx(mod),
+				fx.Populate(&intA),
+			)
+			require.NoError(t, err)
+			require.Equal(t, "OverrideA", intA.MethodA())
+		},
+	)
+
+	t.Run(
+		"override obj constructor", func(t *testing.T) {
+			t.Parallel()
+
+			mod := NewModule("test").
+				SetOverriddenProvider("A", NewAObj).
+				AddProviders(NewOverrideA).
+				WithOptions(OverrideAOption[*OverrideA])
+
+			var intA *A
+			err := test.Invoke(
+				BuildFx(mod),
+				fx.Populate(&intA),
+			)
+			require.NoError(t, err)
+			require.Equal(t, "OverriddenA", intA.MethodA())
+		},
+	)
+}
+
+type InterfaceA interface {
+	MethodA() string
+}
+
+type A struct {
+	val string
+}
+
+func NewA() InterfaceA {
+	return &A{
+		val: "A",
+	}
+}
+func NewAObj() *A {
+	return &A{
+		val: "A",
+	}
+}
+func NewOverriddenAObj() *A {
+	return &A{
+		val: "OverriddenA",
+	}
+}
+func (a *A) MethodA() string {
+	return a.val
+}
+
+type OverrideA struct {
+}
+
+func NewOverrideA() *OverrideA {
+	return &OverrideA{}
+}
+func (o *OverrideA) NewA() *A {
+	return NewOverriddenAObj()
+}
+
+func (o *OverrideA) MethodA() string {
+	return "OverrideA"
+}
+
+func OverrideAInterfaceOption[T InterfaceA](m *Module) *Module {
+	return m.SetOverriddenProvider(
+		"InterfaceA", func(impl T) InterfaceA {
+			return impl
+		},
+	)
+}
+
+type FactoryA interface {
+	NewA() *A
+}
+
+func OverrideAOption[T FactoryA](m *Module) *Module {
+	return m.SetOverriddenProvider(
+		"A", T.NewA,
 	)
 }

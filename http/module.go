@@ -3,8 +3,6 @@ package http
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
-	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/go-modulus/modulus/errors/errwrap"
 	"github.com/go-modulus/modulus/http/errhttp"
@@ -22,58 +20,37 @@ var (
 	)
 )
 
-func NewRouter(errorPipeline *errhttp.ErrorPipeline, config ServeConfig) chi.Router {
-	r := chi.NewRouter()
-	r.MethodNotAllowed(
-		errhttp.WrapHandler(
-			errorPipeline,
-			func(w http.ResponseWriter, req *http.Request) error {
-				return ErrMethodNotAllowed
-			},
-		),
-	)
-	r.NotFound(
-		errhttp.WrapHandler(
-			errorPipeline,
-			func(w http.ResponseWriter, req *http.Request) error {
-				return ErrNotFound
-			},
-		),
-	)
-	if config.TTL > 0 {
-		r.Use(chiMiddleware.Timeout(config.TTL))
-	}
-	if config.RequestSizeLimit > 0 {
-		r.Use(chiMiddleware.RequestSize(int64(config.RequestSizeLimit.Bytes())))
-	}
-	return r
-}
-
-func NewModule() *module.Module {
-	return module.NewModule("chi http").
+func NewModule(options ...module.Option) *module.Module {
+	module := module.NewModule("http").
 		AddCliCommands(
 			NewServeCommand,
 		).
 		AddProviders(
-			NewRouter,
 			NewServe,
 		).
+		SetOverriddenProvider("http.Router", NewDefaultRouter).
 		SetOverriddenProvider("http.ErrorPipeline", errhttp.NewDefaultErrorPipeline).
 		SetOverriddenProvider(
-			"http.MiddlewarePipeline", func() *Pipeline {
-				return &Pipeline{
-					Middlewares: []Middleware{},
-				}
-			},
+			"http.MiddlewarePipeline", NewDefaultPipeline(),
 		).
 		InitConfig(ServeConfig{}).
-		InitConfig(errhttp.ErrorLoggerConfig{})
+		InitConfig(errhttp.ErrorLoggerConfig{}).
+		WithOptions(options...)
+
+	return module
 }
 
-func OverrideErrorPipeline(httpModule *module.Module, pipeline interface{}) *module.Module {
-	return httpModule.SetOverriddenProvider("http.ErrorPipeline", pipeline)
+func OverrideRouter[T Router](authModule *module.Module) *module.Module {
+	return authModule.SetOverriddenProvider("http.Router", func(impl T) Router { return impl })
 }
 
-func OverrideMiddlewarePipeline(httpModule *module.Module, pipeline interface{}) *module.Module {
-	return httpModule.SetOverriddenProvider("http.MiddlewarePipeline", pipeline)
+func OverrideErrorPipeline[T errhttp.ErrorPipelineFactory](httpModule *module.Module) *module.Module {
+	return httpModule.SetOverriddenProvider(
+		"http.ErrorPipeline",
+		func(impl T) *errhttp.ErrorPipeline { return impl.New() },
+	)
+}
+
+func OverrideMiddlewarePipeline[T PipelineFactory](httpModule *module.Module) *module.Module {
+	return httpModule.SetOverriddenProvider("http.MiddlewarePipeline", func(impl T) *Pipeline { return impl.New() })
 }
