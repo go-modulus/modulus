@@ -6,6 +6,7 @@ import (
 	"github.com/go-modulus/modulus/errors/erruser"
 	"github.com/go-modulus/modulus/errors/errwrap"
 	"github.com/go-modulus/modulus/http/errhttp"
+	"github.com/go-modulus/modulus/http/middleware"
 	"github.com/go-modulus/modulus/module"
 )
 
@@ -34,6 +35,7 @@ func NewModule(options ...module.Option) *module.Module {
 			"http.MiddlewarePipeline", NewDefaultPipeline(),
 		).
 		InitConfig(ServeConfig{}).
+		InitConfig(middleware.CorsConfig{}).
 		InitConfig(errhttp.ErrorLoggerConfig{}).
 		WithOptions(options...)
 
