@@ -12,7 +12,6 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/fergusstrange/embedded-postgres v1.33.0
 	github.com/ggicci/httpin v0.20.2
-	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/gofrs/uuid v4.4.0+incompatible
 	github.com/graph-gophers/dataloader/v7 v7.1.3

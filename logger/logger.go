@@ -1,16 +1,17 @@
 package logger
 
 import (
-	"braces.dev/errtrace"
 	"context"
+	"log/slog"
+	"time"
+
+	"braces.dev/errtrace"
 	"github.com/go-modulus/modulus/errors/errlog"
 	slogformatter "github.com/samber/slog-formatter"
 	slogmulti "github.com/samber/slog-multi"
 	slogzap "github.com/samber/slog-zap/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"log/slog"
-	"time"
 )
 
 func NewLogger(config ModuleConfig) (*zap.Logger, error) {
