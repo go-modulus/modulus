@@ -24,6 +24,15 @@ func NewModule() *module.Module {
 	)
 }
 
+func NewManifesto() module.Manifesto {
+	return module.NewManifesto(
+		NewModule(),
+		"github.com/go-modulus/modulus/logger",
+		"Adds a slog logger with a zap backend to the Modulus framework.",
+		"1.0.0",
+	)
+}
+
 func WithLoggerOption() fx.Option {
 	loggerOption := fx.WithLogger(
 		func(logger *zap.Logger, config ModuleConfig) fxevent.Logger {

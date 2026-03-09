@@ -32,7 +32,7 @@ func NewModule(options ...module.Option) *module.Module {
 		SetOverriddenProvider("http.Router", NewDefaultRouter).
 		SetOverriddenProvider("http.ErrorPipeline", errhttp.NewDefaultErrorPipeline).
 		SetOverriddenProvider(
-			"http.MiddlewarePipeline", NewDefaultPipeline(),
+			"http.MiddlewarePipeline", NewDefaultPipeline,
 		).
 		InitConfig(ServeConfig{}).
 		InitConfig(middleware.CorsConfig{}).
