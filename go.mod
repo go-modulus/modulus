@@ -4,16 +4,12 @@ go 1.26
 
 require (
 	braces.dev/errtrace v0.4.0
-	github.com/amacneil/dbmate/v2 v2.31.0
 	github.com/c2h5oh/datasize v0.0.0-20231215233829-aa82cc1e6500
 	github.com/fatih/color v1.18.0
 	github.com/fatih/structs v1.1.0
-	github.com/fergusstrange/embedded-postgres v1.33.0
 	github.com/ggicci/httpin v0.20.2
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/jackc/pgx/v5 v5.8.0
 	github.com/jonboulle/clockwork v0.5.0
-	github.com/laher/mergefs v0.1.1
 	github.com/rs/cors v1.11.1
 	github.com/rs/xid v1.6.0
 	github.com/samber/slog-formatter v1.2.2
@@ -47,10 +43,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.2 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 // indirect
-	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/puddle/v2 v2.2.2 // indirect
-	github.com/lib/pq v1.11.2 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/nexus-rpc/sdk-go v0.5.1 // indirect
@@ -61,7 +53,6 @@ require (
 	github.com/samber/slog-common v0.20.0 // indirect
 	github.com/sirupsen/logrus v1.9.4 // indirect
 	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/xrash/smetrics v0.0.0-20250705151800-55b8f293f342 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/otel v1.40.0 // indirect
