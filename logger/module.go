@@ -28,7 +28,7 @@ func NewManifesto() module.Manifesto {
 	return module.NewManifesto(
 		NewModule(),
 		"github.com/go-modulus/modulus/logger",
-		"Adds a slog logger with a zap backend to the Modulus framework.",
+		"Slog logger with a zap backend for the Modulus framework.",
 		"1.0.0",
 	)
 }

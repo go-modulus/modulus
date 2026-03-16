@@ -2,9 +2,10 @@ package cli
 
 import (
 	"context"
-	"github.com/go-modulus/modulus/module"
 	"os"
 	"sort"
+
+	"github.com/go-modulus/modulus/module"
 
 	"github.com/urfave/cli/v2"
 	"go.uber.org/fx"
@@ -81,11 +82,20 @@ func Start(
 }
 
 func NewModule() *module.Module {
-	return module.NewModule("urfave cli").
+	return module.NewModule("modulus/cli").
 		AddProviders(
 			NewApp,
 			NewRunner,
 		).
 		//AddInvokes(Start).
 		InitConfig(ModuleConfig{})
+}
+
+func NewManifesto() module.Manifesto {
+	return module.NewManifesto(
+		NewModule(),
+		"github.com/go-modulus/modulus/cli",
+		"Cli applications module for the Modulus framework. It is based on github.com/urfave/cli library.",
+		"1.0.0",
+	)
 }
