@@ -82,7 +82,7 @@ func Start(
 }
 
 func NewModule() *module.Module {
-	return module.NewModule("modulus/cli").
+	return module.NewModule("cli").
 		AddProviders(
 			NewApp,
 			NewRunner,

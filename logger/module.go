@@ -15,7 +15,7 @@ type ModuleConfig struct {
 }
 
 func NewModule() *module.Module {
-	return module.NewModule("slog logger").
+	return module.NewModule("logger").
 		AddProviders(
 			NewLogger,
 			NewSlog,
