@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"time"
+
 	"github.com/99designs/gqlgen/graphql/handler/apollotracing"
 	"github.com/go-modulus/modulus/http/errhttp"
 	"github.com/vektah/gqlparser/v2/ast"
 	"go.uber.org/fx"
-	"log/slog"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
@@ -59,6 +61,9 @@ func NewGraphqlServer(
 	config := params.Config
 	srv := handler.New(params.Schema)
 
+	srv.AddTransport(transport.SSE{
+		KeepAlivePingInterval: 5 * time.Second,
+	})
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.GET{})
 	srv.AddTransport(transport.POST{})

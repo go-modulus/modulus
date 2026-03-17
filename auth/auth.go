@@ -2,6 +2,10 @@ package auth
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/go-modulus/modulus/auth/locales"
 	"github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/errors/erruser"
@@ -9,8 +13,6 @@ import (
 	"github.com/gofrs/uuid"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/vorlif/spreak/localize"
-	"net/http"
-	"time"
 )
 
 const TagUnauthenticated = "unauthenticated"
@@ -121,6 +123,14 @@ type refreshTokenResponseWriter struct {
 	ctx     context.Context
 	written bool
 	config  RefreshTokenConfig
+}
+
+func (rw *refreshTokenResponseWriter) Flush() {
+	if f, ok := rw.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	} else {
+		panic(fmt.Errorf("ResponseWriter does not implement http.Flusher"))
+	}
 }
 
 func (rw *refreshTokenResponseWriter) Write(b []byte) (int, error) {
