@@ -1,11 +1,12 @@
-package cli
+package internal
 
 import (
 	"context"
-	"github.com/go-modulus/modulus/errors/errlog"
-	"github.com/go-modulus/modulus/logger"
 	"log/slog"
 	"sync"
+
+	"github.com/go-modulus/modulus/errors/errlog"
+	"github.com/go-modulus/modulus/logger"
 
 	"go.uber.org/fx"
 )

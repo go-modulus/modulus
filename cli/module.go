@@ -2,102 +2,21 @@ package cli
 
 import (
 	"context"
-	"os"
-	"sort"
 
+	"github.com/go-modulus/modulus/cli/internal"
 	"github.com/go-modulus/modulus/module"
-
-	"github.com/urfave/cli/v3"
-	"go.uber.org/fx"
 )
 
-type ModuleConfig struct {
-	Version        string
-	Usage          string
-	DefaultCommand string
-	GlobalFlags    []cli.Flag
-}
-
-type StartCliParams struct {
-	fx.In
-
-	Lc       fx.Lifecycle
-	Commands []*cli.Command `group:"cli.commands"`
-	Runner   *Runner
-	Config   ModuleConfig
-}
-
-type App interface {
-	Run(ctx context.Context, osArgs []string) (deferErr error)
-}
-
-func NewApp(params StartCliParams) App {
-	usage := "Run console commands"
-	if params.Config.Usage != "" {
-		usage = params.Config.Usage
-	}
-	commands := params.Commands
-	addGlobalFlagsToAllSubcommands(commands, params.Config.GlobalFlags)
-	app := &cli.Command{
-		Usage:                 usage,
-		Version:               params.Config.Version,
-		DefaultCommand:        params.Config.DefaultCommand,
-		Commands:              commands,
-		Flags:                 params.Config.GlobalFlags,
-		EnableShellCompletion: true,
-		Suggest:               true,
-	}
-
-	sort.Sort(cli.FlagsByName(app.Flags))
-	sort.Slice(
-		app.Commands, func(i, j int) bool {
-			return app.Commands[i].Name < app.Commands[j].Name
-		},
-	)
-
-	params.Lc.Append(
-		fx.Hook{
-			OnStop: func(ctx context.Context) error {
-				return params.Runner.stop()
-			},
-		},
-	)
-
-	return app
-}
-
-func addGlobalFlagsToAllSubcommands(
-	commands []*cli.Command,
-	flags []cli.Flag,
-) {
-	for _, command := range commands {
-		command.Flags = append(command.Flags, flags...)
-		if len(command.Commands) != 0 {
-			addGlobalFlagsToAllSubcommands(command.Commands, flags)
-		}
-	}
-}
-
-func Start(
-	runner *Runner,
-	app App,
-) error {
-	ctx := context.Background()
-	return runner.start(
-		func() error {
-			return app.Run(ctx, os.Args)
-		},
-	)
+type ModuleConfig = internal.ModuleConfig
+type Runner interface {
+	Run(ctx context.Context, fn func(ctx context.Context) error) error
 }
 
 func NewModule(options ...module.Option) *module.Module {
 	return module.NewModule("cli").
-		AddProviders(
-			NewRunner,
-		).
-		SetOverriddenProvider("cli.App", NewApp).
-		AddInvokes(Start).
-		InitConfig(ModuleConfig{}).
+		SetOverriddenProvider("cli.App", internal.NewApp).
+		SetOverriddenProvider("cli.Runner", internal.NewRunner).
+		InitConfig(internal.ModuleConfig{}).
 		WithOptions(options...)
 }
 
@@ -110,6 +29,20 @@ func NewManifesto() module.Manifesto {
 	)
 }
 
-func OverrideApp[T App](m *module.Module) *module.Module {
-	return m.SetOverriddenProvider("cli.App", func(impl T) App { return impl })
+func OverrideApp[T internal.App](m *module.Module) *module.Module {
+	return m.SetOverriddenProvider("cli.App", func(impl T) internal.App { return impl })
+}
+
+func OverrideRunner[T Runner](m *module.Module) *module.Module {
+	return m.SetOverriddenProvider("cli.Runner", func(impl T) Runner { return impl })
+}
+
+func InvokeStartCli(m *module.Module) *module.Module {
+	return m.AddInvokes(internal.Start)
+}
+
+func SetConfig(config ModuleConfig) module.Option {
+	return func(m *module.Module) *module.Module {
+		return m.InitConfig(config)
+	}
 }
