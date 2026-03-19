@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-modulus/modulus/module"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 	"go.uber.org/fx"
 )
 
@@ -27,25 +27,33 @@ type StartCliParams struct {
 	Config   ModuleConfig
 }
 
-func NewApp(params StartCliParams) *cli.App {
+type App interface {
+	Run(ctx context.Context, osArgs []string) (deferErr error)
+}
+
+func NewApp(params StartCliParams) App {
 	usage := "Run console commands"
 	if params.Config.Usage != "" {
 		usage = params.Config.Usage
 	}
 	commands := params.Commands
 	addGlobalFlagsToAllSubcommands(commands, params.Config.GlobalFlags)
-	app := &cli.App{
-		Usage:                usage,
-		Version:              params.Config.Version,
-		DefaultCommand:       params.Config.DefaultCommand,
-		Commands:             commands,
-		Flags:                params.Config.GlobalFlags,
-		EnableBashCompletion: true,
-		Suggest:              true,
+	app := &cli.Command{
+		Usage:                 usage,
+		Version:               params.Config.Version,
+		DefaultCommand:        params.Config.DefaultCommand,
+		Commands:              commands,
+		Flags:                 params.Config.GlobalFlags,
+		EnableShellCompletion: true,
+		Suggest:               true,
 	}
 
 	sort.Sort(cli.FlagsByName(app.Flags))
-	sort.Sort(cli.CommandsByName(app.Commands))
+	sort.Slice(
+		app.Commands, func(i, j int) bool {
+			return app.Commands[i].Name < app.Commands[j].Name
+		},
+	)
 
 	params.Lc.Append(
 		fx.Hook{
@@ -64,31 +72,33 @@ func addGlobalFlagsToAllSubcommands(
 ) {
 	for _, command := range commands {
 		command.Flags = append(command.Flags, flags...)
-		if len(command.Subcommands) != 0 {
-			addGlobalFlagsToAllSubcommands(command.Subcommands, flags)
+		if len(command.Commands) != 0 {
+			addGlobalFlagsToAllSubcommands(command.Commands, flags)
 		}
 	}
 }
 
 func Start(
 	runner *Runner,
-	app *cli.App,
+	app App,
 ) error {
+	ctx := context.Background()
 	return runner.start(
 		func() error {
-			return app.Run(os.Args)
+			return app.Run(ctx, os.Args)
 		},
 	)
 }
 
-func NewModule() *module.Module {
+func NewModule(options ...module.Option) *module.Module {
 	return module.NewModule("cli").
 		AddProviders(
-			NewApp,
 			NewRunner,
 		).
-		//AddInvokes(Start).
-		InitConfig(ModuleConfig{})
+		SetOverriddenProvider("cli.App", NewApp).
+		AddInvokes(Start).
+		InitConfig(ModuleConfig{}).
+		WithOptions(options...)
 }
 
 func NewManifesto() module.Manifesto {
@@ -98,4 +108,8 @@ func NewManifesto() module.Manifesto {
 		"Cli applications module for the Modulus framework. It is based on github.com/urfave/cli library.",
 		"1.0.0",
 	)
+}
+
+func OverrideApp[T App](m *module.Module) *module.Module {
+	return m.SetOverriddenProvider("cli.App", func(impl T) App { return impl })
 }
