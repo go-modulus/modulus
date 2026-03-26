@@ -22,7 +22,7 @@ type ServeConfig struct {
 }
 
 type Serve struct {
-	runner        infraCli.Runner
+	runner        *infraCli.Runner
 	router        Router
 	routes        []Route
 	middlewares   []Middleware
@@ -34,7 +34,7 @@ type Serve struct {
 type ServeParams struct {
 	fx.In
 
-	Runner   infraCli.Runner
+	Runner   *infraCli.Runner
 	Router   Router
 	Routes   []Route `group:"http.routes"`
 	Pipeline *Pipeline
