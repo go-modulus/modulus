@@ -19,9 +19,7 @@ func NewModule() *module.Module {
 		AddProviders(
 			NewLogger,
 			NewSlog,
-		).InitConfig(
-		ModuleConfig{},
-	)
+		).InitConfig(ModuleConfig{})
 }
 
 func NewManifesto() module.Manifesto {

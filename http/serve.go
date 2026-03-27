@@ -10,7 +10,7 @@ import (
 	"github.com/c2h5oh/datasize"
 	infraCli "github.com/go-modulus/modulus/cli"
 	"github.com/go-modulus/modulus/http/errhttp"
-	"github.com/urfave/cli/v2"
+	"github.com/urfave/cli/v3"
 
 	"go.uber.org/fx"
 )
@@ -67,9 +67,7 @@ func NewServeCommand(s *Serve) *cli.Command {
 	}
 }
 
-func (s *Serve) Invoke(cliCtx *cli.Context) error {
-	ctx := cliCtx.Context
-
+func (s *Serve) Invoke(ctx context.Context, cmd *cli.Command) error {
 	logger := s.logger.With(slog.String("component", "http"))
 
 	server := &netHttp.Server{
