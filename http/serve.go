@@ -86,11 +86,12 @@ func (s *Serve) Invoke(ctx context.Context, cmd *cli.Command) error {
 		logger.Info("registering global middlewares", slog.Int("count", len(s.middlewares)))
 	}
 
+	count := 0
 	for _, route := range s.routes {
 		if route.IsEmpty() {
 			continue
 		}
-		logger.Info(
+		logger.Debug(
 			"registering route",
 			slog.String("method", route.Method),
 			slog.String("path", route.Path),
@@ -100,7 +101,9 @@ func (s *Serve) Invoke(ctx context.Context, cmd *cli.Command) error {
 		} else {
 			s.router.Method(route.Method, route.Path, errhttp.WrapHandler(s.errorPipeline, route.ErrHandler))
 		}
+		count++
 	}
+	logger.Info("registered routes", slog.Int("count", count))
 
 	return s.runner.Run(
 		ctx, func(ctx context.Context) error {

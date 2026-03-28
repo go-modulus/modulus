@@ -8,10 +8,10 @@ import (
 )
 
 type ModuleConfig struct {
-	Level        string `env:"LOGGER_LEVEL, default=debug" comment:"Use one of \"debug\", \"info\", \"warn\", \"error\". It sets the maximum level of the log messages that should be logged"`
+	Level        string `env:"LOGGER_LEVEL, default=debug" comment:"Use one of \"debug\", \"info\", \"warn\", \"error\". It sets the minimum level of the log messages that should be logged"`
 	Type         string `env:"LOGGER_TYPE, default=console" comment:"Use either \"console\" or \"json\" value"`
 	App          string `env:"LOGGER_APP, default=modulus"`
-	FxEventLevel string `env:"LOGGER_FX_EVENT_LEVEL, default=info" comment:"Use one of \"debug\", \"info\", \"warn\", \"error\". It sets the maximum level of the fx events that should be logged"`
+	FxEventLevel string `env:"LOGGER_FX_EVENT_LEVEL, default=info" comment:"Use one of \"debug\", \"info\", \"warn\", \"error\". It sets the minimum level of the fx events that should be logged"`
 }
 
 func NewModule() *module.Module {

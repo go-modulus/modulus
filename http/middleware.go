@@ -1,6 +1,7 @@
 package http
 
 import (
+	"log/slog"
 	netHttp "net/http"
 	"sort"
 
@@ -13,7 +14,7 @@ type PipelineFactory interface {
 	New() *Pipeline
 }
 
-func NewDefaultPipeline() *Pipeline {
+func NewDefaultPipeline(logger *slog.Logger) *Pipeline {
 	return &Pipeline{
 		middlewares: map[int][]Middleware{
 			100: {
@@ -24,6 +25,9 @@ func NewDefaultPipeline() *Pipeline {
 			},
 			300: {
 				middleware.UserAgent,
+			},
+			400: {
+				middleware.NewLogger(logger),
 			},
 		},
 	}

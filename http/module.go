@@ -3,26 +3,30 @@ package http
 import (
 	"net/http"
 
+	httpinIntegration "github.com/ggicci/httpin/integration"
 	"github.com/go-modulus/modulus/errors/erruser"
-	"github.com/go-modulus/modulus/errors/errwrap"
 	"github.com/go-modulus/modulus/http/errhttp"
 	"github.com/go-modulus/modulus/http/middleware"
+	"github.com/go-modulus/modulus/logger"
 	"github.com/go-modulus/modulus/module"
 )
 
 var (
-	ErrMethodNotAllowed = errwrap.Wrap(
-		erruser.New("MethodNotAllowed", "Method not allowed"),
-		errhttp.With(http.StatusMethodNotAllowed),
+	ErrMethodNotAllowed = errhttp.ErrWithHttpCode(
+		erruser.New("method not allowed", "HTTP method is not allowed"),
+		http.StatusMethodNotAllowed,
 	)
-	ErrNotFound = errwrap.Wrap(
-		erruser.New("NotFound", "Not found"),
-		errhttp.With(http.StatusNotFound),
+	ErrNotFound = errhttp.ErrWithHttpCode(
+		erruser.New("not found", "Not found"),
+		http.StatusNotFound,
 	)
 )
 
 func NewModule(options ...module.Option) *module.Module {
 	httpModule := module.NewModule("http").
+		AddDependencies(
+			logger.NewModule(),
+		).
 		AddCliCommands(
 			NewServeCommand,
 		).
@@ -61,9 +65,13 @@ func NewManifesto() module.Manifesto {
 	httpModule := module.NewManifesto(
 		NewModule(),
 		"github.com/go-modulus/modulus/http",
-		"Base package for http server. It is based on the mux server and can be used standalone, but the main purpose of this package is working together with another router like Chi provided in the separate module.",
+		"Base package for http server. It is based on the ner/http server that is able to work without any dependencies, but the main purpose of this package is working together with another router like Chi provided in the separate module.",
 		"1.0.0",
 	)
 
 	return httpModule
+}
+
+func init() {
+	httpinIntegration.UseHttpPathVariable("path")
 }
