@@ -19,19 +19,6 @@ test: ## Run tests
 analyze: ## Run static analyzer
 	docker run --rm -v $(shell pwd):/app -w /app golangci/golangci-lint:v2.10.1 golangci-lint run -v
 
-.PHONY: db-sqlc-generate
-db-sqlc-generate: ## Generate sqlc files in all modules
-	sqlc -f auth/storage/sqlc.yaml generate
-
-.PHONY: db-migrate
-db-migrate: ## Run migrations in test database
-	$(MAKE) install
-	APP_ENV=test ./bin/mtools db migrate --local-manifest=modules-test.json
-
-.PHONY: db-migrate
-db-rollback: ## Rollback the last migration in test database
-	$(MAKE) install
-	APP_ENV=test ./bin/mtools db rollback --local-manifest=modules-test.json
 
 .PHONY: translation-extract
 translation-extract: ## Extract translations from source code

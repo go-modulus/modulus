@@ -2,7 +2,7 @@
 
 Let's create a real-world example that provides a simple GraphQL API for the non-existent Front-end.
 The requirements for the project will be described later. Now, let's say that we want to create an API for the blog.
-It is a simple API, but it is enough to show how to create a GraphQL server using Modulus framework and the `gqlgen` module.
+It is a simple API, but it is enough to show how to create a GraphQL server using Modulus framework and the `graphql` module.
 Previously we created a server that has only one query `ping` that returns the string `pong`.
 
 Read the [Getting Started](./getting_started.md) guide to create a new project with the base set of modules.
@@ -13,9 +13,8 @@ If you don't want to read this and follow all the steps from the article, please
 	go install github.com/go-modulus/mtools/cmd/mtools@latest
 	mkdir blog
     cd blog
-	mtools init --name=blog
-	mtools module install -m "pgx, dbmate migrator, chi http, gqlgen"
-	mtools module create --silent --path=internal --package=blog
+	mtools init --name=blog --path=./
+	mtools module install -m "modulus/pgx,modulus/pgx/migrator,http,modulus/graphql"
 ```
 
 All next calls to `mtools` will be executed in the `blog` directory.
@@ -141,7 +140,7 @@ Now we have to run generation to make the queries available in the code:
 It will generate the `internal/blog/storage/post.sql.go` file with the `CreatePost`, `FindPost`, `FindPosts`, and `PublishPost` functions.
 Also, it will generate the `internal/blog/storage/models.go` file with the `Post` struct and the `PostStatus` enum.
 
-Now we need to configure the database connection. Open .env file and change the following line to your local database connection:
+Now we need to configure the database connection. Open `.env.local` file and change the following line to your local database connection:
 
 ```env
 PGX_DSN=postgres://postgres:foobar@localhost:5432/test?sslmode=disable
@@ -182,11 +181,25 @@ Let's define the resolvers structure:
 package graphql
 
 type Resolver struct {
-	
+}
+
+func NewResolver() *Resolver {
+	return &Resolver{}
 }
 ```
 
-Now we need to inject it to the `internal/graphql/resolver/resolver.go` file:
+Also, it is necessary to add a constructor `NewResolver` to the module providers in the `internal/blog/module.go` file:
+```go
+func NewModule() *module.Module {
+    return module.NewModule("blog").
+		...
+		AddProviders(
+            ...
+            graphql.NewResolver,
+        )
+```
+
+After that we need to inject it to the `internal/graphql/resolver/resolver.go` file:
 
 ```go
 type Resolver struct {
@@ -205,7 +218,8 @@ func NewResolver(
 We can create a schema in `schema.graphql` file in the `internal/blog/graphql` directory defining the Post type and queries and mutations for the Post.
 But it is so boring. Let's use SQLc plugin to generate the schema for us.
 
-Add an anchor for the `codegen-graphql` and `codegen-graphql-options` to the `internal/blog/storage/sqlc.tmpl.yaml` file:
+By default, the graphql SQLs plugin is enabled, if you haven't disabled it during module creation.
+Check if an anchors for the `codegen-graphql` and `codegen-graphql-options` exist in the `internal/blog/storage/sqlc.tmpl.yaml`  file:
 ```yaml
 sqlc-tmpl:
   options:
@@ -324,6 +338,10 @@ import (
 type Resolver struct {
 }
 
+func NewResolver() *Resolver {
+	return &Resolver{}
+}
+
 // CreatePost is the resolver for the createPost field.
 func (r *Resolver) CreatePost(ctx context.Context, input model.CreatePostInput) (storage.Post, error) {
 	panic(fmt.Errorf("not implemented: CreatePost - createPost"))
@@ -387,7 +405,7 @@ After that run the server:
     ./bin/console serve
 ```
 
-Open the `http://localhost:8080/playground` in the browser and try to run the following query:
+Open the `http://localhost:8001/playground` in the browser and try to run the following query:
 
 ```graphql
 {
@@ -405,7 +423,7 @@ Open the `http://localhost:8080/playground` in the browser and try to run the fo
 }
 ```
 
-You will have an error message like this: `Something went wrong on our side`. It is because we didn't implement the resolvers yet.
+You will have an error message like this: `"Something went wrong (Code: d777fjkp5asklicbo70g)"`. It is because we didn't implement the resolvers yet.
 
 
 ## Resolvers Implementation
@@ -414,29 +432,19 @@ Go to the `internal/blog/graphql/resolvers.go` file and add dependency to the DB
 
 ```go
 type Resolver struct {
-	blogDb *storage.Queries
+	blogQueries *storage.Queries
 }
 
-func NewResolver(blogDb *storage.Queries) *Resolver {
-	return &Resolver{blogDb: blogDb}
+func NewResolver(blogQueries *storage.Queries) *Resolver {
+	return &Resolver{blogQueries: blogQueries}
 }
-```
-
-Add the `NewResolver` constructor to the module providers in the `internal/blog/module.go` file:
-
-```go
-func NewModule() *module.Module {
-    return module.NewModule("blog").
-		...
-		AddProviders(
-+			graphql.NewResolver,
 ```
 
 Now we can implement the resolvers. Let's start with the `posts` query resolver located in the `internal/blog/graphql/resolvers.go` file:
 
 ```go
 func (r *Resolver) Posts(ctx context.Context) ([]storage.Post, error) {
-	return r.blogDb.FindPosts(ctx)
+	return r.blogQueries.FindPosts(ctx)
 }
 ```
 
@@ -459,43 +467,52 @@ There are no data in the database yet. Let's create a new post. We need to imple
 Add the following code to the `internal/blog/graphql/resolvers.go` file:
 
 ```go   
-import(
-    "github.com/go-modulus/modulus/validator"
-    validation "github.com/go-ozzo/ozzo-validation/v4"
-    "github.com/gofrs/uuid"
+package graphql
+
+import (
+	"context"
+	
+	"github.com/go-modulus/modulus/errors"
+	"github.com/go-modulus/modulus/validator"
+	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/gofrs/uuid"
 )
 
+type Resolver struct {
+	blogQueries *storage.Queries
+}
+
 func (r *Resolver) CreatePost(ctx context.Context, input model.CreatePostInput) (storage.Post, error) {
-    // validate input using Ozzo validation
-    err := validation.ValidateStructWithContext(
-        ctx,
-        &input,
-        validation.Field(
-            &input.Title,
-            validation.Required.Error("Title is required"),
-        ),
-        validation.Field(
-            &input.Content,
-            validation.Required.Error("Content is required"),
-        ),
-    )
-    if err != nil {
-        return storage.Post{}, validator.NewErrInvalidInputFromOzzo(ctx, err)
-    }
-    
-    preview := input.Content
-    if len(input.Content) > 100 {
-        preview = input.Content[0:100]
-    }
-    
-    return r.blogDb.CreatePost(
-        ctx, storage.CreatePostParams{
-            ID:      uuid.Must(uuid.NewV6()),
-            Title:   input.Title,
-            Preview: preview,
-            Content: input.Content,
-        },
-    )
+	// validate input using Ozzo validation wrapped by modulus validator
+	err := validator.ValidateStructWithContext(
+		ctx,
+		&input,
+		validation.Field(
+			&input.Title,
+			validation.Required.Error("Title is required"),
+		),
+		validation.Field(
+			&input.Content,
+			validation.Required.Error("Content is required"),
+		),
+	)
+	if err != nil {
+		return storage.Post{}, errors.WithTrace(err)
+	}
+
+	preview := input.Content
+	if len(input.Content) > 100 {
+		preview = input.Content[0:100]
+	}
+
+	return r.blogQueries.CreatePost(
+		ctx, storage.CreatePostParams{
+			ID:      uuid.Must(uuid.NewV6()),
+			Title:   input.Title,
+			Preview: preview,
+			Content: input.Content,
+		},
+	)
 }
 
 ```
@@ -532,7 +549,7 @@ Add the following code to the `internal/blog/graphql/resolvers.go` file:
 
 ```go
 func (r *Resolver) PublishPost(ctx context.Context, id uuid.UUID) (storage.Post, error) {
-    return r.blogDb.PublishPost(ctx, id)
+    return r.blogQueries.PublishPost(ctx, id)
 }
 ```
 
@@ -549,7 +566,7 @@ Run the `posts` query. You will see errors like these:
 {
   "errors": [
     {
-      "message": "Something went wrong on our side (RID: )",
+      "message": "Something went wrong (Code:  )",
       "path": [
         "posts",
         0,
@@ -633,60 +650,102 @@ Call the query
 
 and you will see the list of posts without errors.
 
+## Authenticate users
+According to the requirements, we need to add authentication mechanics to the application. It allows users to login and register and write posts as authors.
 
-## Adding users
-According to the requirements, we need to add users and create posts for them. Let's create the `user` table and queries for it.
+Let's install the `modulus/auth` module:
+```shell
+    make module-install
+```
+Select the `modulus/auth` and the `modulus/auth/email` modules like you see in the screenshot below
+![install auth module](./img/install_auth_module.png)
 
-```shell 
-     make module-create
+It creates the folder `internal/auth` with necessary files, including graphql files like these:
+```graphql
+extend type Mutation {
+    emailSignUp(input: EmailSignUpInput!): TokenPair!
+    emailSignIn(input: EmailSignInInput!): TokenPair!
+    requestResetPassword(email: String!): Void!
+    confirmResetPassword(input: ConfirmResetPasswordInput!): Void!
+
+    changePassword(input: ChangePasswordInput!): Void!
+}
+
+input EmailSignUpInput @goModel(model: "github.com/go-modulus/auth/providers/email/graphql.EmailSignUpInput") {
+    email: String!
+    password: String!
+    captcha: CaptchaToken
+}
 ```
 
-Enter the `user` module name and the `user` schema name. Also, chose all the default values.
-The result view of all selected options are there: 
-![create user module](./img/create_user_module.png)
+You can change any fields in the `EmailSignUpInput` or other input types. In a case of changing fileds you need to map input to another struct.
+It is doable, but let's keep it simple. Let's add there additional input struct with the `name` field:
+```graphql
+input UserInfo {
+    name: String!
+}
+```
+Place it in the `internal/auth/graphql/auth.graphql` file.
 
-Create the new migration in the `internal/user/storage/migration` directory:
+Also, rewrite `emailSignUp` mutation in the `internal/auth/providers/email/graphql/auth.graphql` file:
+```graphql
+mutation {
+    emailSignUp(input: EmailSignUpInput!, userInfo: UserInfo!): TokenPair!
+}
+```
+
+Run `make graphql-generate` to generate the new graphql schema.
+
+
+## Adding user info
+We already have an authentication module, that allows users to register and login.
+But we want to save additional data about the user during registration. We need a name to show it as an author info of the posts.
+
+So let's add the `auth.user_info` table to the DB. We will place the migration and queries in the auth module. To do this we need to make a module from the folder `internal/auth`. 
+Now it is just a local folder for files for the module `modulus/auth`.
+
+Run `make module-create` and answer the questions:
+* Enter a Golang package name of the created module (e.g. user): `auth`.
+* Enter a name of the module: `auth`
+* Enter a folder starting from the root of a project: `internal`
+* Allow features GraphQL and Storage.
+* For the Storage feature answer yes for all questions except generating GraphQL schema.
+
+
+
+Create the new migration in the `internal/auth/storage/migration` directory:
 
 ```shell
     make db-add
-    unlink internal/user/storage/migration/default_schema.sql
-    unlink internal/user/storage/query/default_query.sql
+    unlink internal/auth/storage/migration/default_schema.sql
+    unlink internal/auth/storage/query/default_query.sql
 ``` 
 
-The selected options are there:
-![create user table](./img/create_user_table.png)
-
-Add the following code to the created file of the migration:
+Select the auth module and enter the migration name `user_info`
 
 ```sql
 -- migrate:up
 
-CREATE SCHEMA IF NOT EXISTS "user";
-
-CREATE TABLE "user"."user" (
-    id uuid PRIMARY KEY,
-    email text NOT NULL unique CHECK (email ~* '^.+@.+\..+$'),
+CREATE TABLE "auth"."user_info" (
+    -- the same as auth.account.id
+    id uuid PRIMARY KEY, 
     name text NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT now(),
     updated_at TIMESTAMP NOT NULL DEFAULT now()
 );
 
 -- migrate:down
-DROP TABLE "user"."user";
-DROP SCHEMA "user";
+DROP TABLE "auth"."user_info";
 ```
 
-Add users queries to the `internal/user/storage/query/user.sql` file:
+Add users queries to the `internal/auth/storage/query/user_info.sql` file:
 
 ```sql
--- name: RegisterUser :one
-INSERT INTO "user"."user" (id, email, name)
-VALUES (@id::uuid, @email::text, @name::text)
+-- name: SaveUserInfo :one
+INSERT INTO "auth"."user_info" (id, name)
+VALUES (@id::uuid, @name::text)
 RETURNING *;
 
--- name: FindUserByEmail :one
-SELECT * FROM "user"."user"
-WHERE email = @email::text;
 ```
 
 Run the checking the new SQL migration. It will appy the migration, rollback it and apply again.
@@ -701,433 +760,157 @@ Run the SQLc generation to make the queries available in the code:
     make db-sqlc-generate
 ```
 
-Change the `internal/user/storage/sqlc.tmpl.yaml` file to generate GraphQL types by SQLc:
-
-```yaml
-sqlc-tmpl:
-  version: "2"
-  options:
-    graphql:
-      overrides:
-        *default-overrides
-    ...
-  sql:  
-    codegen:
-    - <<: *codegen-graphql
-      options:
-        <<: *codegen-graphql-options
-        default_schema: "user"
-        package: "blog/internal/user/storage"
-```
-
-Run the generation to create the schema:
-
-```shell
-    make db-sqlc-generate
-```
-
-Add the `user` resolvers to the `internal/user/graphql/resolvers.go` file:
+Add the `auth` resolver to the `internal/auth/providers/email/graphql/resolvers.go` file overriding only the changed mutation:
 
 ```go
 package graphql
 
-type Resolver struct {
-	
-}
-
-func NewResolver() *Resolver {
-	return &Resolver{}
-}
-```
-
-Add the `userResolver` resolver to the `internal/graphql/resolver/resolver.go` file:
-
-```go
-type Resolver struct {
-    // Place all dependencies here
-+   userResolver *userGraphql.Resolver
-}
-
-func NewResolver(
-	...
-    userResolver *userGraphql.Resolver,
-) *Resolver {
-    return &Resolver{
-		...
-        userResolver: userResolver,
-    }
-}
-```
-
-Add the `user.graphql` schema to the `internal/user/graphql` directory:
-
-```graphql
-extend type Mutation {
-    registerUser(input: RegisterUserInput!): User!
-} 
-
-input RegisterUserInput @goModel(model: "blog/internal/user/action.RegisterUserInput") {
-    email: String!
-    password: String!
-    name: String!
-}
-```
-
-As you can see we linked the `RegisterUserInput` to the `RegisterUserInput` struct in the `blog/internal/user/action` package.
-Let's create an action for the user module. Create the `internal/user/action` directory and the `register_user.go` file in it.
-
-```shell
-    mkdir internal/user/action
-    touch internal/user/action/register_user.go
-```
-
-Action is a struct with one public method `Execute` that returns the result of the action.
-
-```go
-package action
-
 import (
-	"blog/internal/user/storage"
-	"braces.dev/errtrace"
 	"context"
-	"errors"
-	"github.com/go-modulus/modulus/errors/erruser"
+
+	authGraphql "github.com/go-modulus/auth/graphql"
+	emailGraphql "github.com/go-modulus/auth/providers/email/graphql"
+	"github.com/go-modulus/demo/internal/auth/graphql"
+	"github.com/go-modulus/demo/internal/auth/storage"
+	"github.com/go-modulus/demo/internal/graphql/model"
+	"github.com/go-modulus/modulus/errors"
 	"github.com/go-modulus/modulus/validator"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/gofrs/uuid"
-	"github.com/jackc/pgx/v5"
-)
-
-var ErrUserAlreadyExists = erruser.New("user already exists", "User already exists. Please login or use another email.")
-
-type RegisterUserInput struct {
-	Email    string
-	Password string
-	Name     string
-}
-
-func (i *RegisterUserInput) Validate(ctx context.Context) error {
-	err := validation.ValidateStruct(
-		i,
-		validation.Field(
-			&i.Email,
-			validation.Required.Error("Email is required"),
-			is.Email.Error("Email is not valid"),
-		),
-		validation.Field(
-			&i.Password,
-			validation.Required.Error("Password is required"),
-			validation.Length(6, 20).Error("Password must be between 6 and 20 characters"),
-		),
-		validation.Field(
-			&i.Name,
-			validation.Required.Error("Name is required"),
-			is.Alpha.Error("Name must contain only letters"),
-		),
-	)
-
-	if err != nil {
-		return validator.NewErrInvalidInputFromOzzo(ctx, err)
-	}
-
-	return nil
-}
-
-type RegisterUser struct {
-	userDb *storage.Queries
-}
-
-func NewRegisterUser(userDb *storage.Queries) *RegisterUser {
-	return &RegisterUser{userDb: userDb}
-}
-
-func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (storage.User, error) {
-	err := input.Validate(context.Background())
-	if err != nil {
-		return storage.User{}, err
-	}
-
-	_, err = r.userDb.FindUserByEmail(ctx, input.Email)
-	if err != nil {
-		if !errors.Is(err, pgx.ErrNoRows) {
-			return storage.User{}, errtrace.Wrap(err)
-		}
-	} else {
-		return storage.User{}, ErrUserAlreadyExists
-	}
-	user, err := r.userDb.RegisterUser(
-		ctx, storage.RegisterUserParams{
-			ID: uuid.Must(uuid.NewV6()),
-			Email: input.Email,
-			Name:  input.Name,
-		},
-	)
-	if err != nil {
-		return storage.User{}, errtrace.Wrap(err)
-	}
-	return user, nil
-}
-```
-
-Add the `RegisterUser` action to the module providers in the `internal/user/module.go` file:
-
-```go
-import (
-    "blog/internal/user/action"
-    "blog/internal/user/graphql"
-)
-func NewModule() *module.Module {
-    return module.NewModule("user").
-        ...
-        AddProviders(
-        ...
-        action.NewRegisterUser,
-		graphql.NewResolver,
-    )
-}
-```
-
-Add a link to the `RegisterUser` action in the `internal/user/graphql/resolvers.go` file:
-
-```go
-package graphql
-
-import (
-	"blog/internal/user/action"
-	"blog/internal/user/storage"
-	"context"
 )
 
 type Resolver struct {
-	register *action.RegisterUser
+	emailResolver *emailGraphql.Resolver
+	authQueries   *storage.Queries
 }
 
 func NewResolver(
-	register *action.RegisterUser,
+	emailResolver *emailGraphql.Resolver,
+	authQueries *storage.Queries,
 ) *Resolver {
 	return &Resolver{
-		register: register,
+		emailResolver: emailResolver,
+		authQueries:   authQueries,
 	}
 }
 
-func (r *Resolver) RegisterUser(ctx context.Context, input action.RegisterUserInput) (storage.User, error) {
-	return r.register.Execute(ctx, input)
+func (r *Resolver) EmailSignUp(
+	ctx context.Context,
+	input emailGraphql.EmailSignUpInput,
+	userInfo model.UserInfo,
+) (authGraphql.TokenPair, error) {
+	err := validator.ValidateStructWithContext(
+		ctx, &userInfo,
+		validation.Field(
+			&userInfo.Name,
+			validation.Required.Error("Name is required"),
+			is.Alpha.Error("Name must contain only letters"),
+			validation.Length(2, 20).Error("Name must be between 2 and 20 characters"),
+		),
+	)
+	if err != nil {
+		return authGraphql.TokenPair{}, errors.WithTrace(err)
+	}
+	userID := uuid.Must(uuid.NewV6())
+	_, err = r.authQueries.SaveUserInfo(
+		ctx, storage.SaveUserInfoParams{
+			ID:   userID,
+			Name: userInfo.Name,
+		},
+	)
+	if err != nil {
+		return authGraphql.TokenPair{}, errors.WithTrace(err)
+	}
+	input.ID = userID
+	input.Roles = []string{graphql.DefaultUserRole}
+	tokenPair, err := r.emailResolver.EmailSignUp(ctx, input)
+	if err != nil {
+		_ = r.authQueries.DeleteUserInfo(ctx, userID)
+		return authGraphql.TokenPair{}, errors.WithTrace(err)
+	}
+
+	return tokenPair, err
 }
 ```
 
-Generate the GraphQL resolvers:
-
-```shell
-    make graphql-generate
-```
-
-In the generated `internal/graphql/resolver/user.resolvers.go` file, add the following code:
+Add the `authResolver` resolver to the `internal/graphql/resolver/resolver.go` file:
 
 ```go
-func (r *mutationResolver) RegisterUser(ctx context.Context, input action.RegisterUserInput) (storage.User, error) {
-	return r.userResolver.RegisterUser(ctx, input)
+import authEmailGraphql "github.com/go-modulus/demo/internal/auth/providers/email/graphql"
+
+type Resolver struct {
+    // Place all dependencies here
++   authResolver *authEmailGraphql.Resolver
+}
+
+func NewResolver(
+	...
+    authResolver *authEmailGraphql.Resolver,
+) *Resolver {
+    return &Resolver{
+		...
+        authResolver: authResolver,
+    }
 }
 ```
 
+Call our `EmailSignUp` resolver in the `internal/graphql/auth.resolvers.go` file:
+```go
+func (r *mutationResolver) EmailSignUp(ctx context.Context, input graphql1.EmailSignUpInput, userInfo model.UserInfo) (graphql2.TokenPair, error) {
+    return r.authResolver.EmailSignUp(ctx, input, userInfo)
+}
+```
 
-Now we can register a new user. Try it in playground:
+Do not forget to add `NewResolver` function to the `internal/authmodule.go` file in the `NewModule` function:.
+
+```go
+func NewModule() *module.Module {
+    return module.NewModule(
+	    AddProviders(
+		    ...
+            graphql.NewResolver,
+        )
+    )
+	
+```
+
+Run the server and try to register a new user.
 
 ```graphql
 mutation {
-  registerUser(input:{email:"test@test.com", password:"123456", name:"Test"}){id, email, name}
+    emailSignUp(input:{
+        email: "test@test.com",
+        password:"123456"
+    }, userInfo:{
+        name:"Test"
+    }){accessToken}
 }
 ```
-
 
 
 ## Authenticate User
-We have the `registerUser` mutation to create a new user. Now we need to authenticate the user.
-To get the basement for our authentication we can use the `auth` module of the Modulus framework.
-Let's install the `auth` module with the following command:
+We have the `emailSignUp` mutation to create a new user. Now we need to authenticate the user.
 
-```shell
-    make module-install
-```
-And select `modulus auth` module from the list of available modules.
+Use the existent `emailSignIn` mutation to authenticate the user.
 
-After installing the `auth` module, we need to update the schema of our DB with the new tables for the `auth` module.
-Migrations have been created in the `internal/auth/storage/migration`, so we need to run them:
-
-```shell
-    make db-migrate
-```
-
-Now let's make an identity for the further authentication at the `RegisterUser` action.
-
-Add to the `internal/user/action/register_user.go` file:
-
+Add a proxy method to the `internal/auth/providers/email/graphql/resolvers.go` file:
 ```go
-type RegisterUser struct {
-	userDb *storage.Queries
-	passwordAuth *auth.PasswordAuthenticator
+func (r *Resolver) EmailSignIn(ctx context.Context, input emailGraphql.EmailSignInInput) (
+    authGraphql.TokenPair,
+    error,
+) {
+    return r.emailResolver.EmailSignIn(ctx, input)
 }
-
-func NewRegisterUser(
-	userDb *storage.Queries,
-    passwordAuth *auth.PasswordAuthenticator,
-) *RegisterUser {
-	return &RegisterUser{
-		userDb: userDb,
-		passwordAuth: passwordAuth,
-	}
-}
-
-func (r *RegisterUser) Execute(ctx context.Context, input RegisterUserInput) (storage.User, error) {
-	...
-	// register the new account with identity 
-	// it also creates a new identity for this account
-	account, err := r.passwordAuth.Register(
-        ctx,
-        input.Email,
-        input.Password,
-        // type of the created identity
-        repository.IdentityTypeEmail,
-        // the authenticated user role that will be used in the future
-        []string{"user"},
-        nil,
-    )
-    if err != nil {
-        return storage.User{}, errtrace.Wrap(err)
-    }
-    user, err := r.userDb.RegisterUser(
-        ctx, storage.RegisterUserParams{
-			// store somewhere the ID of created account. It will be used in the future authentication requests as a Performer.ID field
-			// it is a good idea to store the ID of the account as a primary key of the user table
-			// it will be relation 1:1 between the account and the user
-            ID:    account.ID,
-			// store data or the registered user
-            Email: input.Email,
-            Name:  input.Name,
-        },
-    )
-    if err != nil {
-        return storage.User{}, errtrace.Wrap(err)
-    }
-	return user, nil
-}
-
 ```
 
-Make a login mutation in the `internal/user/graphql/user.graphql` file:
-
-```graphql
-
-extend type Mutation {
-    ...
-    loginUser(input: LoginUserInput!): TokenPair!
-}
-
-
-input LoginUserInput @goModel(model: "blog/internal/user/action.LoginUserInput") {
-    email: String!
-    password: String!
-}
-
-type TokenPair @goModel(model: "blog/internal/user/action.TokenPair") {
-    accessToken: String!
-    refreshToken: String!
-}
-
-```
-
-Generate resolvers and add the `loginUser` resolver to the `internal/user/graphql/resolvers.go` file. Link added resolver with generated resolver in the `internal/graphql/resolver/user.resolvers.go` file.
-This steps the same as we did for the `registerUser` mutation.
-
-Also, don't forget to make the `LoginUser` action in the `internal/user/action/login_user.go` file.
-Call its constructor in the `internal/user/module.go` file.
-And call Execute method in the `internal/user/graphql/resolvers.go` file.
-
-The `LoginUser` action should look like this:
-
+Fill the `EmailSignIn` resolver in the `internal/graphql/auth.resolvers.go` file with:
 ```go
-package action
-
-import (
-	"braces.dev/errtrace"
-	"context"
-	"github.com/go-modulus/modulus/auth"
-	"github.com/go-modulus/modulus/validator"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/go-ozzo/ozzo-validation/v4/is"
-)
-
-type LoginUserInput struct {
-	Email    string
-	Password string
-}
-
-type TokenPair struct {
-	AccessToken  string
-	RefreshToken string
-}
-
-func (i *LoginUserInput) Validate(ctx context.Context) error {
-	err := validation.ValidateStruct(
-		i,
-		validation.Field(
-			&i.Email,
-			validation.Required.Error("Email is required"),
-			is.Email.Error("Email is not valid"),
-		),
-		validation.Field(
-			&i.Password,
-			validation.Required.Error("Password is required"),
-			validation.Length(6, 20).Error("Password must be between 6 and 20 characters"),
-		),
-	)
-
-	if err != nil {
-		return validator.NewErrInvalidInputFromOzzo(ctx, err)
-	}
-
-	return nil
-}
-
-type LoginUser struct {
-	passwordAuth   *auth.PasswordAuthenticator
-	plainTokenAuth *auth.PlainTokenAuthenticator
-}
-
-func NewLoginUser(
-	passwordAuth *auth.PasswordAuthenticator,
-	tokenAuth *auth.PlainTokenAuthenticator,
-) *LoginUser {
-	return &LoginUser{
-		passwordAuth:   passwordAuth,
-		plainTokenAuth: tokenAuth,
-	}
-}
-
-// Execute performs the login action by email and password.
-// Returns a token pair of the access and refresh tokens if the login is successful.
-// Errors:
-// * github.com/go-modulus/modulus/auth.ErrIdentityIsBlocked - if the identity is blocked.
-// * github.com/go-modulus/modulus/auth.ErrInvalidPassword - if the password is invalid.
-// * Any error from the IdentityRepository.Get method (e.g. github.com/go-modulus/modulus/auth/repository.ErrIdentityNotFound).
-// * Any error from the CredentialRepository.GetLast method (e.g. github.com/go-modulus/modulus/auth/repository.ErrCredentialNotFound).
-func (l *LoginUser) Execute(ctx context.Context, input LoginUserInput) (TokenPair, error) {
-	// Authenticate the user with the given email and password.
-	performer, err := l.passwordAuth.Authenticate(ctx, input.Email, input.Password)
-	if err != nil {
-		return TokenPair{}, errtrace.Wrap(err)
-	}
-
-	// Issue a new pair of access and refresh tokens.
-	pair, err := l.plainTokenAuth.IssueTokens(ctx, performer.IdentityID, nil)
-	if err != nil {
-		return TokenPair{}, errtrace.Wrap(err)
-	}
-
-	return TokenPair{
-		AccessToken:  pair.AccessToken.Token.String,
-		RefreshToken: pair.RefreshToken.Token.String,
-	}, nil
+func (r *mutationResolver) EmailSignIn(ctx context.Context, input graphql1.EmailSignInInput) (
+    graphql2.TokenPair,
+    error,
+) {
+    return r.authResolver.EmailSignIn(ctx, input)
 }
 ```
 
@@ -1135,21 +918,14 @@ Try it in playground:
 
 ```graphql
 mutation {
-  registerUser(input:{email:"test3@test.com", password:"123456", name:"Test"}){id, email, name}
+    emailSignIn(input:{
+        email: "test@test.com",
+        password:"123456"
+    }){accessToken}
 }
 ``` 
-to register a new user.
+to log in as a registered previously user.
 
-And then try to login:
-
-```graphql
-mutation {
-  loginUser(input:{email:"test3@test.com", password:"123456"}){
-    accessToken, 
-    refreshToken
-  }
-}
-```
 
 You will get the `accessToken` and `refreshToken` in the response.
 
@@ -1165,11 +941,12 @@ You will get the `accessToken` and `refreshToken` in the response.
 ```
 
 In this example we will not use the `refreshToken` but it is a good practice to use it in the real project.
+By default the `refreshToken` is set to cookies.
 
 
 ## Protect Queries and Mutations
 
-First of all, let's protect the `createPost` mutation to allow only authenticated users to create posts.
+First, let's protect the `createPost` mutation to allow only authenticated users to create posts.
 
 We need to use the Auth middleware for reading the tokens from headers and checking the access token. Also, this middleware will add the `Performer` to the context.
 
@@ -1349,7 +1126,7 @@ Edit the `internal/blog/graphql/resolvers.go` file and add the `AuthorID` field 
 
 ```go
     authorId := auth.GetPerformerID(ctx)
-	return r.blogDb.CreatePost(
+	return r.blogQueries.CreatePost(
 		ctx, storage.CreatePostParams{
 			...
 			AuthorID: authorId,
@@ -1414,7 +1191,7 @@ Generate the SQLc and change the `Posts` resolver in the `internal/blog/graphql/
 ```go
 func (r *Resolver) Posts(ctx context.Context) ([]storage.Post, error) {
     authorId := auth.GetPerformerID(ctx)
-    return r.blogDb.FindPosts(ctx, authorId)
+    return r.blogQueries.FindPosts(ctx, authorId)
 }
 ```
 

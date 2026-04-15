@@ -21,6 +21,7 @@ type Module struct {
 	fxOptions           []fx.Option
 	taggedProviders     map[string][]interface{}
 	overriddenProviders map[string]interface{}
+	decorators          []interface{}
 
 	exposeCommands bool
 	hiddenTags     map[string]struct{}
@@ -78,6 +79,11 @@ func (m *Module) SetOverriddenProvider(name string, provider interface{}) *Modul
 	return m
 }
 
+func (m *Module) Decorate(provider interface{}) *Module {
+	m.decorators = append(m.decorators, provider)
+	return m
+}
+
 func (m *Module) RemoveOverriddenProvider(name string) *Module {
 	if m.overriddenProviders == nil {
 		return m
@@ -127,6 +133,9 @@ func (m *Module) buildFx() fx.Option {
 			supplies = append(supplies, config)
 		}
 		opts = append(opts, fx.Supply(supplies...))
+	}
+	if len(m.decorators) > 0 {
+		opts = append(opts, fx.Decorate(m.decorators...))
 	}
 
 	if len(m.invokes) > 0 {

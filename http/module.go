@@ -65,7 +65,7 @@ func NewManifesto() module.Manifesto {
 	httpModule := module.NewManifesto(
 		NewModule(),
 		"github.com/go-modulus/modulus/http",
-		"Base package for http server. It is based on the ner/http server that is able to work without any dependencies, but the main purpose of this package is working together with another router like Chi provided in the separate module.",
+		"Base package for http server. It is based on the net/http server that is able to work without any dependencies, but the main purpose of this package is working together with another router like Chi provided in the separate module.",
 		"1.0.0",
 	)
 
