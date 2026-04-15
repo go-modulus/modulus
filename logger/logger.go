@@ -1,16 +1,16 @@
 package logger
 
 import (
-	"braces.dev/errtrace"
 	"context"
-	"github.com/go-modulus/modulus/errors/errlog"
+	"log/slog"
+	"time"
+
+	"braces.dev/errtrace"
 	slogformatter "github.com/samber/slog-formatter"
 	slogmulti "github.com/samber/slog-multi"
 	slogzap "github.com/samber/slog-zap/v2"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"log/slog"
-	"time"
 )
 
 func NewLogger(config ModuleConfig) (*zap.Logger, error) {
@@ -59,7 +59,6 @@ func NewSlog(
 	handler := slogzap.Option{Logger: zapLogger.WithOptions(zap.AddCallerSkip(8))}.NewZapHandler()
 	errorFormattingMiddleware := slogformatter.NewFormatterMiddleware(
 		slogformatter.TimeFormatter(time.RFC3339Nano, time.UTC),
-		errlog.Formatter(),
 	)
 	logger := slog.New(
 		slogmulti.

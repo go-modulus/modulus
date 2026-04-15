@@ -22,7 +22,7 @@ func WithHint(err error, hint localize.Singular) error {
 		return err
 	}
 
-	e := copyErr(err)
+	e := copyErr(err, 2)
 	e.hint = hint
 
 	return e
