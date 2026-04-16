@@ -45,7 +45,7 @@ func WithMeta(err error, kv ...string) error {
 		parts = append(parts, key+"="+value)
 	}
 
-	e := copyErr(err)
+	e := copyErr(err, 2)
 	e.meta = strings.Join(parts, ";")
 	return e
 }

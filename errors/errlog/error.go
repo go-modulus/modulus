@@ -5,27 +5,20 @@ import (
 	"reflect"
 
 	"github.com/go-modulus/modulus/errors"
-	slogformatter "github.com/samber/slog-formatter"
 	_ "golang.org/x/text/message"
 )
 
-func Error(err error) slog.Attr {
-	return slog.Any("error", err)
+type errorValue struct {
+	err error
 }
 
-func Formatter() slogformatter.Formatter {
-	return slogformatter.FormatByType[error](
-		func(err error) slog.Value {
-			values := getErrorAttrs(err)
-			cause := errors.Cause(err)
-			if cause != nil {
-				causeValues := getErrorAttrs(cause)
-				values = append(values, slog.Any("cause", causeValues))
-			}
+func (e errorValue) LogValue() slog.Value {
+	values := getErrorAttrs(e.err)
+	return slog.GroupValue(values...)
+}
 
-			return slog.GroupValue(values...)
-		},
-	)
+func Error(err error) slog.Attr {
+	return slog.Any("error", errorValue{err: err})
 }
 
 func getErrorAttrs(err error) []slog.Attr {
@@ -43,6 +36,17 @@ func getErrorAttrs(err error) []slog.Attr {
 		slog.String("hint", hint),
 		slog.Any("trace", trace),
 		slog.Group("meta", metaValues...),
+	}
+	cause := errors.Cause(err)
+	if cause != nil {
+		if errors.InternalErrorCode != cause.Error() {
+			values = append(values, slog.Any("cause", getErrorAttrs(cause)))
+		} else {
+			cause = errors.Cause(cause)
+			if cause != nil {
+				values = append(values, slog.Any("cause", getErrorAttrs(cause)))
+			}
+		}
 	}
 	return values
 }

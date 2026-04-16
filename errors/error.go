@@ -66,7 +66,11 @@ func new(code string) mError {
 	}
 }
 
-func copyErr(err error) mError {
+// copies the error to mError
+// if the error is not mError, it will be wrapped with mError
+// if the error is mError, it will be copied
+// each call adds a new trace item if skipFrames >= 0 and the error is not mError
+func copyErr(err error, skipFrames int) mError {
 	e := new(InternalErrorCode)
 	syserrors.As(err, &e)
 
@@ -75,9 +79,9 @@ func copyErr(err error) mError {
 		e.cause = err
 	}
 	// add trace if there is no mError in the chain (we are transforming the Golang error to our mError)
-	if e.code == InternalErrorCode {
+	if e.code == InternalErrorCode && skipFrames >= 0 {
 		traceItem := ""
-		_, file, line, ok := runtime.Caller(2)
+		_, file, line, ok := runtime.Caller(skipFrames)
 		if ok {
 			traceItem = fmt.Sprintf("%s:%d", file, line)
 		}

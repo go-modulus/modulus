@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"braces.dev/errtrace"
-	"github.com/go-modulus/modulus/errors/errlog"
 	slogformatter "github.com/samber/slog-formatter"
 	slogmulti "github.com/samber/slog-multi"
 	slogzap "github.com/samber/slog-zap/v2"
@@ -60,7 +59,6 @@ func NewSlog(
 	handler := slogzap.Option{Logger: zapLogger.WithOptions(zap.AddCallerSkip(8))}.NewZapHandler()
 	errorFormattingMiddleware := slogformatter.NewFormatterMiddleware(
 		slogformatter.TimeFormatter(time.RFC3339Nano, time.UTC),
-		errlog.Formatter(),
 	)
 	logger := slog.New(
 		slogmulti.

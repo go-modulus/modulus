@@ -84,7 +84,7 @@ func WithTraceSkip(err error, skipFrames int) error {
 		traceItem = fmt.Sprintf("%s:%d", file, line)
 	}
 
-	e := copyErr(err)
+	e := copyErr(err, -1)
 
 	if e.trace != "" {
 		traceItem = e.trace + "\n" + traceItem
