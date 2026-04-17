@@ -1,9 +1,11 @@
 # Real GraphQL Server Example
 
-Let's create a real-world example that provides a simple GraphQL API for the non-existent Front-end.
+All the code from this article is available in the [github repository](https://github.com/go-modulus/demo). Feel free to clone it and play with it to understand how to create a real-world GraphQL server using Modulus framework.
+
+Let's create a real-world example that provides a simple GraphQL API for the non-existent frontend.
 The requirements for the project will be described later. Now, let's say that we want to create an API for the blog.
 It is a simple API, but it is enough to show how to create a GraphQL server using Modulus framework and the `graphql` module.
-Previously we created a server that has only one query `ping` that returns the string `pong`.
+Previously, we created a server that has only one query `ping` that returns the string `pong`.
 
 Read the [Getting Started](./getting_started.md) guide to create a new project with the base set of modules.
 
@@ -24,7 +26,7 @@ All next calls to `mtools` will be executed in the `blog` directory.
 Every project starts with requirements. Let's define the requirements for our blog API:
 1. There are 2 roles in the system: `Admin` and `User`.
 2. The `Admin` can create, update, and delete any posts in the system. Also, the `Admin` can see all posts, including unpublished ones.
-3. The `User` can create, update, and delete only his posts and see all published posts.
+3. The `User` can create, update, and delete only their posts and see all published posts.
 4. The system shows the list of posts with the following fields: `ID`, `Title`, `Preview`, `Author`, `Status`, `PublishedAt`.
 5. The system allows filtering posts by `Status` and sorting by `PublishedAt`.
 6. The system allows getting the full post by `ID` providing the additional field `Content`.
@@ -50,7 +52,7 @@ After that, we need to define the database schema. Let's use the migrate module 
 ```
 
 The command will create the `<timestamp>_create_schema.sql` file in the `internal/blog/storage/migration` directory. 
-For the first iteration let's define the schema for the `post` table only. We will add the schema for the `user` table later.
+For the first iteration, let's define the schema for the `post` table only. We will add the schema for working with user info and user authentication in next chapters.
 
 ```sql
 CREATE SCHEMA IF NOT EXISTS blog;
@@ -76,7 +78,7 @@ DROP TYPE blog.post_status;
 DROP SCHEMA blog;
 ```
 
-After creating the schema, we may delete the default migration:
+After creating the schema, we can delete the default migration:
 
 ```bash
     unlink internal/blog/storage/migration/default_schema.sql
@@ -146,7 +148,7 @@ Now we need to configure the database connection. Open `.env.local` file and cha
 PGX_DSN=postgres://postgres:foobar@localhost:5432/test?sslmode=disable
 ```
 
-If you don't want to use DSN as a configuration feel free to use the separate environment variables for the database connection. But don't forget to comment the `PG_DSN` variable.
+If you don't want to use DSN as a configuration, feel free to use the separate environment variables for the database connection. But don't forget to comment the `PG_DSN` variable.
 
 ```env
 DB_NAME=test
@@ -219,7 +221,7 @@ We can create a schema in `schema.graphql` file in the `internal/blog/graphql` d
 But it is so boring. Let's use SQLc plugin to generate the schema for us.
 
 By default, the graphql SQLs plugin is enabled, if you haven't disabled it during module creation.
-Check if an anchors for the `codegen-graphql` and `codegen-graphql-options` exist in the `internal/blog/storage/sqlc.tmpl.yaml`  file:
+Check if anchors for the `codegen-graphql` and `codegen-graphql-options` exist in the `internal/blog/storage/sqlc.tmpl.yaml` file:
 ```yaml
 sqlc-tmpl:
   options:
@@ -589,7 +591,7 @@ Run the `posts` query. You will see errors like these:
     }
 ```
 
-It is because the Go types of fields in the DB models and in Graphql models differs.
+It is because the Go types of fields in the DB models and in GraphQL models differ.
 For each field with different type the resolver is added by the `gqlgen` generator.
 Let's fill this resolver with the type conversion.
 
@@ -651,7 +653,7 @@ Call the query
 and you will see the list of posts without errors.
 
 ## Authenticate users
-According to the requirements, we need to add authentication mechanics to the application. It allows users to login and register and write posts as authors.
+According to the requirements, we need to add authentication mechanics to the application. It allows users to log in and register and write posts as authors.
 
 Let's install the `modulus/auth` module:
 ```shell
@@ -678,7 +680,7 @@ input EmailSignUpInput @goModel(model: "github.com/go-modulus/auth/providers/ema
 }
 ```
 
-You can change any fields in the `EmailSignUpInput` or other input types. In a case of changing fileds you need to map input to another struct.
+You can change any fields in the `EmailSignUpInput` or other input types. In case of changing fields you need to map input to another struct.
 It is doable, but let's keep it simple. Let's add there additional input struct with the `name` field:
 ```graphql
 input UserInfo {
@@ -698,7 +700,7 @@ Run `make graphql-generate` to generate the new graphql schema.
 
 
 ## Adding user info
-We already have an authentication module, that allows users to register and login.
+We already have an authentication module that allows users to register and log in.
 But we want to save additional data about the user during registration. We need a name to show it as an author info of the posts.
 
 So let's add the `auth.user_info` table to the DB. We will place the migration and queries in the auth module. To do this we need to make a module from the folder `internal/auth`. 
@@ -748,7 +750,7 @@ RETURNING *;
 
 ```
 
-Run the checking the new SQL migration. It will appy the migration, rollback it and apply again.
+Run a check on the new SQL migration. It will apply the migration, roll it back, and apply it again.
 It is a good practice to check a new migration for rollback and apply it again.
 
 ```shell
@@ -862,7 +864,7 @@ func (r *mutationResolver) EmailSignUp(ctx context.Context, input graphql1.Email
 }
 ```
 
-Do not forget to add `NewResolver` function to the `internal/authmodule.go` file in the `NewModule` function:.
+Do not forget to add `NewResolver` function to the `internal/auth/module.go` file in the `NewModule` function:
 
 ```go
 func NewModule() *module.Module {
@@ -892,7 +894,7 @@ mutation {
 ## Authenticate User
 We have the `emailSignUp` mutation to create a new user. Now we need to authenticate the user.
 
-Use the existent `emailSignIn` mutation to authenticate the user.
+Use the existing `emailSignIn` mutation to authenticate the user.
 
 Add a proxy method to the `internal/auth/providers/email/graphql/resolvers.go` file:
 ```go
@@ -924,7 +926,7 @@ mutation {
     }){accessToken}
 }
 ``` 
-to log in as a registered previously user.
+to log in as a previously registered user.
 
 
 You will get the `accessToken` and `refreshToken` in the response.
@@ -940,7 +942,7 @@ You will get the `accessToken` and `refreshToken` in the response.
 }
 ```
 
-In this example we will not use the `refreshToken` but it is a good practice to use it in the real project.
+In this example, we will not use the `refreshToken`, but it is a good practice to use it in a real project.
 By default the `refreshToken` is set to cookies.
 
 
@@ -1002,7 +1004,7 @@ extend type Mutation {
 ```
 
 We have added the `@authGuard(allowedRoles: ["user"])` directive to the `createPost` mutation. It means that only authenticated users with the role `user` can create posts.
-In a case if admin should have the ability to create posts, you can add the `admin` role to the `allowedRoles` list.
+In case the admin should have the ability to create posts, you can add the `admin` role to the `allowedRoles` list.
 
 Regenerate the GraphQL resolvers:
 
@@ -1074,7 +1076,7 @@ Enter the following code to the created file of the migration:
 
 ```sql  
 -- migrate:up
--- remove old published posts without author to avoid getting an error in dataloader for an unexistent author
+-- remove old published posts without author to avoid getting an error in dataloader for a non-existent author
 DELETE FROM blog.post WHERE status = 'published';
 
 ALTER TABLE blog.post
@@ -1127,7 +1129,7 @@ func (r *Resolver) CreatePost(ctx context.Context, input model.CreatePostInput) 
 
 Try to create a post and get convinced that the `author_id` field is filled with the `id` of the authenticated user.
 
-If you see on the generated GraphQL `Post` type you see that the `authorId: Uuid!` field is added. But we need to add the `author` field of type `User` to the `Post` type.
+If you look at the generated GraphQL `Post` type, you will see that the `authorId: Uuid!` field is added. But we need to add the `author` field of type `User` to the `Post` type.
 
 Add the following code to the `internal/blog/graphql/blog.graphql` file:
 
@@ -1143,7 +1145,7 @@ extend type Post {
 
 Change the path `github.com/go-modulus/demo/internal/auth/storage.UserInfo` to your own path to the `UserInfo` struct created in the local auth module previously.
 
-And avoid generating the `authorId` field adding the line to the `internal/blog/storage/sqlc.tmpl.yaml`
+To avoid generating the `authorId` field, add the following line to `internal/blog/storage/sqlc.tmpl.yaml`:
 
 ```yaml
    exclude:
@@ -1270,7 +1272,7 @@ Run the SQLc generation:
 
 It creates the dataloaders for the `auth` module. 
 
-The generator creates the `internal/auth/storage/dataloader` directory with the dataloaders. It also creates the `internal/auth/storage/dataloader/loader_factory.go` that have to be used in your code as an entrypoint to the loaders.
+The generator creates the `internal/auth/storage/dataloader` directory with the dataloaders. It also creates the `internal/auth/storage/dataloader/loader_factory.go` that has to be used in your code as an entry point to the loaders.
 
 Add the dataloaders to the `internal/auth/module.go` file:
 
@@ -1312,7 +1314,7 @@ func NewResolver(
 }
 ```
 
-Load an author in the `internalgraphql/resolver/blog.resolvers.go` file:
+Load an author in the `internal/graphql/resolver/blog.resolvers.go` file:
 
 ```go
 func (r *postResolver) Author(ctx context.Context, obj *storage.Post) (storage1.UserInfo, error) {
@@ -1338,4 +1340,4 @@ Rerun the server and try to get a list of posts again. You will see the list of 
 }
 ```
 
-See the full example of this documentation in the `https://github.com/go-modulus/demo` repository.
+See the full example created in this documentation in the `https://github.com/go-modulus/demo` repository.
