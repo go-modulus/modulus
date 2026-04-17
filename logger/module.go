@@ -14,12 +14,19 @@ type ModuleConfig struct {
 	FxEventLevel string `env:"LOGGER_FX_EVENT_LEVEL, default=info" comment:"Use one of \"debug\", \"info\", \"warn\", \"error\". It sets the minimum level of the fx events that should be logged"`
 }
 
-func NewModule() *module.Module {
+func NewModule(options ...module.Option) *module.Module {
 	return module.NewModule("logger").
 		AddProviders(
 			NewLogger,
 			NewSlog,
-		).InitConfig(ModuleConfig{})
+		).InitConfig(ModuleConfig{}).
+		WithOptions(options...)
+}
+
+func SetConfig(config ModuleConfig) module.Option {
+	return func(m *module.Module) *module.Module {
+		return m.InitConfig(config)
+	}
 }
 
 func NewManifesto() module.Manifesto {
@@ -31,7 +38,7 @@ func NewManifesto() module.Manifesto {
 	)
 }
 
-func WithLoggerOption() fx.Option {
+func FxLoggerOption() fx.Option {
 	loggerOption := fx.WithLogger(
 		func(logger *zap.Logger, config ModuleConfig) fxevent.Logger {
 			level, err := zap.ParseAtomicLevel(config.FxEventLevel)

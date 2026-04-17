@@ -1074,6 +1074,9 @@ Enter the following code to the created file of the migration:
 
 ```sql  
 -- migrate:up
+-- remove old published posts without author to avoid getting an error in dataloader for an unexistent author
+DELETE FROM blog.post WHERE status = 'published';
+
 ALTER TABLE blog.post
     ADD COLUMN author_id uuid NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
 
@@ -1108,13 +1111,18 @@ Run the SQLc generation to make the queries available in the code:
 Edit the `internal/blog/graphql/resolvers.go` file and add the `AuthorID` field to the `CreatePostParams`:
 
 ```go
-    authorId := auth.GetPerformerID(ctx)
+import "github.com/go-modulus/auth"
+...
+    authorID := auth.GetPerformerID(ctx)
+func (r *Resolver) CreatePost(ctx context.Context, input model.CreatePostInput) (storage.Post, error) {
+	...
 	return r.blogQueries.CreatePost(
 		ctx, storage.CreatePostParams{
 			...
-			AuthorID: authorId,
+			AuthorID: authorID,
 		},
 	)
+	
 ```
 
 Try to create a post and get convinced that the `author_id` field is filled with the `id` of the authenticated user.
@@ -1124,10 +1132,16 @@ If you see on the generated GraphQL `Post` type you see that the `authorId: Uuid
 Add the following code to the `internal/blog/graphql/blog.graphql` file:
 
 ```graphql
+type Author  @goModel(model: "github.com/go-modulus/demo/internal/auth/storage.UserInfo"){
+    name: String!
+}
+
 extend type Post {
-    author: User!
+    author: Author!
 }
 ```
+
+Change the path `github.com/go-modulus/demo/internal/auth/storage.UserInfo` to your own path to the `UserInfo` struct created in the local auth module previously.
 
 And avoid generating the `authorId` field adding the line to the `internal/blog/storage/sqlc.tmpl.yaml`
 
@@ -1149,8 +1163,8 @@ After that we get the new resolver for the `author` field in the `internal/graph
 
 ```go
 // Author is the resolver for the author field.
-func (r *postResolver) Author(ctx context.Context, obj *storage.Post) (storage1.User, error) {
-	panic(fmt.Errorf("not implemented: Author - author"))
+func (r *postResolver) Author(ctx context.Context, obj *storage.Post) (storage1.UserInfo, error) {
+    panic(fmt.Errorf("not implemented: Author - author"))
 }
 ```
 
@@ -1173,8 +1187,8 @@ Generate the SQLc and change the `Posts` resolver in the `internal/blog/graphql/
 
 ```go
 func (r *Resolver) Posts(ctx context.Context) ([]storage.Post, error) {
-    authorId := auth.GetPerformerID(ctx)
-    return r.blogQueries.FindPosts(ctx, authorId)
+    authorID := auth.GetPerformerID(ctx)
+    return r.blogQueries.FindPosts(ctx, authorID)
 }
 ```
 
@@ -1190,8 +1204,6 @@ Try to call a list of posts in the playground:
         status
         publishedAt
         author {
-            id
-            email
             name
         }
     }
@@ -1212,7 +1224,7 @@ You are free to use any other dataloader library or implement your own dataloade
 But we recommend generate the dataloaders with the `sqlc` generator using the plugin https://github.com/debugger84/sqlc-dataloader.
 
 Let's add the dataloaders to the project.
-Edit your `/internal/user/storage/sqlc.tmpl.yaml` file adding the dataloader plugin:
+Edit your `/internal/auth/storage/sqlc.tmpl.yaml` file adding the dataloader plugin if it is not present and let's exclude tables imported from the public auth module:
 
 ```yaml
 sqlc-tmpl:
@@ -1231,12 +1243,21 @@ sqlc-tmpl:
           options:
             <<: *codegen-dataloader-options
             default_schema: "user"  
-            model_import: "blog/internal/user/storage"
+            model_import: "your/path/to/storage"
             cache:
-              - table: "user.user"
+              - table: "auth.user_info"
                 type: "lru"
                 ttl: "1m"
                 size: 100
+            exclude_tables:
+              - "auth.account"
+              - "auth.access_token"
+              - "auth.refresh_token"
+              - "auth.identity"
+              - "auth.credential"
+              - "auth.reset_password"
+              - "auth.reset_password_request"
+              - "auth.session"
 ```
 
 Read more about the dataloader plugin options in the Readme of the plugin [repository](https://github.com/debugger84/sqlc-dataloader).
@@ -1247,23 +1268,19 @@ Run the SQLc generation:
     make db-sqlc-generate
 ```
 
-It creates the dataloaders for the `user` module. Dataloaders are generated with unresolved dependencies so we need to call:
+It creates the dataloaders for the `auth` module. 
 
-```shell
-    go get github.com/debugger84/sqlc-dataloader
-```
+The generator creates the `internal/auth/storage/dataloader` directory with the dataloaders. It also creates the `internal/auth/storage/dataloader/loader_factory.go` that have to be used in your code as an entrypoint to the loaders.
 
-The generator creates the `internal/user/storage/dataloader` directory with the dataloaders. It also creates the `internal/user/storage/dataloader/loader_factory.go` that have to be used in your code as an entrypoint to the loaders.
-
-Add the dataloaders to the `internal/user/module.go` file:
+Add the dataloaders to the `internal/auth/module.go` file:
 
 ```go
 import (
-    "blog/internal/user/storage/dataloader"
+    "github.com/go-modulus/demo/internal/auth/storage/dataloader"
 )
 
 func NewModule() *module.Module {
-    return module.NewModule("user").
+    return module.NewModule("auth").
         ...
         AddProviders(
             ...
@@ -1276,21 +1293,21 @@ Also add the dependency to the dataloader factory to the `internal/graphql/resol
 
 ```go
 import (
-    userDataloader "blog/internal/user/storage/dataloader"
+    authDataloader "github.com/go-modulus/demo/internal/auth/storage/dataloader"
 )
 
 type Resolver struct {
     ...
-	userLoaderFactory *userDataloader.LoaderFactory
+	authLoaderFactory *authDataloader.LoaderFactory
 }
 
 func NewResolver(
     ...
-    userLoaderFactory *userDataloader.LoaderFactory,
+    authLoaderFactory *authDataloader.LoaderFactory,
 ) *Resolver {
     return &Resolver{
         ...
-        userLoaderFactory: userLoaderFactory,
+        authLoaderFactory: authLoaderFactory,
     }
 }
 ```
@@ -1298,8 +1315,8 @@ func NewResolver(
 Load an author in the `internalgraphql/resolver/blog.resolvers.go` file:
 
 ```go
-func (r *postResolver) Author(ctx context.Context, obj *storage.Post) (storage1.User, error) {
-	return r.userLoaderFactory.UserLoader().Load(ctx, obj.AuthorID)
+func (r *postResolver) Author(ctx context.Context, obj *storage.Post) (storage1.UserInfo, error) {
+    return r.authLoaderFactory.UserInfoLoader().Load(ctx, obj.AuthorID)
 }
 ```
 
@@ -1315,10 +1332,10 @@ Rerun the server and try to get a list of posts again. You will see the list of 
         status
         publishedAt
         author {
-            id
-            email
             name
         }
     }
 }
 ```
+
+See the full example of this documentation in the `https://github.com/go-modulus/demo` repository.
