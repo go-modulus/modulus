@@ -955,22 +955,18 @@ Add the following code to the `/cmd/console/main.go`:
 ```go
     modules := []*module.Module{
     ...
-        http.NewModule().AddProviders(
-			func(authMd *auth.Middleware) *http.Pipeline {
-				return &http.Pipeline{
-					Middlewares: []http.Middleware {
-						authMd.HttpMiddleware(),
-					},
-				}
-			},
-		),
+	http.NewModule(
+        http.AddMiddlewareFactoryToPipeline[*auth.Middleware](500),
+    ),
 	...
     }
 ```
 
-It setups the pipeline of middlewares for the HTTP server. The `authMd.HttpMiddleware()` adds the `Auth` middleware to the pipeline.
-You can see the usage of the `HttpMiddleware()` method instead of `Middleware`. It is because the `Middleware` method has our own signature and is not compatible with the Chi router.
-The method `HttpMiddleware()` wraps our vision of the middleware to the standard middleware representation.
+The `http.AddMiddlewareFactoryToPipeline[*auth.Middleware](500)` adds an `Auth` HTTP middleware to the list of middlewares under position 500. Inside this method the `authMd.HTTPMiddleware()` is called.
+The method `HTTPMiddleware()` wraps our vision of the middleware to the standard middleware representation.
+It is a factory to create a middleware that needs some dependencies for working.
+If you have just http middleware like `func(next http.Handler) http.Handler { return next }` you can use the `http.AddMiddlewareToPipeline(500, pckg.Middleware)` instead. 
+
 
 Regenerate the graphql resolvers:
 
@@ -984,7 +980,7 @@ Add `AuthGuard` directive to the `internal/graphql/resolver/resolver.go` file:
 
 ```go
 import (
-    "blog/internal/auth/graphql"
+    "github.com/go-modulus/demo/internal/auth/graphql"
 )
 func (r Resolver) GetDirectives() generated.DirectiveRoot {
 	return generated.DirectiveRoot{
@@ -1046,35 +1042,22 @@ Now try to put the `accessToken` to the `Authorization` header and run the mutat
 In Playground, click on the `Headers` tab and add the following header:
 
 ```json
-{"Authorization": "Bearer <your access token obtained from the 'loginUser()' mutation>"}
+{"Authorization": "Bearer <your access token obtained from the 'emailSignIn()' mutation>"}
 ```
 
-Now try to create a post again. You will get the new error message:
-
+Now everything should work fine if you have the correct access token.
+The response will contain the created post.
 ```json
 {
-  "errors": [
-    {
-      "message": "You are not authorized to perform this action",
-      "path": [
-        "createPost"
-      ],
-      "extensions": {
-        "code": "unauthorized"
-      }
+  "data": {
+    "createPost": {
+      "id": "1f13a67f-87d9-669a-8820-dc5683ad646e",
+      "title": "aaa",
+      "content": "bbb"
     }
-  ],
-  "data": null
+  }
 }
 ```
-
-It is because the `accessToken` doesn't contain the `user` role. In your application you obviously will create a user management sub-system, but in this example we just add necessary data to the database manually.
-
-Write `{user}` to the field `roles` in the `auth.identity` table for the user you want to authenticate.
-
-Login again to get the access token with updated roles and try to create a post again.
-
-Now everything should work fine.
 
 Protect also the `publishPost` and `deletePost` mutations. 
 

@@ -61,6 +61,28 @@ func OverrideMiddlewarePipeline[T PipelineFactory](httpModule *module.Module) *m
 	return httpModule.SetOverriddenProvider("http.MiddlewarePipeline", func(impl T) *Pipeline { return impl.New() })
 }
 
+func AddMiddlewareToPipeline(rank int, addedMiddleware Middleware) module.Option {
+	return func(httpModule *module.Module) *module.Module {
+		return httpModule.AddInvokes(
+			func(pipeline *Pipeline) *Pipeline {
+				pipeline.SetMiddleware(rank, addedMiddleware)
+				return pipeline
+			},
+		)
+	}
+}
+
+func AddMiddlewareFactoryToPipeline[T MiddlewareFactory](rank int) module.Option {
+	return func(httpModule *module.Module) *module.Module {
+		return httpModule.AddInvokes(
+			func(pipeline *Pipeline, factory T) *Pipeline {
+				pipeline.SetMiddleware(rank, factory.HTTPMiddleware())
+				return pipeline
+			},
+		)
+	}
+}
+
 func NewManifesto() module.Manifesto {
 	httpModule := module.NewManifesto(
 		NewModule(),

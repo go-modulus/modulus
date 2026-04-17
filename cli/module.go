@@ -2,6 +2,7 @@ package cli
 
 import (
 	"github.com/go-modulus/modulus/module"
+	"go.uber.org/fx"
 )
 
 func NewModule(options ...module.Option) *module.Module {
@@ -32,8 +33,8 @@ func OverrideErrorHandler[T ErrorHandler](m *module.Module) *module.Module {
 	return m.SetOverriddenProvider("cli.ErrorHandler", func(impl T) ErrorHandler { return impl })
 }
 
-func InvokeStartCli(m *module.Module) *module.Module {
-	return m.AddInvokes(Start)
+func InvokeStartCli() fx.Option {
+	return fx.Invoke(Start)
 }
 
 func SetConfig(config ModuleConfig) module.Option {

@@ -10,6 +10,10 @@ import (
 
 type Middleware func(handler netHttp.Handler) netHttp.Handler
 
+type MiddlewareFactory interface {
+	HTTPMiddleware() Middleware
+}
+
 type PipelineFactory interface {
 	New() *Pipeline
 }
