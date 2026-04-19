@@ -2,9 +2,8 @@
   
 - [GraphQL Server Example](graphql_server_example.md)
   
-- [Deployment](deployment.md)
+- [Configuration](configuration.md)
 
 - [Testing](testing.md)
 
 - [Error Handling](error_handling.md)
-  

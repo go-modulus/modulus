@@ -3,11 +3,12 @@ package module
 import (
 	"context"
 	"fmt"
-	"github.com/fatih/structs"
-	"github.com/sethvargo/go-envconfig"
 	"os"
 	"sort"
 	"strings"
+
+	"github.com/fatih/structs"
+	"github.com/sethvargo/go-envconfig"
 )
 
 type ConfigEnvVariable struct {
