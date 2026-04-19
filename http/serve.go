@@ -3,14 +3,14 @@ package http
 import (
 	"context"
 	"fmt"
-	"github.com/c2h5oh/datasize"
-	"github.com/go-chi/chi/v5"
-	infraCli "github.com/go-modulus/modulus/cli"
-	"github.com/go-modulus/modulus/http/errhttp"
-	"github.com/urfave/cli/v2"
 	"log/slog"
 	netHttp "net/http"
 	"time"
+
+	"github.com/c2h5oh/datasize"
+	infraCli "github.com/go-modulus/modulus/cli"
+	"github.com/go-modulus/modulus/http/errhttp"
+	"github.com/urfave/cli/v3"
 
 	"go.uber.org/fx"
 )
@@ -23,7 +23,7 @@ type ServeConfig struct {
 
 type Serve struct {
 	runner        *infraCli.Runner
-	router        chi.Router
+	router        Router
 	routes        []Route
 	middlewares   []Middleware
 	errorPipeline *errhttp.ErrorPipeline
@@ -35,7 +35,7 @@ type ServeParams struct {
 	fx.In
 
 	Runner   *infraCli.Runner
-	Router   chi.Router
+	Router   Router
 	Routes   []Route `group:"http.routes"`
 	Pipeline *Pipeline
 	// @todo: think on placing this in each route to be able to override it for specific routes
@@ -47,7 +47,7 @@ type ServeParams struct {
 func NewServe(params ServeParams) *Serve {
 	middlewares := make([]Middleware, 0)
 	if params.Pipeline != nil {
-		middlewares = params.Pipeline.Middlewares
+		middlewares = params.Pipeline.GetMiddlewares()
 	}
 	return &Serve{
 		runner:        params.Runner,
@@ -67,9 +67,7 @@ func NewServeCommand(s *Serve) *cli.Command {
 	}
 }
 
-func (s *Serve) Invoke(cliCtx *cli.Context) error {
-	ctx := cliCtx.Context
-
+func (s *Serve) Invoke(ctx context.Context, cmd *cli.Command) error {
 	logger := s.logger.With(slog.String("component", "http"))
 
 	server := &netHttp.Server{
@@ -88,11 +86,12 @@ func (s *Serve) Invoke(cliCtx *cli.Context) error {
 		logger.Info("registering global middlewares", slog.Int("count", len(s.middlewares)))
 	}
 
+	count := 0
 	for _, route := range s.routes {
 		if route.IsEmpty() {
 			continue
 		}
-		logger.Info(
+		logger.Debug(
 			"registering route",
 			slog.String("method", route.Method),
 			slog.String("path", route.Path),
@@ -102,7 +101,9 @@ func (s *Serve) Invoke(cliCtx *cli.Context) error {
 		} else {
 			s.router.Method(route.Method, route.Path, errhttp.WrapHandler(s.errorPipeline, route.ErrHandler))
 		}
+		count++
 	}
+	logger.Info("registered routes", slog.Int("count", count))
 
 	return s.runner.Run(
 		ctx, func(ctx context.Context) error {

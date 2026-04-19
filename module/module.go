@@ -3,10 +3,11 @@ package module
 import (
 	"context"
 	"fmt"
-	"github.com/sethvargo/go-envconfig"
-	"go.uber.org/fx"
 	"reflect"
 	"sort"
+
+	"github.com/sethvargo/go-envconfig"
+	"go.uber.org/fx"
 )
 
 type Module struct {
@@ -20,6 +21,7 @@ type Module struct {
 	fxOptions           []fx.Option
 	taggedProviders     map[string][]interface{}
 	overriddenProviders map[string]interface{}
+	decorators          []interface{}
 
 	exposeCommands bool
 	hiddenTags     map[string]struct{}
@@ -77,6 +79,11 @@ func (m *Module) SetOverriddenProvider(name string, provider interface{}) *Modul
 	return m
 }
 
+func (m *Module) Decorate(provider interface{}) *Module {
+	m.decorators = append(m.decorators, provider)
+	return m
+}
+
 func (m *Module) RemoveOverriddenProvider(name string) *Module {
 	if m.overriddenProviders == nil {
 		return m
@@ -126,6 +133,9 @@ func (m *Module) buildFx() fx.Option {
 			supplies = append(supplies, config)
 		}
 		opts = append(opts, fx.Supply(supplies...))
+	}
+	if len(m.decorators) > 0 {
+		opts = append(opts, fx.Decorate(m.decorators...))
 	}
 
 	if len(m.invokes) > 0 {
@@ -178,13 +188,19 @@ func (m *Module) InitConfig(config any) *Module {
 
 	vars := getVariables(config, false)
 	for _, value := range vars {
+		if value.Key == "" {
+			continue
+		}
 		m.envVars = append(m.envVars, value)
 	}
-	sort.Slice(
-		m.envVars, func(i, j int) bool {
-			return m.envVars[i].Key < m.envVars[j].Key
-		},
-	)
+	if len(m.envVars) > 0 {
+		sort.Slice(
+			m.envVars, func(i, j int) bool {
+				return m.envVars[i].Key < m.envVars[j].Key
+			},
+		)
+	}
+
 	return m
 }
 

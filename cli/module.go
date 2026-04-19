@@ -1,91 +1,44 @@
 package cli
 
 import (
-	"context"
 	"github.com/go-modulus/modulus/module"
-	"os"
-	"sort"
-
-	"github.com/urfave/cli/v2"
 	"go.uber.org/fx"
 )
 
-type ModuleConfig struct {
-	Version        string
-	Usage          string
-	DefaultCommand string
-	GlobalFlags    []cli.Flag
-}
-
-type StartCliParams struct {
-	fx.In
-
-	Lc       fx.Lifecycle
-	Commands []*cli.Command `group:"cli.commands"`
-	Runner   *Runner
-	Config   ModuleConfig
-}
-
-func NewApp(params StartCliParams) *cli.App {
-	usage := "Run console commands"
-	if params.Config.Usage != "" {
-		usage = params.Config.Usage
-	}
-	commands := params.Commands
-	addGlobalFlagsToAllSubcommands(commands, params.Config.GlobalFlags)
-	app := &cli.App{
-		Usage:                usage,
-		Version:              params.Config.Version,
-		DefaultCommand:       params.Config.DefaultCommand,
-		Commands:             commands,
-		Flags:                params.Config.GlobalFlags,
-		EnableBashCompletion: true,
-		Suggest:              true,
-	}
-
-	sort.Sort(cli.FlagsByName(app.Flags))
-	sort.Sort(cli.CommandsByName(app.Commands))
-
-	params.Lc.Append(
-		fx.Hook{
-			OnStop: func(ctx context.Context) error {
-				return params.Runner.stop()
-			},
-		},
-	)
-
-	return app
-}
-
-func addGlobalFlagsToAllSubcommands(
-	commands []*cli.Command,
-	flags []cli.Flag,
-) {
-	for _, command := range commands {
-		command.Flags = append(command.Flags, flags...)
-		if len(command.Subcommands) != 0 {
-			addGlobalFlagsToAllSubcommands(command.Subcommands, flags)
-		}
-	}
-}
-
-func Start(
-	runner *Runner,
-	app *cli.App,
-) error {
-	return runner.start(
-		func() error {
-			return app.Run(os.Args)
-		},
-	)
-}
-
-func NewModule() *module.Module {
-	return module.NewModule("urfave cli").
+func NewModule(options ...module.Option) *module.Module {
+	return module.NewModule("cli").
 		AddProviders(
-			NewApp,
 			NewRunner,
 		).
-		//AddInvokes(Start).
-		InitConfig(ModuleConfig{})
+		SetOverriddenProvider("cli.App", NewApp).
+		SetOverriddenProvider("cli.ErrorHandler", NewLogErrorHandler).
+		InitConfig(ModuleConfig{}).
+		WithOptions(options...)
+}
+
+func NewManifesto() module.Manifesto {
+	return module.NewManifesto(
+		NewModule(),
+		"github.com/go-modulus/modulus/cli",
+		"Cli applications module for the Modulus framework. It is based on github.com/urfave/cli library.",
+		"1.0.0",
+	)
+}
+
+func OverrideApp[T App](m *module.Module) *module.Module {
+	return m.SetOverriddenProvider("cli.App", func(impl T) App { return impl })
+}
+
+func OverrideErrorHandler[T ErrorHandler](m *module.Module) *module.Module {
+	return m.SetOverriddenProvider("cli.ErrorHandler", func(impl T) ErrorHandler { return impl })
+}
+
+func InvokeStartCli() fx.Option {
+	return fx.Invoke(Start)
+}
+
+func SetConfig(config ModuleConfig) module.Option {
+	return func(m *module.Module) *module.Module {
+		return m.InitConfig(config)
+	}
 }

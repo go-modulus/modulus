@@ -8,7 +8,7 @@ import (
 // New creates a new system error with the given code and hint
 // it is an alias for errors.NewSysError
 func New(code string, hint localize.Singular) error {
-	return errors.WithHint(errors.New(code), hint)
+	return errors.NewWithHint(code, hint)
 }
 
 func NewWithCause(code, hint localize.Singular, cause error) error {

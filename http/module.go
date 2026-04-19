@@ -1,79 +1,99 @@
 package http
 
 import (
-	"github.com/go-chi/chi/v5"
-	chiMiddleware "github.com/go-chi/chi/v5/middleware"
-	"github.com/go-modulus/modulus/auth"
-	"github.com/go-modulus/modulus/errors/erruser"
-	"github.com/go-modulus/modulus/errors/errwrap"
-	"github.com/go-modulus/modulus/http/errhttp"
-	"github.com/go-modulus/modulus/module"
 	"net/http"
+
+	httpinIntegration "github.com/ggicci/httpin/integration"
+	"github.com/go-modulus/modulus/errors/erruser"
+	"github.com/go-modulus/modulus/http/errhttp"
+	"github.com/go-modulus/modulus/http/middleware"
+	"github.com/go-modulus/modulus/logger"
+	"github.com/go-modulus/modulus/module"
 )
 
 var (
-	ErrMethodNotAllowed = errwrap.Wrap(
-		erruser.New("MethodNotAllowed", "Method not allowed"),
-		errhttp.With(http.StatusMethodNotAllowed),
+	ErrMethodNotAllowed = errhttp.ErrWithHttpCode(
+		erruser.New("method not allowed", "HTTP method is not allowed"),
+		http.StatusMethodNotAllowed,
 	)
-	ErrNotFound = errwrap.Wrap(
-		erruser.New("NotFound", "Not found"),
-		errhttp.With(http.StatusNotFound),
+	ErrNotFound = errhttp.ErrWithHttpCode(
+		erruser.New("not found", "Not found"),
+		http.StatusNotFound,
 	)
 )
 
-func NewRouter(errorPipeline *errhttp.ErrorPipeline, config ServeConfig) chi.Router {
-	r := chi.NewRouter()
-	r.MethodNotAllowed(
-		errhttp.WrapHandler(
-			errorPipeline,
-			func(w http.ResponseWriter, req *http.Request) error {
-				return ErrMethodNotAllowed
-			},
-		),
-	)
-	r.NotFound(
-		errhttp.WrapHandler(
-			errorPipeline,
-			func(w http.ResponseWriter, req *http.Request) error {
-				return ErrNotFound
-			},
-		),
-	)
-	if config.TTL > 0 {
-		r.Use(chiMiddleware.Timeout(config.TTL))
-	}
-	if config.RequestSizeLimit > 0 {
-		r.Use(chiMiddleware.RequestSize(int64(config.RequestSizeLimit.Bytes())))
-	}
-	return r
-}
-
-func NewModule() *module.Module {
-	return module.NewModule("chi http").
+func NewModule(options ...module.Option) *module.Module {
+	httpModule := module.NewModule("http").
+		AddDependencies(
+			logger.NewModule(),
+		).
 		AddCliCommands(
 			NewServeCommand,
 		).
 		AddProviders(
-			NewRouter,
 			NewServe,
 		).
+		SetOverriddenProvider("http.Router", NewDefaultRouter).
 		SetOverriddenProvider("http.ErrorPipeline", errhttp.NewDefaultErrorPipeline).
 		SetOverriddenProvider(
-			"http.MiddlewarePipeline", func(authMd *auth.Middleware) *Pipeline {
-				return &Pipeline{
-					Middlewares: []Middleware{},
-				}
-			},
+			"http.MiddlewarePipeline", NewDefaultPipeline,
 		).
 		InitConfig(ServeConfig{}).
-		InitConfig(errhttp.ErrorLoggerConfig{})
+		InitConfig(middleware.CorsConfig{}).
+		InitConfig(errhttp.ErrorLoggerConfig{}).
+		WithOptions(options...)
+
+	return httpModule
 }
 
-func OverrideErrorPipeline(httpModule *module.Module, pipeline interface{}) *module.Module {
-	return httpModule.SetOverriddenProvider("http.ErrorPipeline", pipeline)
+func OverrideRouter[T Router](authModule *module.Module) *module.Module {
+	return authModule.SetOverriddenProvider("http.Router", func(impl T) Router { return impl })
 }
 
-func OverrideMiddlewarePipeline(httpModule *module.Module, pipeline interface{}) *module.Module {
-	return httpModule.SetOverriddenProvider("http.MiddlewarePipeline", pipeline)
+func OverrideErrorPipeline[T errhttp.ErrorPipelineFactory](httpModule *module.Module) *module.Module {
+	return httpModule.SetOverriddenProvider(
+		"http.ErrorPipeline",
+		func(impl T) *errhttp.ErrorPipeline { return impl.New() },
+	)
+}
+
+func OverrideMiddlewarePipeline[T PipelineFactory](httpModule *module.Module) *module.Module {
+	return httpModule.SetOverriddenProvider("http.MiddlewarePipeline", func(impl T) *Pipeline { return impl.New() })
+}
+
+func AddMiddlewareToPipeline(rank int, addedMiddleware Middleware) module.Option {
+	return func(httpModule *module.Module) *module.Module {
+		return httpModule.AddInvokes(
+			func(pipeline *Pipeline) *Pipeline {
+				pipeline.SetMiddleware(rank, addedMiddleware)
+				return pipeline
+			},
+		)
+	}
+}
+
+func AddMiddlewareFactoryToPipeline[T MiddlewareFactory](rank int) module.Option {
+	return func(httpModule *module.Module) *module.Module {
+		return httpModule.AddInvokes(
+			func(pipeline *Pipeline, factory T) *Pipeline {
+				pipeline.SetMiddleware(rank, factory.HTTPMiddleware())
+				return pipeline
+			},
+		)
+	}
+}
+
+func NewManifesto() module.Manifesto {
+	httpModule := module.NewManifesto(
+		NewModule(),
+		"github.com/go-modulus/modulus/http",
+		"Base package for http server. It is based on the net/http server that is able to work without any dependencies, but the main purpose of this package is working together with another router like Chi provided in the separate module.",
+		"1.0.0",
+	)
+
+	return httpModule
+}
+
+func init() {
+	httpinIntegration.UseHttpPathVariable("path")
 }

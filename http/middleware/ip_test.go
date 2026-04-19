@@ -75,7 +75,7 @@ func TestIP(t *testing.T) {
 					},
 				)
 
-				middleware := middleware.IP(nextHandler)
+				ipMiddleware := middleware.IP(nextHandler)
 
 				req := httptest.NewRequest("GET", "/", nil)
 				req.RemoteAddr = tt.remoteAddr
@@ -84,7 +84,7 @@ func TestIP(t *testing.T) {
 				}
 
 				rr := httptest.NewRecorder()
-				middleware.ServeHTTP(rr, req)
+				ipMiddleware.ServeHTTP(rr, req)
 
 				require.Equal(t, tt.expectedIP, capturedIP)
 				require.Equal(t, http.StatusOK, rr.Code)

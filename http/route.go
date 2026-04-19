@@ -1,9 +1,10 @@
 package http
 
 import (
+	"net/http"
+
 	"github.com/go-modulus/modulus/http/errhttp"
 	"go.uber.org/fx"
-	"net/http"
 )
 
 type Route struct {

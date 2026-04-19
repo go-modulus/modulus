@@ -1,5 +1,0 @@
-scalar Void
-
-type VoidBox {
-    value: Void!
-}

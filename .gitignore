@@ -2,3 +2,6 @@
 bin/
 testproj
 go.work
+
+# MacOS specific files
+.DS_Store

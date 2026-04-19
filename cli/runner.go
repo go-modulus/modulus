@@ -2,34 +2,41 @@ package cli
 
 import (
 	"context"
-	"github.com/go-modulus/modulus/errors/errlog"
-	"github.com/go-modulus/modulus/logger"
-	"log/slog"
+	"fmt"
 	"sync"
 
 	"go.uber.org/fx"
 )
 
+// Runner runs a function inside a goroutine running FX shutdowner for graceful shutdown.
 type Runner struct {
-	shutdowner fx.Shutdowner
-	done       chan struct{}
-	stopOnce   sync.Once
-	waitOnce   sync.Once
-	wg         sync.WaitGroup
-	logger     *slog.Logger
+	shutdowner   fx.Shutdowner
+	done         chan struct{}
+	stopOnce     sync.Once
+	waitOnce     sync.Once
+	wg           sync.WaitGroup
+	errorHandler ErrorHandler
 }
 
-func NewRunner(shutdowner fx.Shutdowner, logger *slog.Logger) *Runner {
+func NewRunner(
+	shutdowner fx.Shutdowner,
+	errorHandler ErrorHandler,
+) *Runner {
 	return &Runner{
-		shutdowner: shutdowner,
-		done:       make(chan struct{}),
-		logger:     logger,
+		shutdowner:   shutdowner,
+		done:         make(chan struct{}),
+		errorHandler: errorHandler,
 	}
 }
 
 func (p *Runner) start(fn func() error) error {
 	go func() {
-		defer logger.Recover(p.logger)
+		defer func() {
+			if err := recover(); err != nil {
+				formattedErr := fmt.Errorf("%v", err)
+				p.errorHandler.HandleError(formattedErr)
+			}
+		}()
 		defer func() {
 			// Shutdown app when all goroutines are done.
 			p.waitOnce.Do(
@@ -37,10 +44,7 @@ func (p *Runner) start(fn func() error) error {
 					p.wg.Wait()
 					err := p.shutdowner.Shutdown()
 					if err != nil {
-						p.logger.Error(
-							"error occurred while shutting down app",
-							errlog.Error(err),
-						)
+						p.errorHandler.HandleError(err)
 					}
 				},
 			)
@@ -48,10 +52,7 @@ func (p *Runner) start(fn func() error) error {
 
 		err := fn()
 		if err != nil {
-			p.logger.Error(
-				"error occurred while starting app",
-				errlog.Error(err),
-			)
+			p.errorHandler.HandleError(err)
 		}
 	}()
 

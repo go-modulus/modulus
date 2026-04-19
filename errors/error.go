@@ -45,10 +45,14 @@ func (m mError) Is(target error) bool {
 // New creates a new handled system error with the given error code.
 // The error hint equals to the error code.
 // This error is tagged with SystemErrorTag.
-//
-// If the default error pipeline is used, this error will be logged and shown to the user as is with added request id to the message.
 func New(code string) error {
 	return new(code)
+}
+
+// NewWithHint creates a new handled system error with the given error code and hint.
+// This error is tagged with SystemErrorTag.
+func NewWithHint(code string, hint localize.Singular) error {
+	return WithHint(New(code), hint)
 }
 
 func new(code string) mError {

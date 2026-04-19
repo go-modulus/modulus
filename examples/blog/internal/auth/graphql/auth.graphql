@@ -1,2 +1,0 @@
-
-directive @authGuard(allowedRoles: [String!]!) on FIELD_DEFINITION | MUTATION | QUERY | SUBSCRIPTION

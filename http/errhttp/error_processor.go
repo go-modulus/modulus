@@ -15,9 +15,14 @@ const InternalErrorCode = "unhandled internal error"
 
 type ErrorProcessor func(ctx context.Context, err error) error
 
+type ErrorPipelineFactory interface {
+	New() *ErrorPipeline
+}
+
 type ErrorPipeline struct {
 	// processors is a map of ranked ErrorProcessor functions that will be executed in order, according to their rank.
 	processors map[int][]ErrorProcessor
+	cache      []ErrorProcessor
 }
 
 func (p *ErrorPipeline) Process(ctx context.Context, err error) error {
@@ -31,6 +36,20 @@ func (p *ErrorPipeline) Process(ctx context.Context, err error) error {
 		return nil
 	}
 
+	processors := p.cache
+	if len(processors) == 0 {
+		processors = p.getProcessorsList()
+		p.cache = processors
+	}
+	for _, processor := range processors {
+		err = processor(ctx, err)
+	}
+	return err
+}
+
+func (p *ErrorPipeline) getProcessorsList() []ErrorProcessor {
+	result := make([]ErrorProcessor, 0, len(p.processors))
+
 	// get all keys (ranks) from the processors map
 	var ranks []int
 	for rank := range p.processors {
@@ -43,11 +62,9 @@ func (p *ErrorPipeline) Process(ctx context.Context, err error) error {
 	// iterate over all ranks and call all processors in each rank
 	for _, rank := range ranks {
 		processors := p.processors[rank]
-		for _, processor := range processors {
-			err = processor(ctx, err)
-		}
+		result = append(result, processors...)
 	}
-	return err
+	return result
 }
 
 func (p *ErrorPipeline) SetProcessor(rank int, processor ErrorProcessor) {

@@ -25,8 +25,8 @@ func NewModule() *module.Module {
 		InitConfig(action.RecaptchaConfig{})
 }
 
-func NewManifestModule() module.ManifestModule {
-	temporalModule := module.NewManifestModule(
+func NewManifesto() module.Manifesto {
+	temporalModule := module.NewManifesto(
 		NewModule(),
 		"github.com/go-modulus/modulus/captcha",
 		"Captcha processor that have to be integrated in auth queries to protect against bots registrations.",

@@ -3,9 +3,10 @@ package config
 import (
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/fatih/color"
 	"github.com/subosito/gotenv"
-	"os"
 	// strange import. Translation is not working with this import
 	_ "golang.org/x/text/message"
 )

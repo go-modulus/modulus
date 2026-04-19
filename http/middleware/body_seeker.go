@@ -1,11 +1,12 @@
 package middleware
 
 import (
-	"braces.dev/errtrace"
 	"bytes"
-	"github.com/go-modulus/modulus/http/errhttp"
 	"io"
 	"net/http"
+
+	"github.com/go-modulus/modulus/errors/errtrace"
+	"github.com/go-modulus/modulus/http/errhttp"
 )
 
 type RequestBody struct {
@@ -24,6 +25,7 @@ func NewBodySeeker(errorPipeline *errhttp.ErrorPipeline) func(next http.Handler)
 				if err != nil {
 					err = errorPipeline.Process(r.Context(), err)
 					errhttp.SendError(w, errtrace.Wrap(err))
+					return
 				}
 				r.Body = RequestBody{bytes.NewReader(data)}
 			}
