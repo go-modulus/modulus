@@ -21,7 +21,8 @@ func TestMain(m *testing.M, options ...fx.Option) {
 	os.Exit(m.Run())
 }
 
-func LoadEnv(envFileDir string) {
+func LoadEnv() {
+	envFileDir := projectRoot()
 	initOnce.Do(
 		func() {
 			// force UTC timezone, otherwise it will use local timezone

@@ -1,39 +1,43 @@
 # Testing
 
-In this section, we will discuss how to test your code. We will show you how to run the tests and how to write the tests for your code.
+This section covers how to write and run tests for your application built on the Modulus framework.
 
 ## Writing tests
-First of all, you need to understand that our framework is based on the dependency injection principle, so it is not so easy to write tests for the code.
+The framework is built on dependency injection, which requires some setup before you can write tests.
 
-We propose to use `main_test.go` file to describe DI for the tests and init necessary dependencies.
+We recommend using a `main_test.go` file to configure the DI container for tests and initialize the required dependencies.
 
 Let's write a test for the `CreatePost` function from the `blog` resolvers. We haven't implemented a separate action for the post creation, so let's test the resolver file.
 
 The first step is to create a new file `main_test.go` in the `internal/blog/graphql` directory. It will run automatically before starting the tests.
 
 ```go
-// package should be the same as the package of the tested file
+// package should be the same as the package of the test file
 package graphql_test
 
 import (
-	"blog/internal/blog"
-	"blog/internal/blog/graphql"
+	"testing"
+
+	"github.com/go-modulus/demo/internal/blog"
+	"github.com/go-modulus/demo/internal/blog/graphql"
 	"github.com/go-modulus/modulus/module"
 	"github.com/go-modulus/modulus/test"
 	"go.uber.org/fx"
-	"testing"
 )
+
+func createMod() *module.Module {
+	return blog.NewModule()
+}
 
 var (
 	// all dependencies that you want to use in tests
-	resolver   *graphql.Resolver
+	resolver *graphql.Resolver
 )
 
 func TestMain(m *testing.M) {
-	// put the path to the root of the project. And load the environment variables from there
-	test.LoadEnv("../../..")
+	test.LoadEnv()
 	// create a new module where tested code is placed
-	mod := blog.NewModule()
+	mod := createMod()
 
 	test.TestMain(
 		m,
@@ -87,7 +91,7 @@ func TestResolver_CreatePost(t *testing.T) {
 }
 ```
 
-It is not necessary, but we recommend you to name a test as `StructName_MethodName` to make it easier to understand what is being tested.
+While not required, we recommend naming tests as `StructName_MethodName` to make it clear what is being tested.
 Also, you can use the `t.Run` function to describe the different test cases of the tested method.
 Moreover, you can use the `t.Log` function to describe the test case as:
 
@@ -98,8 +102,8 @@ When the action is performed
     And the expectation B should be met
 ```
 
-I want to note that due to the testing of the resolver file, we need to prepare context with the current user ID. We use the `auth.WithPerformer` function to do this.
-Usually, the business logic is placed in actions, but not in resolvers. And actions gets the current user ID from the input parameter instead of the context. But in a case of testing the resolver we need to prepare the context manually.
+Note that when testing the resolver directly, the context must include the current user ID. Use the `auth.WithPerformer` function to set it up, as shown above.
+Business logic is usually placed in actions rather than resolvers. Actions receive the current user ID as an explicit input parameter, not from the context. When testing a resolver directly, however, the context must be prepared manually.
 
 ## Running tests
 To run the tests, you need to execute the following command:
@@ -108,9 +112,11 @@ To run the tests, you need to execute the following command:
 make test
 ```
 
-Our framework creates a make file with all necessary commands to run the project. You can find it in the root of the project. The `test` command runs all tests in the project.
+The framework generates a `Makefile` in the project root with all the commands needed to run the project. The `test` target runs all tests.
 
-It looks like the test is working:
+Run this target and inspect the output.
+
+It has to look like the next strings if the test is working:
 
 ```text
  resolvers_test.go:30: When the post is created with valid input
@@ -121,9 +127,9 @@ PASS
 ok      blog/internal/blog/graphql  0.276s
 ```
 
-But look at your database. It uses the same database as the main application. So, you need to clean up the database after each test. You can do it calling a regular query to DB, or use our fixtures that are generated with SQLc.
+You may notice that by default tests run against the same database as the main application. You need to clean up the database after each test — either by running a regular query or by using fixtures generated with SQLc (covered in the next section).
 
-By the way, it is a good idea to run test over the separate DB. You are able to do this by:
+It is also a good idea to run tests against a dedicated database. To do this:
 1. Create a new env file `.env.test`.
 2. Add `PGX_DSN=postgres://postgres:foobar@localhost:5432/blog_test?sslmode=disable`
 3. Run migrations for the test environment
@@ -137,9 +143,9 @@ make test
 
 ## Fixtures
 
-Fixtures are a set of predefined data that is used as input for tests. They are used to test the application with a known set of data. Fixtures can be used to test the application with different data sets.
+Fixtures provide predefined data for tests, letting you validate application behavior against a known, controlled dataset.
 
-To make fixtures, you need to generate fixture builders with SQLc.
+To use fixtures, first generate fixture builders with SQLc:
 
 1. Edit the `internal/blog/storage/sqlc.tmpl.yaml` file and add the following code:
 
@@ -158,7 +164,7 @@ sqlc-tmpl:
           <<: *codegen-fixture-options
           default_schema: "blog"
           package: "fixture"
-          model_import: "blog/internal/blog/storage"
+          model_import: "your/package/path/of/storage"
 ```
 
 2. Run the following command to generate the fixture builders:
@@ -168,7 +174,7 @@ make db-sqlc-generate
 ```
 It will generate the `internal/blog/storage/fixture` directory with the post fixture builder.
 
-3. It is a good idea to create a factory to initialize the builder with the default values.
+3. We recommend creating a factory to initialize the builder with sensible default values.
 
 ```go
 package fixture
@@ -206,33 +212,55 @@ func (f *Factory) NewPostFixture() *PostFixture {
 	})
 }
 ```
-We recommend you to initialize fields with unique values. It will help you to avoid conflicts between tests and simplifies running the test in a parallel mode.
+We recommend initializing fields with unique values. This avoids conflicts between tests and makes it safe to run them in parallel.
 
-4. Add the factory to the `main_test.go` file. You can add it to the `module.go` file, but we recommend you to add it to the `main_test.go` file to avoid swelling of the container.
+4. Add the factory to `main_test.go`. You could also add it to `module.go`, but keeping it in `main_test.go` is preferable to avoid bloating the DI container in production.
 
 ```go
+package graphql_test
+
+import (
+	"testing"
+
+	"github.com/go-modulus/demo/internal/blog"
+	"github.com/go-modulus/demo/internal/blog/graphql"
+	"github.com/go-modulus/demo/internal/blog/storage/fixture"
+	"github.com/go-modulus/modulus/module"
+	"github.com/go-modulus/modulus/test"
+	"go.uber.org/fx"
+)
+
+func createMod() *module.Module {
+	return blog.NewModule().
+		// add the factory to the module's dependencies
+		AddProviders(fixture.NewFactory)
+}
+
 var (
+	// all dependencies that you want to use in tests
 	resolver *graphql.Resolver
 	// add a local variable of a factory to create fixtures in tests
 	fixtures *fixture.Factory
 )
 
 func TestMain(m *testing.M) {
-	test.LoadEnv("../../..")
-	mod := blog.NewModule().
-	// add the factory to the module's dependencies
-		AddProviders(fixture.NewFactory)
+	test.LoadEnv()
+	// create a new module where tested code is placed
+	mod := createMod()
 
 	test.TestMain(
 		m,
+		// add all necessary dependencies to the module
 		module.BuildFx(mod),
 		fx.Populate(
+			// populate all dependencies that you want to use in tests
 			&resolver,
 			// populate fixtures to work with them in tests
 			&fixtures,
 		),
 	)
 }
+
 ```
 
 5. Now you can use the factory to create fixtures in tests or cleanup the created data.
@@ -244,13 +272,11 @@ func TestMain(m *testing.M) {
     
     fixtures.NewPostFixture().ID(post.ID).Cleanup(t)
 ```
-It marks that the post with ID obtained from the `CreatePost` function should be deleted after the test running.
+This registers the post for deletion after the test completes.
 
-Run the test and check the database. It should be cleaned up after the test running (only old data that is not managed by test left there).
+Run the test and inspect the database — it should be clean after the test, with only data that was not managed by the test remaining.
 
-
-Let's change the test to get convinced that the data is stored in the database.
-It also can be achieved via the fixture builder.
+You can also use the fixture builder to verify that data was correctly persisted to the database.
 
 Change the line
 ```go
