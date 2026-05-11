@@ -8,57 +8,51 @@ import (
 )
 
 type CorsConfig struct {
-	Host           string   `env:"CORS_HOST, default=^https?://(localhost|127.0.0.1)(:[0-9]+)?$"`
-	AllowedMethods []string `env:"CORS_ALLOWED_METHODS"`
-	AllowedHeaders []string `env:"CORS_ALLOWED_HEADERS"`
+	Host                     string   `env:"CORS_HOST, default=^https?://(localhost|127.0.0.1)(:[0-9]+)?$" comment:"Regular expression pattern for allowed origins or * for all origins"`
+	AdditionalAllowedHeaders []string `env:"CORS_ADDITIONAL_ALLOWED_HEADERS" comment:"Comma-separated list of additional allowed headers for CORS requests"`
+	MaxAge                   int      `env:"CORS_MAX_AGE, default=3600"`
 }
 
 func NewCors(config CorsConfig) *cors.Cors {
 	host := config.Host
-	if host == "*" {
-		host = ".+"
+	if host == "*" || host == "" {
+		return cors.AllowAll()
 	}
 	corsRegexp := regexp.MustCompile(host)
 
-	allowedMethods := config.AllowedMethods
-	if len(allowedMethods) == 0 {
-		allowedMethods = []string{
-			http.MethodGet,
-			http.MethodHead,
-			http.MethodPost,
-			http.MethodPut,
-			http.MethodPatch,
-			http.MethodOptions,
-			http.MethodDelete,
-		}
-	}
-
-	allowedHeaders := config.AllowedHeaders
-	if len(allowedHeaders) == 0 {
-		allowedHeaders = []string{
-			"Accept",
-			"Accept-Encoding",
-			"Accept-Language",
-			"Authorization",
-			"Content-Type",
-			"Content-Length",
-			"Cache-Control",
-			"Connection",
-			"Pragma",
-			"Cookie",
-			"Access-Control-Allow-Origin",
-			"User-Agent",
-			"Last-Event-Id",
-		}
-	}
-
 	return cors.New(
 		cors.Options{
-			AllowOriginFunc:    func(origin string) bool { return corsRegexp.Match([]byte(origin)) },
-			AllowedMethods:     allowedMethods,
-			AllowedHeaders:     allowedHeaders,
+			AllowOriginFunc: func(origin string) bool {
+				return corsRegexp.Match([]byte(origin))
+			},
+			AllowedMethods: []string{
+				http.MethodGet,
+				http.MethodHead,
+				http.MethodPost,
+				http.MethodPut,
+				http.MethodPatch,
+				http.MethodOptions,
+				http.MethodDelete,
+			},
+			AllowedHeaders: append(
+				[]string{
+					"Accept",
+					"Accept-Encoding",
+					"Accept-Language",
+					"Authorization",
+					"Content-Type",
+					"Content-Length",
+					"Cache-Control",
+					"Connection",
+					"Pragma",
+					"Cookie",
+					"Access-Control-Allow-Origin",
+					"User-Agent",
+					"Last-Event-Id",
+				}, config.AdditionalAllowedHeaders...,
+			),
 			ExposedHeaders:     nil,
-			MaxAge:             3600,
+			MaxAge:             config.MaxAge,
 			AllowCredentials:   true,
 			OptionsPassthrough: false,
 			Debug:              false,
