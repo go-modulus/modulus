@@ -38,6 +38,7 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 
 // Flush implements the http.Flusher interface.
 func (rw *responseWriter) Flush() {
+	rw.wroteHeader = true
 	if flusher, ok := rw.ResponseWriter.(http.Flusher); ok {
 		flusher.Flush()
 	}
