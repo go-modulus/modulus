@@ -6,7 +6,7 @@ This is a guide to help you get started with the project. It will walk you throu
 First, you need to install the Modulus CLI tool. You can do this by running the following command:
 
 ```bash
-go install github.com/go-modulus/mtools/cmd/mtools@latest
+go install github.com/go-modulus/mtools@latest
 ```
 
 Next, you need to initialize a new project. You can do this by running the following command:
