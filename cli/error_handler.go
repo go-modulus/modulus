@@ -34,8 +34,11 @@ type LogErrorHandler struct {
 }
 
 func NewLogErrorHandler(logger *slog.Logger) ErrorHandler {
-	return &LogErrorHandler{}
+	return &LogErrorHandler{
+		logger: logger,
+	}
 }
+
 func (e LogErrorHandler) HandleError(err error) {
 	e.logger.Error("application run error occurred", errlog.Error(err))
 }

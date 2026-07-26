@@ -38,6 +38,7 @@ func (rw *responseWriter) Write(b []byte) (int, error) {
 
 // Flush implements the http.Flusher interface.
 func (rw *responseWriter) Flush() {
+	rw.wroteHeader = true
 	if flusher, ok := rw.ResponseWriter.(http.Flusher); ok {
 		flusher.Flush()
 	}
@@ -49,6 +50,10 @@ func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		return hijacker.Hijack()
 	}
 	return nil, nil, http.ErrNotSupported
+}
+
+func (rw *responseWriter) Unwrap() http.ResponseWriter {
+	return rw.ResponseWriter
 }
 
 func NewLogger(logger *slog.Logger) func(next http.Handler) http.Handler {
