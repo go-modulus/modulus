@@ -165,6 +165,127 @@ func TestDefaultRouter_Hijack_ThroughUnwrapOnlyMiddleware(t *testing.T) {
 	)
 }
 
+func TestDefaultRouter_Timeout(t *testing.T) {
+	t.Run(
+		"a regular request gets the TTL deadline", func(t *testing.T) {
+			router := http.NewDefaultRouter(
+				&errhttp.ErrorPipeline{},
+				http.ServeConfig{TTL: 50 * time.Millisecond, StreamTTL: 5 * time.Minute},
+			)
+			var deadline time.Time
+			var ok bool
+			router.Method(
+				"GET", "/plain", nethttp.HandlerFunc(
+					func(w nethttp.ResponseWriter, r *nethttp.Request) {
+						deadline, ok = r.Context().Deadline()
+					},
+				),
+			)
+
+			start := time.Now()
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "/plain", nil)
+			router.ServeHTTP(rec, req)
+
+			require.True(t, ok, "a deadline should be set")
+			require.WithinDuration(t, start.Add(50*time.Millisecond), deadline, 30*time.Millisecond)
+		},
+	)
+
+	t.Run(
+		"a WebSocket upgrade gets the StreamTTL deadline instead of TTL", func(t *testing.T) {
+			router := http.NewDefaultRouter(
+				&errhttp.ErrorPipeline{},
+				http.ServeConfig{TTL: 50 * time.Millisecond, StreamTTL: 5 * time.Minute},
+			)
+			var deadline time.Time
+			var ok bool
+			router.Method(
+				"GET", "/ws", nethttp.HandlerFunc(
+					func(w nethttp.ResponseWriter, r *nethttp.Request) {
+						deadline, ok = r.Context().Deadline()
+					},
+				),
+			)
+
+			start := time.Now()
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "/ws", nil)
+			req.Header.Set("Upgrade", "websocket")
+			router.ServeHTTP(rec, req)
+
+			require.True(t, ok, "a deadline should be set")
+			require.WithinDuration(t, start.Add(5*time.Minute), deadline, time.Second)
+		},
+	)
+
+	t.Run(
+		"an SSE subscription gets the StreamTTL deadline instead of TTL", func(t *testing.T) {
+			router := http.NewDefaultRouter(
+				&errhttp.ErrorPipeline{},
+				http.ServeConfig{TTL: 50 * time.Millisecond, StreamTTL: 5 * time.Minute},
+			)
+			var deadline time.Time
+			var ok bool
+			router.Method(
+				"POST", "/graphql", nethttp.HandlerFunc(
+					func(w nethttp.ResponseWriter, r *nethttp.Request) {
+						deadline, ok = r.Context().Deadline()
+					},
+				),
+			)
+
+			start := time.Now()
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest("POST", "/graphql", nil)
+			req.Header.Set("Accept", "text/event-stream")
+			router.ServeHTTP(rec, req)
+
+			require.True(t, ok, "a deadline should be set")
+			require.WithinDuration(t, start.Add(5*time.Minute), deadline, time.Second)
+		},
+	)
+
+	t.Run(
+		"a regular request is actually cancelled and gets a 504 once TTL elapses", func(t *testing.T) {
+			router := http.NewDefaultRouter(&errhttp.ErrorPipeline{}, http.ServeConfig{TTL: 10 * time.Millisecond})
+			router.Method(
+				"GET", "/slow", nethttp.HandlerFunc(
+					func(w nethttp.ResponseWriter, r *nethttp.Request) {
+						<-r.Context().Done()
+					},
+				),
+			)
+
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "/slow", nil)
+			router.ServeHTTP(rec, req)
+
+			require.Equal(t, nethttp.StatusGatewayTimeout, rec.Code)
+		},
+	)
+
+	t.Run(
+		"zero TTL and StreamTTL mean no deadline at all", func(t *testing.T) {
+			router := http.NewDefaultRouter(&errhttp.ErrorPipeline{}, http.ServeConfig{})
+			var ok bool
+			router.Method(
+				"GET", "/plain", nethttp.HandlerFunc(
+					func(w nethttp.ResponseWriter, r *nethttp.Request) {
+						_, ok = r.Context().Deadline()
+					},
+				),
+			)
+
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "/plain", nil)
+			router.ServeHTTP(rec, req)
+
+			require.False(t, ok, "no timeout middleware should be wired up")
+		},
+	)
+}
+
 func TestDefaultRouter_RegularRequests(t *testing.T) {
 	t.Run(
 		"still serves normal responses through the buffer", func(t *testing.T) {

@@ -18,6 +18,7 @@ import (
 type ServeConfig struct {
 	Address          string            `env:"HTTP_HOST, default=localhost:8001"`
 	TTL              time.Duration     `env:"ROUTER_TTL, default=15s"` // 15 seconds
+	StreamTTL        time.Duration     `env:"ROUTER_STREAM_TTL, default=15m" comment:"Deadline for long-lived requests such as WebSocket and SSE connections"`
 	RequestSizeLimit datasize.ByteSize `env:"ROUTER_REQUEST_SIZE_LIMIT, default=5mb"`
 }
 

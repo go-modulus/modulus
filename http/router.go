@@ -5,6 +5,7 @@ import (
 	"context"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-modulus/modulus/http/errhttp"
@@ -169,8 +170,8 @@ func NewDefaultRouter(errorPipeline *errhttp.ErrorPipeline, config ServeConfig) 
 			},
 		),
 	)
-	if config.TTL > 0 {
-		r.Use(timeout(config.TTL))
+	if config.TTL > 0 || config.StreamTTL > 0 {
+		r.Use(timeout(config.TTL, config.StreamTTL))
 	}
 	if config.RequestSizeLimit > 0 {
 		r.Use(requestSize(int64(config.RequestSizeLimit.Bytes())))
@@ -178,10 +179,24 @@ func NewDefaultRouter(errorPipeline *errhttp.ErrorPipeline, config ServeConfig) 
 	return r
 }
 
-func timeout(timeout time.Duration) func(next http.Handler) http.Handler {
+// timeout bounds the request context lifetime. Regular requests get ttl.
+// Long-lived requests (WebSocket upgrades and SSE subscriptions) get
+// streamTTL instead, since ttl is normally far too short to hold a
+// subscription open. Either duration being <= 0 means "no deadline" for
+// that class of request.
+func timeout(ttl time.Duration, streamTTL time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
-			ctx, cancel := context.WithTimeout(r.Context(), timeout)
+			d := ttl
+			if isStreamingRequest(r) {
+				d = streamTTL
+			}
+			if d <= 0 {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			ctx, cancel := context.WithTimeout(r.Context(), d)
 			defer func() {
 				cancel()
 				if ctx.Err() == context.DeadlineExceeded {
@@ -194,6 +209,16 @@ func timeout(timeout time.Duration) func(next http.Handler) http.Handler {
 		}
 		return http.HandlerFunc(fn)
 	}
+}
+
+// isStreamingRequest reports whether the request is a WebSocket upgrade or an
+// SSE subscription, mirroring how gqlgen's own transports (transport.Websocket
+// and transport.SSE) detect them.
+func isStreamingRequest(r *http.Request) bool {
+	if r.Header.Get("Upgrade") != "" {
+		return true
+	}
+	return strings.Contains(r.Header.Get("Accept"), "text/event-stream")
 }
 
 func requestSize(bytes int64) func(http.Handler) http.Handler {
