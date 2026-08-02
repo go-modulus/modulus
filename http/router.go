@@ -1,7 +1,9 @@
 package http
 
 import (
+	"bufio"
 	"context"
+	"net"
 	"net/http"
 	"time"
 
@@ -51,8 +53,14 @@ func (r *DefaultRouter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func (r *DefaultRouter) route(w http.ResponseWriter, req *http.Request) {
-	buf := &responseBuffer{headers: make(http.Header), code: http.StatusOK}
+	buf := &responseBuffer{headers: make(http.Header), code: http.StatusOK, underlying: w}
 	r.mux.ServeHTTP(buf, req)
+
+	if buf.hijacked {
+		// The connection was taken over (e.g. a WebSocket upgrade) and must not
+		// be touched through w again.
+		return
+	}
 
 	switch buf.code {
 	case http.StatusNotFound:
@@ -75,9 +83,11 @@ func (r *DefaultRouter) route(w http.ResponseWriter, req *http.Request) {
 // responseBuffer captures the mux response so custom not-found and
 // method-not-allowed handlers can be invoked before writing to the real writer.
 type responseBuffer struct {
-	headers http.Header
-	code    int
-	body    []byte
+	headers    http.Header
+	code       int
+	body       []byte
+	underlying http.ResponseWriter
+	hijacked   bool
 }
 
 func (rb *responseBuffer) Header() http.Header  { return rb.headers }
@@ -85,6 +95,46 @@ func (rb *responseBuffer) WriteHeader(code int) { rb.code = code }
 func (rb *responseBuffer) Write(b []byte) (int, error) {
 	rb.body = append(rb.body, b...)
 	return len(b), nil
+}
+
+// Hijack lets protocol upgrades (e.g. WebSocket) take over the underlying
+// connection. Without this, handlers see a buffered http.ResponseWriter that
+// isn't an http.Hijacker and the upgrade fails. Any status/headers already
+// recorded on the buffer (e.g. the 101 Switching Protocols response written
+// by the upgrader right before hijacking) are flushed to the real writer
+// first, so they actually reach the connection before it's taken over.
+func (rb *responseBuffer) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	hj, ok := hijacker(rb.underlying)
+	if !ok {
+		return nil, nil, http.ErrNotSupported
+	}
+	rb.flush(rb.underlying)
+	rb.hijacked = true
+	return hj.Hijack()
+}
+
+// responseWriterUnwrapper is the de facto standard convention (also used by
+// net/http.ResponseController and coder/websocket) for a http.ResponseWriter
+// wrapper to expose the writer it wraps.
+type responseWriterUnwrapper interface {
+	Unwrap() http.ResponseWriter
+}
+
+// hijacker walks a chain of wrapped http.ResponseWriters (e.g. middlewares
+// that embed http.ResponseWriter and implement Unwrap) to find one that
+// actually supports hijacking. A wrapper only needs to implement Unwrap for
+// this to see through it; it doesn't need to implement http.Hijacker itself.
+func hijacker(w http.ResponseWriter) (http.Hijacker, bool) {
+	for {
+		switch t := w.(type) {
+		case http.Hijacker:
+			return t, true
+		case responseWriterUnwrapper:
+			w = t.Unwrap()
+		default:
+			return nil, false
+		}
+	}
 }
 
 func (rb *responseBuffer) flush(w http.ResponseWriter) {
