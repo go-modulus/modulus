@@ -50,6 +50,7 @@ func OverrideRouter[T Router](authModule *module.Module) *module.Module {
 	return authModule.SetOverriddenProvider("http.Router", func(impl T) Router { return impl })
 }
 
+// OverrideErrorPipeline - overrides a flow or error transformers to make errors more secure and user friendly
 func OverrideErrorPipeline[T errhttp.ErrorPipelineFactory](httpModule *module.Module) *module.Module {
 	return httpModule.SetOverriddenProvider(
 		"http.ErrorPipeline",

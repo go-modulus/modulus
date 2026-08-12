@@ -3,75 +3,43 @@ package errhttp
 import (
 	"context"
 	"log/slog"
-	"sort"
 
-	"github.com/go-modulus/modulus/errors"
-	"github.com/go-modulus/modulus/errors/errlog"
-	"github.com/go-modulus/modulus/errors/errsys"
-	context2 "github.com/go-modulus/modulus/http/context"
+	"github.com/go-modulus/modulus/errors/errpipe"
 )
 
 const InternalErrorCode = "unhandled internal error"
 
 type ErrorProcessor func(ctx context.Context, err error) error
 
+// ErrorPipelineFactory
 type ErrorPipelineFactory interface {
 	New() *ErrorPipeline
 }
 
 type ErrorPipeline struct {
-	// processors is a map of ranked ErrorProcessor functions that will be executed in order, according to their rank.
-	processors map[int][]ErrorProcessor
-	cache      []ErrorProcessor
+	pipe *errpipe.ErrorPipeline
 }
 
 func (p *ErrorPipeline) Process(ctx context.Context, err error) error {
-	if p.processors == nil {
-		p.processors = make(map[int][]ErrorProcessor)
-	}
-	if len(p.processors) == 0 {
-		return err
-	}
 	if err == nil {
 		return nil
 	}
-
-	processors := p.cache
-	if len(processors) == 0 {
-		processors = p.getProcessorsList()
-		p.cache = processors
+	if p.pipe == nil {
+		return err
 	}
-	for _, processor := range processors {
-		err = processor(ctx, err)
-	}
-	return err
+	return p.pipe.Process(ctx, err)
 }
 
-func (p *ErrorPipeline) getProcessorsList() []ErrorProcessor {
-	result := make([]ErrorProcessor, 0, len(p.processors))
-
-	// get all keys (ranks) from the processors map
-	var ranks []int
-	for rank := range p.processors {
-		ranks = append(ranks, rank)
-	}
-
-	// sort ranks in ascending order
-	sort.Ints(ranks)
-
-	// iterate over all ranks and call all processors in each rank
-	for _, rank := range ranks {
-		processors := p.processors[rank]
-		result = append(result, processors...)
-	}
-	return result
-}
-
+// SetProcessor adds an error processor.
 func (p *ErrorPipeline) SetProcessor(rank int, processor ErrorProcessor) {
-	if p.processors == nil {
-		p.processors = make(map[int][]ErrorProcessor)
+	if p.pipe == nil {
+		p.pipe = &errpipe.ErrorPipeline{}
 	}
-	p.processors[rank] = append(p.processors[rank], processor)
+	p.pipe.SetProcessor(
+		rank, func(ctx context.Context, err error) error {
+			return processor(ctx, err)
+		},
+	)
 }
 
 type ErrorLoggerConfig struct {
@@ -79,98 +47,48 @@ type ErrorLoggerConfig struct {
 	SystemLogLevel string `env:"HTTP_SYSTEM_ERROR_LOG_LEVEL, default=error" comment:"Log level for the system errors: dont_log, error, warn, info, debug"`
 }
 
+// NewDefaultErrorPipeline creates a new default error pipeline.
 func NewDefaultErrorPipeline(
 	logger *slog.Logger,
 	loggerConfig ErrorLoggerConfig,
 ) *ErrorPipeline {
 	return &ErrorPipeline{
-		processors: map[int][]ErrorProcessor{
-			100: {
-				LogError(logger, loggerConfig),
+		pipe: errpipe.NewDefaultErrorPipeline(
+			logger, errpipe.ErrorLoggerConfig{
+				UserLogLevel:   loggerConfig.UserLogLevel,
+				SystemLogLevel: loggerConfig.SystemLogLevel,
 			},
-			200: {
-				HideInternalError(),
-			},
-			300: {
-				AddRequestID(),
-			},
-		},
+		),
+	}
+}
+
+func WrapErrProcessor(processor errpipe.ErrorProcessor) ErrorProcessor {
+	return func(ctx context.Context, err error) error {
+		return processor(ctx, err)
 	}
 }
 
 func HideInternalError() ErrorProcessor {
-	return func(ctx context.Context, err error) error {
-		if err == nil {
-			return nil
-		}
-		hint := errors.Hint(err)
-		code := err.Error()
-		if hint == "" || code == InternalErrorCode {
-			resultErr := errsys.New(InternalErrorCode, "Something went wrong")
-			resultErr = errors.WithCause(resultErr, err)
-
-			return resultErr
-		}
-		return err
-	}
+	return WrapErrProcessor(errpipe.HideInternalError())
 }
 
 func AddRequestID() ErrorProcessor {
-	return func(ctx context.Context, err error) error {
-		if err == nil {
-			return nil
-		}
-		requestID := context2.GetRequestID(ctx)
-		if requestID != "" {
-			err = HideInternalError()(ctx, err)
-			if errors.IsSystemError(err) {
-				hint := errors.Hint(err)
-				hint = hint + " (Code: " + requestID + ")"
-				err = errors.WithAddedMeta(err, "requestId", requestID)
-				return errors.WithHint(err, hint)
-			}
-			return errors.WithAddedMeta(err, "requestId", requestID)
-		}
-		return err
-	}
+	return WrapErrProcessor(errpipe.AddRequestID())
 }
 
 func LogError(logger *slog.Logger, loggerConfig ErrorLoggerConfig) ErrorProcessor {
-	return func(ctx context.Context, err error) error {
-		if err == nil {
-			return nil
-		}
-		defaultLogLevel := convertConfigLogLevelToSlogLevel(loggerConfig.SystemLogLevel)
-		if errors.IsUserError(err) {
-			defaultLogLevel = convertConfigLogLevelToSlogLevel(loggerConfig.UserLogLevel)
-		}
-		errlog.LogError(ctx, err, logger, defaultLogLevel)
-		return err
-	}
+	return WrapErrProcessor(
+		errpipe.LogError(
+			logger, errpipe.ErrorLoggerConfig{
+				UserLogLevel:   loggerConfig.UserLogLevel,
+				SystemLogLevel: loggerConfig.SystemLogLevel,
+			},
+		),
+	)
 }
 
 func SaveMultiErrorsToMeta() ErrorProcessor {
-	return func(ctx context.Context, err error) error {
-		if err == nil {
-			return nil
-		}
-		allErrors := extractErrors(err)
-		if len(allErrors) == 0 {
-			return err
-		}
-		err = allErrors[0]
-		additionalErrors := allErrors[1:]
-
-		if len(additionalErrors) > 0 {
-			meta := make([]string, 0, len(additionalErrors)*2)
-			for _, err2 := range additionalErrors {
-				meta = append(meta, err2.Error(), errors.Hint(err2))
-			}
-			err = errors.WithAddedMeta(err, meta...)
-		}
-
-		return err
-	}
+	return WrapErrProcessor(errpipe.SaveMultiErrorsToMeta())
 }
 
 func extractErrors(err error) []error {
@@ -190,21 +108,4 @@ func extractErrors(err error) []error {
 	}
 
 	return allErrors
-}
-
-func convertConfigLogLevelToSlogLevel(logLevel string) slog.Level {
-	switch logLevel {
-	case "error":
-		return slog.LevelError
-	case "warn":
-		return slog.LevelWarn
-	case "info":
-		return slog.LevelInfo
-	case "debug":
-		return slog.LevelDebug
-	case "dont_log":
-		return slog.Level(-8)
-	default:
-		return slog.LevelDebug
-	}
 }
