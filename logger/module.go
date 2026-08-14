@@ -19,13 +19,49 @@ func NewModule(options ...module.Option) *module.Module {
 		AddProviders(
 			NewLogger,
 			NewSlog,
-		).InitConfig(ModuleConfig{}).
+		).
+		SetOverriddenProvider("logger.MiddlewarePipeline", NewDefaultPipeline).
+		InitConfig(ModuleConfig{}).
 		WithOptions(options...)
 }
 
 func SetConfig(config ModuleConfig) module.Option {
 	return func(m *module.Module) *module.Module {
 		return m.InitConfig(config)
+	}
+}
+
+// OverrideMiddlewarePipeline lets a module replace the default, ranked set of
+// logger middlewares with a custom one.
+func OverrideMiddlewarePipeline[T PipelineFactory](loggerModule *module.Module) *module.Module {
+	return loggerModule.SetOverriddenProvider("logger.MiddlewarePipeline", func(impl T) *Pipeline { return impl.New() })
+}
+
+// AddMiddlewareToPipeline registers an additional logger middleware at the
+// given rank. Middlewares with a lower rank run first, closer to the log
+// call site.
+func AddMiddlewareToPipeline(rank int, addedMiddleware Middleware) module.Option {
+	return func(loggerModule *module.Module) *module.Module {
+		return loggerModule.AddInvokes(
+			func(pipeline *Pipeline) *Pipeline {
+				pipeline.SetMiddleware(rank, addedMiddleware)
+				return pipeline
+			},
+		)
+	}
+}
+
+// AddMiddlewareFactoryToPipeline registers an additional logger middleware,
+// built by the given MiddlewareFactory, at the given rank. Middlewares with
+// a lower rank run first, closer to the log call site.
+func AddMiddlewareFactoryToPipeline[T MiddlewareFactory](rank int) module.Option {
+	return func(loggerModule *module.Module) *module.Module {
+		return loggerModule.AddInvokes(
+			func(pipeline *Pipeline, factory T) *Pipeline {
+				pipeline.SetMiddleware(rank, factory.SlogMiddleware())
+				return pipeline
+			},
+		)
 	}
 }
 
