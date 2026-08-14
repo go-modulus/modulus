@@ -17,31 +17,22 @@ import (
 	"go.uber.org/fx"
 )
 
-func NewResource(lc fx.Lifecycle, config Config) *resource.Resource {
-	var res *resource.Resource
-	var err error
-	lc.Append(
-		fx.Hook{
-			OnStart: func(ctx context.Context) error {
-				res, err = resource.New(
-					ctx,
-					resource.WithFromEnv(),
-					resource.WithTelemetrySDK(),
-					resource.WithHost(),
-					resource.WithAttributes(
-						semconv.DeploymentEnvironmentKey.String(config.AppEnv),
-						semconv.ServiceNameKey.String(config.ServiceName),
-					),
-				)
-				if err != nil {
-					return errors.NewWithCause("failed to create resource", err)
-				}
-				return nil
-			},
-		},
+func NewResource(config Config) (*resource.Resource, error) {
+	ctx := context.Background()
+	res, err := resource.New(
+		ctx,
+		resource.WithFromEnv(),
+		resource.WithTelemetrySDK(),
+		resource.WithHost(),
+		resource.WithAttributes(
+			semconv.DeploymentEnvironmentKey.String(config.AppEnv),
+			semconv.ServiceNameKey.String(config.ServiceName),
+		),
 	)
-
-	return res
+	if err != nil {
+		return nil, errors.NewWithCause("failed to create resource", err)
+	}
+	return res, nil
 }
 
 func NewLogProvider(lc fx.Lifecycle, res *resource.Resource) (*log.LoggerProvider, error) {
