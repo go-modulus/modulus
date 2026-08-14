@@ -27,14 +27,3 @@ func NewModule() *module.Module {
 		InitConfig(Config{}).
 		AddInvokes(invokeProviders)
 }
-
-//
-//// invokeLogMiddleware registers NewLogMiddleware on the modulus logger
-//// pipeline so every log record is also emitted via OpenTelemetry, but only
-//// when logging via OpenTelemetry is turned on in the config.
-//func invokeLogMiddleware(pipeline *logger.Pipeline, config Config, provider *log.LoggerProvider) {
-//	if !config.LogViaOtel {
-//		return
-//	}
-//	pipeline.SetMiddleware(900, NewLogMiddleware(config.ServiceName, provider))
-//}
